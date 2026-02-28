@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>拾色季 | 高定 AI 色彩美学诊断</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500;600;900&display=swap');
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
+            -webkit-font-smoothing: antialiased;
+            background-color: #F7F5F2; 
+            background-image: url('https://www.transparenttextures.com/patterns/cream-paper.png');
+        }
+        
+        .font-serif-custom { font-family: 'Noto Serif SC', serif; }
+        
+        .glass-panel { 
+            background: rgba(255, 255, 255, 0.85); 
+            backdrop-filter: blur(24px); 
+            -webkit-backdrop-filter: blur(24px);
+            box-shadow: 0 20px 60px rgba(180, 165, 155, 0.15);
+            border: 1px solid rgba(255, 255, 255, 0.9);
+        }
+
+        .content-card {
+            background: #FFFFFF;
+            border-radius: 1.5rem;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.03);
+            border: 1px solid rgba(240, 235, 230, 0.8);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .fade-in { animation: fadeIn 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+        .premium-loader { position: relative; width: 120px; height: 120px; display: flex; align-items: center; justify-content: center; }
+        .loader-ring { position: absolute; border-radius: 50%; border: 1px solid #DABFB4; animation: ripple 2.5s infinite cubic-bezier(0.21, 0.53, 0.56, 0.8); }
+        .loader-ring:nth-child(2) { animation-delay: 0.8s; }
+        .loader-ring:nth-child(3) { animation-delay: 1.6s; }
+        @keyframes ripple { 0% { width: 0; height: 0; opacity: 1; } 100% { width: 100%; height: 100%; opacity: 0; } }
+
+        ::-webkit-scrollbar { display: none; }
+        
+        .hex-color-swatch { box-shadow: inset 0 2px 6px rgba(0,0,0,0.08); border: 2px solid #FFFFFF; }
+        
+        /* 进度条动画 */
+        .progress-bar-fill { transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1); }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-3 text-[#4A403A]">
+
+    <div class="relative w-full max-w-md h-[90vh] md:h-[820px] glass-panel rounded-[2.5rem] flex flex-col overflow-hidden">
+        
+        <header class="pt-10 pb-4 px-8 text-center shrink-0 z-10 bg-gradient-to-b from-white/80 to-transparent">
+            <h1 class="text-[26px] font-serif-custom font-semibold text-[#3D342F] tracking-[0.25em] ml-1">拾色季</h1>
+            <div class="flex items-center justify-center mt-2 opacity-50">
+                <div class="h-[1px] w-6 bg-[#8C7A70]"></div>
+                <p class="text-[8px] text-[#8C7A70] tracking-[0.4em] uppercase mx-3">Color Season</p>
+                <div class="h-[1px] w-6 bg-[#8C7A70]"></div>
+            </div>
+        </header>
+
+        <div class="flex-1 overflow-y-auto px-6 pb-12" id="mainContainer">
+            
+            <div id="step-activation" class="fade-in mt-8">
+                <div class="content-card p-8">
+                    <div class="text-center mb-8">
+                        <div class="inline-block bg-[#F4EFEA] px-3 py-1 rounded-full mb-4">
+                            <span class="text-[10px] text-[#8C7A70] tracking-widest">✨ 官方高定色彩诊断系统</span>
+                        </div>
+                        <h2 class="text-xl font-serif-custom font-medium text-[#3D342F] tracking-wider mb-2">唤醒原生美学</h2>
+                        <p class="text-[12px] text-[#8C7A70] leading-relaxed">
+                            输入您的专属色彩密钥<br>AI 将通过 16 型面部算法为您精准定调
+                        </p>
+                    </div>
+                    <input type="text" id="activationCode" placeholder="输入密钥" class="w-full bg-[#F9F8F6] border border-[#EBE6E0] text-[#4A403A] text-sm rounded-[1rem] focus:ring-[#DABFB4] focus:border-[#DABFB4] block p-4 outline-none transition-all duration-300 text-center tracking-[0.3em] shadow-inner placeholder:text-[#C5B8B2] placeholder:tracking-widest">
+                    <div class="flex justify-center items-center mt-3 opacity-70">
+                        <svg class="w-3.5 h-3.5 text-[#BFA89F] mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        <span class="text-[10px] text-[#8C7A70] tracking-wider">提示：专属密钥已自动下发至小红书聊天框</span>
+                    </div>
+                    <button onclick="verifyCode()" class="w-full text-white bg-gradient-to-r from-[#594E48] to-[#3B332E] hover:from-[#4A403A] hover:to-[#2B2420] shadow-lg shadow-[#594E48]/20 font-medium rounded-[1rem] text-[14px] px-5 py-4 text-center mt-8 transition-all duration-500 tracking-[0.25em]">
+                        开启专属测试
+                    </button>
+                    <p id="codeError" class="text-[#D98A8A] text-[11px] text-center mt-4 hidden tracking-widest">密钥无效，请重新核对</p>
+                </div>
+            </div>
+
+            <div id="step-upload" class="hidden fade-in mt-6">
+                <div class="content-card p-8">
+                    <h2 class="text-lg font-serif-custom font-medium text-center mb-2 text-[#3D342F] tracking-wider">遇见真实的自己</h2>
+                    <p class="text-[12px] text-[#8C7A70] mb-6 text-center leading-relaxed">请在自然光下拍摄一张素颜照<br>供 AI 提取原生肤色与瞳孔色值</p>
+                    
+                    <label for="dropzone-file" class="flex flex-col items-center justify-center w-full h-64 border border-[#E8E1DE] border-dashed rounded-[1.5rem] cursor-pointer bg-[#F9F8F6] hover:bg-[#F2EDE8] transition-all duration-300 group relative overflow-hidden">
+                        <div id="imagePreviewContainer" class="absolute inset-0 hidden bg-cover bg-center z-10 opacity-60 mix-blend-multiply"></div>
+                        <div class="flex flex-col items-center justify-center pt-5 pb-6 relative z-20">
+                            <div class="w-12 h-12 bg-white rounded-full flex items-center justify-center shadow-sm mb-4 group-hover:scale-110 transition-transform">
+                                <svg class="w-5 h-5 text-[#DABFB4]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                            </div>
+                            <p class="text-[13px] text-[#6B5D55] tracking-widest mb-1 font-medium" id="uploadText">轻触上传照片</p>
+                            <p class="text-[10px] text-[#BFA89F] tracking-widest">本地渲染 · 阅后即焚</p>
+                        </div>
+                        <input id="dropzone-file" type="file" class="hidden" accept="image/*" onchange="handleImageUpload(event)" />
+                    </label>
+                    
+                    <div class="mt-6 flex justify-center gap-6">
+                        <div class="flex items-center"><span class="w-1.5 h-1.5 rounded-full bg-[#DABFB4] mr-2"></span><span class="text-[10px] text-[#8C7A70]">素颜原相机</span></div>
+                        <div class="flex items-center"><span class="w-1.5 h-1.5 rounded-full bg-[#DABFB4] mr-2"></span><span class="text-[10px] text-[#8C7A70]">面对自然光</span></div>
+                        <div class="flex items-center"><span class="w-1.5 h-1.5 rounded-full bg-[#DABFB4] mr-2"></span><span class="text-[10px] text-[#8C7A70]">露出原发色</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="step-loading" class="hidden fade-in mt-32 flex flex-col items-center justify-center">
+                <div class="premium-loader mb-8">
+                    <div class="loader-ring"></div>
+                    <div class="loader-ring"></div>
+                    <div class="loader-ring"></div>
+                    <div class="w-3 h-3 bg-[#DABFB4] rounded-full animate-pulse shadow-[0_0_15px_#DABFB4]"></div>
+                </div>
+                <h3 class="text-[14px] font-serif-custom font-medium text-[#4A403A] tracking-[0.2em]" id="loadingText">系统正在唤醒...</h3>
+                <p class="text-[10px] text-[#BFA89F] tracking-[0.3em] mt-3 uppercase">AI Engine Processing</p>
+            </div>
+
+            <div id="step-result" class="hidden fade-in">
+                
+                <div id="captureArea" class="space-y-4 pb-4 pt-2 bg-[#F7F5F2] px-1">
+                    
+                    <div class="text-center pt-2 pb-2">
+                        <h2 class="text-[11px] font-medium text-[#8C7A70] tracking-[0.4em] uppercase">拾色季 · 专属高定分析报告</h2>
+                        <div class="w-12 h-[1px] bg-[#DABFB4] mx-auto mt-2"></div>
+                    </div>
+
+                    <div class="content-card p-8 relative">
+                        <div class="absolute top-0 left-0 w-full h-[3px] bg-gradient-to-r from-[#F4EFEA] via-[#DABFB4] to-[#F4EFEA]"></div>
+                        <div class="flex items-center justify-between mb-6">
+                            <div class="flex items-center gap-5">
+                                <div class="w-[72px] h-[72px] rounded-full bg-[#F4EFEA] border-[3px] border-white shadow-[0_4px_15px_rgba(0,0,0,0.05)] overflow-hidden relative">
+                                    <img id="userAvatarResult" src="" alt="avatar" class="w-full h-full object-cover hidden" />
+                                </div>
+                                <div>
+                                    <h2 id="res-season-name" class="text-[28px] font-serif-custom font-bold text-[#3D342F] tracking-widest">柔秋型</h2>
+                                    <h3 id="res-season-en" class="text-[12px] text-[#BFA89F] font-serif-custom italic tracking-wider mt-1">Soft Autumn</h3>
+                                </div>
+                            </div>
+                        </div>
+                        <p id="res-desc" class="text-[12px] text-[#6B5D55] leading-[2.2] text-justify tracking-wide">
+                            您的肌肤基调呈现出极其平衡的中性偏暖色，在自然光下散发着温润如玉的光泽...
+                        </p>
+                    </div>
+
+                    <div class="content-card p-6">
+                        <div class="text-center mb-5">
+                            <span class="text-[11px] font-semibold text-[#6B5D55] tracking-[0.2em]">面部色值提取</span>
+                        </div>
+                        <div class="grid grid-cols-4 gap-2" id="res-hex-extraction"></div>
+                    </div>
+
+                    <div class="content-card p-6 pb-2">
+                        <div class="text-center mb-6">
+                            <span class="text-[11px] font-semibold text-[#6B5D55] tracking-[0.2em]">色彩维度分析</span>
+                        </div>
+                        
+                        <div class="space-y-4 mb-6" id="res-progress-bars">
+                            </div>
+
+                        <div class="relative w-full h-[180px]">
+                            <canvas id="radarChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="content-card p-6 pb-8">
+                        <div class="text-center mb-6">
+                            <span class="text-[11px] font-semibold text-[#6B5D55] tracking-[0.2em]">专属天命色彩</span>
+                        </div>
+                        <div class="grid grid-cols-4 gap-3" id="res-best-colors"></div>
+                    </div>
+
+                    <div class="content-card p-7 mb-2">
+                        <div class="text-center mb-6">
+                            <span class="text-[11px] font-semibold text-[#6B5D55] tracking-[0.2em]">高定美学法则</span>
+                        </div>
+                        <div class="space-y-5">
+                            <div class="border-b border-[#F4EFEA] pb-4">
+                                <h4 class="text-[11px] font-semibold text-[#6B5D55] mb-2 tracking-widest flex items-center"><span class="w-1 h-1 rounded-full bg-[#DABFB4] mr-2"></span> 妆容 & 色号直抄</h4>
+                                <p id="res-makeup" class="text-[11px] text-[#8C7A70] leading-[2] tracking-wide text-justify">生成中...</p>
+                            </div>
+                            <div class="border-b border-[#F4EFEA] pb-4">
+                                <h4 class="text-[11px] font-semibold text-[#6B5D55] mb-2 tracking-widest flex items-center"><span class="w-1 h-1 rounded-full bg-[#DABFB4] mr-2"></span> 穿搭 & 面料灵感</h4>
+                                <p id="res-outfit" class="text-[11px] text-[#8C7A70] leading-[2] tracking-wide text-justify">生成中...</p>
+                            </div>
+                            <div class="border-b border-[#F4EFEA] pb-4">
+                                <h4 class="text-[11px] font-semibold text-[#6B5D55] mb-2 tracking-widest flex items-center"><span class="w-1 h-1 rounded-full bg-[#DABFB4] mr-2"></span> 饰品 & 质感建议</h4>
+                                <p id="res-accessory" class="text-[11px] text-[#8C7A70] leading-[2] tracking-wide text-justify">生成中...</p>
+                            </div>
+                            <div class="border-b border-[#F4EFEA] pb-4">
+                                <h4 class="text-[11px] font-semibold text-[#6B5D55] mb-2 tracking-widest flex items-center"><span class="w-1 h-1 rounded-full bg-[#DABFB4] mr-2"></span> 同季型明星参考</h4>
+                                <p id="res-celebrity" class="text-[11px] text-[#8C7A70] leading-[2] tracking-wide text-justify">生成中...</p>
+                            </div>
+                            <div>
+                                <h4 class="text-[11px] font-semibold text-[#D98A8A] mb-2 tracking-widest flex items-center"><span class="w-1 h-1 rounded-full bg-[#D98A8A] mr-2"></span> 绝对避雷区</h4>
+                                <p id="res-avoid" class="text-[11px] text-[#8C7A70] leading-[2] tracking-wide text-justify">生成中...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div> 
+                <div class="mt-4 mb-8 text-center px-1">
+                    <button id="saveBtn" onclick="saveAsImage()" class="w-full text-white bg-[#4A403A] hover:bg-[#3D342F] shadow-[0_8px_25px_rgba(74,64,58,0.25)] font-medium rounded-[1.25rem] text-[14px] px-5 py-3.5 text-center transition-all duration-300 tracking-[0.2em]">
+                        长按或点击保存专属报告
+                    </button>
+                    <p class="text-[9px] text-[#C5B8B2] mt-4 tracking-widest font-serif-custom opacity-60">拾色季 AI COLOR ANALYSIS © 2026</p>
+                </div>
+
+            </div> 
+        </div>
+    </div>
+
+    <script>
+        // 全局变量保存用户上传的图片 Base64
+        let userImageBase64 = "";
+
+        function showStep(stepId) {
+            ['step-activation', 'step-upload', 'step-loading', 'step-result'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById(stepId).classList.remove('hidden');
+        }
+
+        function verifyCode() {
+            const code = document.getElementById('activationCode').value;
+            // 简化验证：密码长度>3 或等于8888 即可通过
+            const validCodes = ['VIP888', 'COLOR99', 'SHISEJI2026', '8888'];
+            if (validCodes.includes(code.trim()) || code.length > 3) {
+                showStep('step-upload');
+                document.getElementById('codeError').classList.add('hidden');
+            } else {
+                document.getElementById('codeError').classList.remove('hidden');
+            }
+        }
+
+        // 处理图片上传与本地预览
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    userImageBase64 = e.target.result;
+                    // 在上传区域显示隐约的预览
+                    const previewContainer = document.getElementById('imagePreviewContainer');
+                    previewContainer.style.backgroundImage = `url(${userImageBase64})`;
+                    previewContainer.classList.remove('hidden');
+                    document.getElementById('uploadText').innerText = "已加载，点击可重新上传";
+                    
+                    // 延迟 800ms 后自动进入分析流程
+                    setTimeout(startAnalysis, 800);
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // 核心修改：对接真实API，替换假数据逻辑
+        async function startAnalysis() {
+            showStep('step-loading');
+            const loadingText = document.getElementById('loadingText');
+            const states = [
+                "正在扫描面部色彩矩阵...", 
+                "正在提取肤色与瞳孔 HEX 色值...", 
+                "正在进行五维数据量化分析...", 
+                "正在匹配高定彩妆库与明星库...",
+                "正在生成满血版专属报告..."
+            ];
+            
+            let i = 0;
+            const interval = setInterval(() => {
+                i = (i + 1) % states.length;
+                loadingText.style.opacity = 0;
+                setTimeout(() => { 
+                    loadingText.innerText = states[i]; 
+                    loadingText.style.opacity = 1; 
+                }, 200);
+            }, 1500);
+
+            try {
+                // 调用Vercel后端API，获取真实AI分析结果
+                const response = await fetch('/api/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ imageBase64: userImageBase64 })
+                });
+
+                if (!response.ok) throw new Error('API请求失败');
+                const realAiData = await response.json();
+                
+                // 停止加载动画，渲染真实数据
+                clearInterval(interval);
+                renderAIResult(realAiData); 
+                showStep('step-result');
+
+            } catch (error) {
+                // 出错时回退到上传页，提示用户
+                clearInterval(interval);
+                alert("色彩诊断失败，请检查网络/重新上传清晰照片");
+                showStep('step-upload');
+            }
+        }
+
+        // 修改：接收真实AI数据，不再用假数据
+        function renderAIResult(aiData) {
+            // 备用逻辑：如果AI返回数据异常，用默认假数据兜底
+            const mockAiData = {
+                season_name: "柔秋型",
+                season_en: "Soft Autumn",
+                description: "您的肌肤基调呈现出极其平衡的中性偏暖色，在自然光下散发着温润如玉的光泽。正如初秋的枫叶晚霞，深沉而温暖。您能够完美驾驭莫兰迪色系，呈现出不费力的高级感。",
+                feature_colors: [
+                    { label: "肌肤底色", hex: "#EABD9B" },
+                    { label: "面颊色调", hex: "#E9B79A" },
+                    { label: "原生发色", hex: "#2F2F2F" },
+                    { label: "瞳孔特征", hex: "#1C1C1C" }
+                ],
+                radar_data: [
+                    { name: "色调 (冷暖倾向)", value: 75, desc: "偏暖色调" },
+                    { name: "明度 (深浅程度)", value: 60, desc: "中等明度" },
+                    { name: "彩度 (饱和程度)", value: 45, desc: "中低饱和" },
+                    { name: "清浊 (清透程度)", value: 55, desc: "柔和偏浊" },
+                    { name: "对比 (明暗反差)", value: 30, desc: "低对比度" }
+                ],
+                best_colors: [
+                    { name: "燕麦米白", hex: "#F5F0E6" },
+                    { name: "焦糖甜橙", hex: "#D48054" },
+                    { name: "莫兰迪绿", hex: "#81937A" },
+                    { name: "深茶褐", hex: "#5D3F4F" }
+                ],
+                makeup_advice: "底妆首选黄调一白或二白，推荐 NARS Light Reflecting Foundation #02。眼影强烈推荐 Charlotte Tilbury 'The Sophisticate' 纯哑光大地盘。口红必选 MAC Velvet Teddy，打造自带柔焦的裸雾妆效。",
+                outfit_advice: "避免高光泽度的真丝，多选择羊绒、粗花呢、棉麻等具有自然肌理感的面料。日常通勤可采用同色系渐变穿搭（如驼色大衣+深棕毛衣+米白内搭）。",
+                accessory_advice: "首饰材质盲选玫瑰金或哑光古铜色，完美契合您的温暖底色。包包可选择深棕或焦糖色的复古牛皮，丝巾推荐含有姜黄或橄榄绿的佩斯利印花。",
+                celebrity_reference: "韩国演员李政宰的深棕系穿搭将柔秋感发挥到极致；女星中可参考汤唯的经典大地色系风衣造型，慵懒且散发着智性美。",
+                avoid_colors: "绝对避开高饱和荧光色（荧光粉、电光蓝）以及冷硬的纯黑色、纯白色。这些颜色会让您的面部显得暗沉且具有割裂感。"
+            };
+
+            // 优先用真实AI数据，无数据则用兜底假数据
+            const renderData = aiData || mockAiData;
+
+            // 将用户上传的图片赋值给结果页头像
+            if(userImageBase64) {
+                const avatarEl = document.getElementById('userAvatarResult');
+                avatarEl.src = userImageBase64;
+                avatarEl.classList.remove('hidden');
+            }
+
+            // 1. 填充文本
+            document.getElementById('res-season-name').innerText = renderData.season_name;
+            document.getElementById('res-season-en').innerText = renderData.season_en;
+            document.getElementById('res-desc').innerText = renderData.description;
+            document.getElementById('res-makeup').innerText = renderData.makeup_advice;
+            document.getElementById('res-outfit').innerText = renderData.outfit_advice;
+            document.getElementById('res-accessory').innerText = renderData.accessory_advice;
+            document.getElementById('res-celebrity').innerText = renderData.celebrity_reference;
+            document.getElementById('res-avoid').innerText = renderData.avoid_colors;
+
+            // 2. 面部色值提取
+            const featureContainer = document.getElementById('res-hex-extraction');
+            featureContainer.innerHTML = '';
+            renderData.feature_colors.forEach(item => {
+                featureContainer.innerHTML += `
+                    <div class="flex flex-col items-center">
+                        <div class="w-10 h-10 rounded-full hex-color-swatch mb-2" style="background-color: ${item.hex};"></div>
+                        <span class="text-[10px] text-[#6B5D55] font-medium">${item.label}</span>
+                        <span class="text-[8px] text-[#8C7A70] scale-90 mt-0.5 uppercase tracking-wide">${item.hex}</span>
+                    </div>
+                `;
+            });
+
+            // 3. 渲染五维进度条
+            const progressContainer = document.getElementById('res-progress-bars');
+            progressContainer.innerHTML = '';
+            const pureRadarValues = []; // 提取纯数字给雷达图用
+            
+            renderData.radar_data.forEach(item => {
+                pureRadarValues.push(item.value);
+                progressContainer.innerHTML += `
+                    <div>
+                        <div class="flex justify-between items-end mb-1.5">
+                            <span class="text-[11px] text-[#6B5D55] font-medium tracking-wider">${item.name}</span>
+                            <span class="text-[11px] font-serif-custom font-bold text-[#3D342F]">${item.value}</span>
+                        </div>
+                        <div class="w-full bg-[#F4EFEA] rounded-full h-1.5 mb-1 overflow-hidden">
+                            <div class="bg-[#DABFB4] h-1.5 rounded-full progress-bar-fill" style="width: 0%" data-target-width="${item.value}%"></div>
+                        </div>
+                        <span class="text-[9px] text-[#BFA89F] tracking-widest">${item.desc}</span>
+                    </div>
+                `;
+            });
+
+            // 触发进度条动画
+            setTimeout(() => {
+                document.querySelectorAll('.progress-bar-fill').forEach(el => {
+                    el.style.width = el.getAttribute('data-target-width');
+                });
+            }, 100);
+
+            // 4. 填充本命色卡
+            const colorContainer = document.getElementById('res-best-colors');
+            colorContainer.innerHTML = '';
+            renderData.best_colors.forEach(color => {
+                colorContainer.innerHTML += `
+                    <div class="flex flex-col items-center">
+                        <div class="w-12 h-12 rounded-full hex-color-swatch mb-2.5" style="background-color: ${color.hex};"></div>
+                        <span class="text-[10px] text-[#6B5D55] tracking-widest font-medium">${color.name}</span>
+                        <span class="text-[8px] text-[#BFA89F] scale-90 mt-0.5 uppercase tracking-wider">${color.hex}</span>
+                    </div>
+                `;
+            });
+
+            // 5. 绘制雷达图
+            initRadarChart(pureRadarValues);
+        }
+
+        function initRadarChart(data) {
+            const ctx = document.getElementById('radarChart').getContext('2d');
+            if(window.myRadarChart) { window.myRadarChart.destroy(); }
+
+            Chart.defaults.font.family = "'Noto Serif SC', serif";
+            Chart.defaults.color = "#8C7A70";
+
+            window.myRadarChart = new Chart(ctx, {
+                type: 'radar',
+                data: {
+                    labels: ['色调', '明度', '彩度', '清浊', '对比'],
+                    datasets: [{
+                        data: data,
+                        backgroundColor: 'rgba(218, 191, 180, 0.4)', 
+                        borderColor: 'rgba(180, 150, 140, 0.8)', 
+                        borderWidth: 1.5,
+                        pointBackgroundColor: '#FFFFFF',
+                        pointBorderColor: 'rgba(180, 150, 140, 1)',
+                        pointBorderWidth: 1.5,
+                        pointRadius: 3
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        r: {
+                            angleLines: { color: 'rgba(235, 230, 225, 0.6)' },
+                            grid: { color: 'rgba(235, 230, 225, 0.8)', circular: false },
+                            pointLabels: { font: { size: 10, weight: '500' }, color: '#6B5D55' },
+                            ticks: { display: false, min: 0, max: 100 } 
+                        }
+                    }
+                }
+            });
+        }
+
+        function saveAsImage() {
+            const captureArea = document.getElementById('captureArea');
+            const saveBtn = document.getElementById('saveBtn');
+            const originalBtnText = saveBtn.innerText;
+            
+            saveBtn.innerText = "正在为您生成高定专属原图...";
+            saveBtn.classList.add('opacity-70', 'cursor-not-allowed');
+            
+            setTimeout(() => {
+                html2canvas(captureArea, { 
+                    scale: 2, 
+                    backgroundColor: '#F7F5F2', 
+                    useCORS: true, 
+                    logging: false 
+                }).then(canvas => {
+                    const link = document.createElement('a');
+                    link.download = '拾色季_高定美学分析报告.png';
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                    
+                    saveBtn.innerText = originalBtnText;
+                    saveBtn.classList.remove('opacity-70', 'cursor-not-allowed');
+                });
+            }, 300); 
+        }
+    </script>
+</body>
+
+</html>
