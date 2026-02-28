@@ -33,7 +33,7 @@
         }
         .fade-in { animation: fadeIn 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-        .premium-loader { position: relative; width: 120px height: 120px; display: flex; align-items: center; justify-content: center; }
+        .premium-loader { position: relative; width: 120px; height: 120px; display: flex; align-items: center; justify-content: center; }
         .loader-ring { position: absolute; border-radius: 50%; border: 1px solid #DABFB4; animation: ripple 2.5s infinite cubic-bezier(0.21, 0.53, 0.56, 0.8); }
         .loader-ring:nth-child(2) { animation-delay: 0.8s; }
         .loader-ring:nth-child(3) { animation-delay: 1.6s; }
@@ -210,8 +210,8 @@
 </div>
 </div>
 <div class="mt-4 mb-8 text-center px-1">
-    <button id="saveBtn" onclick="saveAsImage()" class="w-full text-white bg-[#4A403A] hover:bg-[#3D342F] shadow-[0_8px_25px rgba(74,64,58,0.25)] font-medium rounded-[1.25rem] text-[14px] px-5 py-3.5 text-center transition-all duration-300 tracking-[0.2em]">长按或点击保存专属报告</button>
-    <p class="text-[9px] text-[#C5B8B2] mt-4 tracking-widest font-serif-custom opacity-60">拾色季 AI COLOR ANALYSIS © 2026</p>
+    <button id="saveBtn" onclick="saveAsImage()" class="w-full text-white bg-[#4A403A] hover:bg-[#3D342F] shadow-[0_8px_25px rgba(74,64,58,0.25)] font-medium rounded-[1.25rem] text-[14px] px-5 py-3.5 text-center transition-all duration-300 tracking-[0.2em]">使用手机截图功能保存您的专属报告</button>
+    <p class="text-[9px] text-[#C5B8B2] mt-3 tracking-widest font-serif-custom opacity-70">温馨提示：电源键 + 音量键 即可快速截图保存</p>
 </div>
 </div>
 </div>
@@ -263,56 +263,11 @@
         window.myRadarChart=new Chart(ctx,{type:'radar',data:{labels:['色调','明度','彩度','清浊','对比'],datasets:[{data:data,backgroundColor:'rgba(218,191,180,0.4)',borderColor:'rgba(180,150,140,0.8)',borderWidth:1.5,pointBackgroundColor:'#FFFFFF',pointBorderColor:'rgba(180,150,140,1)',pointBorderWidth:1.5,pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:false},scales:{r:{angleLines:{color:'rgba(235,230,225,0.6)'},grid:{color:'rgba(235,230,225,0.8)',circular:false},pointLabels:{font:{size:10,weight:500},color:'#6B5D55'},ticks:{display:false,min:0,max:100}}}}});
     }
     function saveAsImage() {
-        const isWechat = /MicroMessenger/i.test(navigator.userAgent);
-        if (isWechat) {
-            alert(
-                '💌 为了正常保存您的专属色彩报告，请点击右上角“…”，\n'+
-                '选择「在浏览器中打开」，即可解锁完整保存功能。\n\n'+
-                '感谢您的理解与配合，拾色季期待与您一同探索色彩美学。'
-            );
-            return;
-        }
-
-        const saveBtn = document.getElementById('saveBtn');
-        const originalBtnText = saveBtn.innerText;
-        saveBtn.innerText = "正在生成高定专属原图...";
-        saveBtn.classList.add('opacity-70', 'cursor-not-allowed');
-
-        setTimeout(() => {
-            html2canvas(document.getElementById('captureArea'), {
-                scale: window.devicePixelRatio || 2,
-                backgroundColor: '#F7F5F2',
-                useCORS: true,
-                logging: false,
-                allowTaint: false
-            }).then(canvas => {
-                if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
-                    const imageData = canvas.toDataURL('image/png');
-                    const newTab = window.open();
-                    newTab.document.body.innerHTML = `<img src="${imageData}" style="width:100%;" />`;
-                    alert('图片已在新页面打开，请长按图片保存到相册。');
-                } else {
-                    canvas.toBlob(function(blob) {
-                        const link = document.createElement('a');
-                        link.download = '拾色季_高定美学分析报告.png';
-                        link.href = URL.createObjectURL(blob);
-                        link.click();
-                        setTimeout(() => URL.revokeObjectURL(link.href), 100);
-                    }, 'image/png');
-                }
-                saveBtn.innerText = originalBtnText;
-                saveBtn.classList.remove('opacity-70', 'cursor-not-allowed');
-            }).catch(err => {
-                console.error('截图失败:', err);
-                alert(
-                    '💡 自动保存遇到小插曲啦～\n'+
-                    '请尝试使用手机自带截图功能（如电源键+音量键），\n'+
-                    '截取当前页面，即可永久珍藏您的专属色彩美学报告。'
-                );
-                saveBtn.innerText = originalBtnText;
-                saveBtn.classList.remove('opacity-70', 'cursor-not-allowed');
-            });
-        }, 500);
+        alert(
+            '💡 保存您的专属色彩报告：\n\n' +
+            '请使用手机自带截图功能（如电源键 + 音量键），\n' +
+            '截取当前页面，即可永久珍藏您的专属色彩美学报告。\n'
+        );
     }
 </script>
 </body>
