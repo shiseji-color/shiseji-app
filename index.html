@@ -266,7 +266,11 @@
         // 检测是否在微信内置浏览器
         const isWechat = /MicroMessenger/i.test(navigator.userAgent);
         if (isWechat) {
-            alert('为了正常保存您的专属色彩报告，请点击右上角“...”，选择“在浏览器中打开”后再尝试保存。');
+            alert(
+                '💌 为了正常保存您的专属色彩报告，请点击右上角“…”，\n' +
+                '选择「在浏览器中打开」，即可解锁完整保存功能。\n\n' +
+                '感谢您的理解与配合，拾色季期待与您一同探索色彩美学。'
+            );
             return;
         }
 
@@ -306,7 +310,11 @@
                 saveBtn.classList.remove('opacity-70', 'cursor-not-allowed');
             }).catch(err => {
                 console.error('截图失败:', err);
-                alert('截图保存失败，请尝试用手机自带截图功能（如电源键+音量键）保存当前页面。');
+                alert(
+                    '💡 自动保存遇到小插曲啦～\n' +
+                    '请尝试使用手机自带截图功能（如电源键+音量键），\n' +
+                    '截取当前页面，即可永久珍藏您的专属色彩美学报告。'
+                );
                 saveBtn.innerText = originalBtnText;
                 saveBtn.classList.remove('opacity-70', 'cursor-not-allowed');
             });
