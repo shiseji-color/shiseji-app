@@ -89,9 +89,9 @@
                 min-height: 44px !important;
                 font-size: 13px !important;
             }
-            /* 上传区域高度适配 */
+            /* 修复上传区域高度 bug，让相机图标完整显示 */
             label[for="dropzone-file"] {
-                height: 56px !important;
+                height: 160px !important; /* 恢复到更合理的高度 */
             }
             /* 色卡适配 - 小屏缩小尺寸 */
             .hex-color-swatch {
@@ -136,6 +136,9 @@
             }
             .content-card {
                 padding: 1rem !important;
+            }
+            label[for="dropzone-file"] {
+                height: 120px !important; /* 横屏时适当降低高度 */
             }
         }
 
@@ -367,8 +370,8 @@
             }
         }
 
-        // 核心修改：对接真实API，替换假数据逻辑
-        async function startAnalysis() {
+        // 核心修改：改为纯前端模拟，不再调用API
+        function startAnalysis() {
             showStep('step-loading');
             const loadingText = document.getElementById('loadingText');
             const states = [
@@ -389,28 +392,13 @@
                 }, 200);
             }, 1500);
 
-            try {
-                // 调用Vercel后端API，获取真实AI分析结果
-                const response = await fetch('/api/analyze', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ imageBase64: userImageBase64 })
-                });
-
-                if (!response.ok) throw new Error('API请求失败');
-                const realAiData = await response.json();
-                
-                // 停止加载动画，渲染真实数据
+            // 模拟3秒后完成分析
+            setTimeout(() => {
                 clearInterval(interval);
-                renderAIResult(realAiData); 
+                // 直接使用假数据渲染结果
+                renderAIResult(null); 
                 showStep('step-result');
-
-            } catch (error) {
-                // 出错时回退到上传页，提示用户
-                clearInterval(interval);
-                alert("色彩诊断失败，请检查网络/重新上传清晰照片");
-                showStep('step-upload');
-            }
+            }, 3000);
         }
 
         // 修改：接收真实AI数据，不再用假数据
