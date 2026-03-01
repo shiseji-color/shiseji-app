@@ -42,6 +42,27 @@
         .hex-color-swatch { box-shadow: inset 0 2px 6px rgba(0,0,0,0.08); border: 2px solid #FFFFFF; }
         .progress-bar-fill { transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1); }
 
+        /* 统一自定义弹窗样式 */
+        #customAlert {
+            transition: opacity 0.3s ease;
+        }
+        #customAlert:not(.hidden) {
+            opacity: 1;
+        }
+        #customAlert.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        #customAlert > div {
+            transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), opacity 0.3s ease;
+            transform: translateY(20px);
+            opacity: 0;
+        }
+        #customAlert:not(.hidden) > div {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
         /* 安卓浏览器兜底样式 */
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -262,7 +283,19 @@
 </div>
 </div>
 </div>
+
+<!-- 统一自定义弹窗 -->
+<div id="customAlert" class="fixed inset-0 z-50 flex items-center justify-center bg-black/30 backdrop-blur-sm hidden">
+    <div class="bg-white rounded-2xl shadow-2xl w-[85%] max-w-sm overflow-hidden transform transition-all">
+        <div class="p-6 text-center">
+            <p id="alertMessage" class="text-[#4A403A] text-base font-medium leading-relaxed">提示信息</p>
+        </div>
+        <div class="border-t border-[#F4EFEA]">
+            <button onclick="closeCustomAlert()" class="w-full py-4 text-[#DABFB4] font-semibold hover:bg-[#F9F8F6] transition-colors">确定</button>
+        </div>
+    </div>
 </div>
+
 <script>
     let userImageBase64 = "";
     let cameraStream = null;
@@ -429,6 +462,16 @@
         return remaining - 1;
     }
 
+    // 统一自定义弹窗函数
+    function showCustomAlert(message) {
+        document.getElementById('alertMessage').innerText = message;
+        document.getElementById('customAlert').classList.remove('hidden');
+    }
+
+    function closeCustomAlert() {
+        document.getElementById('customAlert').classList.add('hidden');
+    }
+
     function showStep(stepId) {
         ['step-activation','step-upload','step-camera','step-loading','step-result'].forEach(id=>{
             const el = document.getElementById(id);
@@ -485,7 +528,7 @@
             const videoEl = document.getElementById('cameraVideo');
             videoEl.srcObject = stream;
         } catch (err) {
-            alert('请允许相机权限后重试');
+            showCustomAlert('请允许相机权限后重试');
             showStep('step-upload');
         }
     }
@@ -512,13 +555,13 @@
 
     function startAnalysis() {
         if (!window.currentCode) {
-            alert("请先输入兑换码");
+            showCustomAlert("请先输入兑换码");
             return;
         }
 
         const remaining = useCodeOnce(window.currentCode);
         if (remaining < 0) {
-            alert("次数已用完，请再次购买");
+            showCustomAlert("次数已用完，请再次购买");
             showStep('step-activation');
             return;
         }
@@ -541,9 +584,9 @@
             const seasonData = getSeasonDataByImage(userImageBase64);
             renderAIResult(seasonData);
             showStep('step-result');
-            // 显示剩余次数
+            // 显示剩余次数（使用自定义弹窗）
             setTimeout(() => {
-                alert(`本次消耗1次机会，剩余 ${remaining} 次`);
+                showCustomAlert(`本次消耗1次机会，剩余 ${remaining} 次`);
             }, 500);
         },6000);
     }
@@ -659,7 +702,7 @@
                 img.style.zIndex = '9999';
                 document.body.appendChild(img);
 
-                alert('✅ 图片已生成，请长按图片选择「保存图片」到相册。');
+                showCustomAlert('✅ 图片已生成，请长按图片选择「保存图片」到相册。');
 
                 img.onclick = function() {
                     document.body.removeChild(img);
@@ -674,11 +717,11 @@
                     link.click();
                     document.body.removeChild(link);
                     setTimeout(() => URL.revokeObjectURL(url), 100);
-                    alert('✅ 您的专属色彩报告已成功保存到本地！');
+                    showCustomAlert('✅ 您的专属色彩报告已成功保存到本地！');
                 }, 'image/png');
             }
         } catch (e) {
-            alert('💡 保存失败，可使用截图功能：电源键 + 音量键');
+            showCustomAlert('💡 保存失败，可使用截图功能：电源键 + 音量键');
         }
     }
 </script>
