@@ -18,37 +18,60 @@ export const handler = async (event) => {
     const { imageBase64 } = JSON.parse(event.body);
     if (!imageBase64) return { statusCode: 200, headers, body: JSON.stringify({ error: '请上传照片' }) };
 
-    // 【核弹级防线】强制二选一
-    const systemPrompt = `你是一个极其严格的安检员兼色彩诊断师。请严格按顺序执行：
-    第一步：安检图片。图片里是否有清晰的【真实人类脸部】？（窗帘、水杯、衣物、风景、卡通等一律算没有！）
-    第二步：如果【没有】人脸，停止一切分析！【必须且只能】输出这一个JSON：
-    {"error": "亲爱的，系统没有检测到清晰的人脸哦~ 请上传一张清晰的正面无滤镜照片。"}
-    第三步：如果【有】清晰人脸，再输出完整的色彩分析JSON（包含 season_name, feature_colors 等字段）。
-    
-    【致命警告】：绝对不准给窗帘、杯子等物品编造色彩数据！`;
+    // 【全新逻辑】强制 AI 先做判断题，再做填空题
+    const systemPrompt = `你是一个专业的色彩诊断AI。请严格按照以下JSON结构返回：
+    {
+      "is_human": true或者false,
+      "season_name": "...",
+      "season_en": "...",
+      "description": "...",
+      "feature_colors": ["#...", "#...", "#...", "#..."],
+      "radar_data": [80, 70, 60, 90, 85],
+      "best_colors": ["#...", "#...", "#..."],
+      "makeup_advice": "...",
+      "outfit_advice": "...",
+      "accessory_advice": "...",
+      "celebrity_reference": "...",
+      "avoid_colors": ["#...", "#..."]
+    }
+
+    【最高判定规则】：
+    如果图片是一个清晰的真实人类面部，"is_human"必须为true，并认真填写色彩测算字段。
+    如果图片是衣服、水杯、鼠标、风景等非人类主体，"is_human"必须为false！并且其他所有字段随便填即可，不要去分析它！`;
 
     const response = await openai.chat.completions.create({
       model: process.env.MODEL_NAME || 'qwen-vl-max',
       messages: [
         { role: 'system', content: systemPrompt },
-        { role: 'user', content: [{ type: 'text', text: '请先严格判断是否有人脸！如果没有，只返回带 error 的 JSON！' }, { type: 'image_url', image_url: { url: imageBase64 } }] }
+        { role: 'user', content: [{ type: 'text', text: '请分析图片并严格返回JSON' }, { type: 'image_url', image_url: { url: imageBase64 } }] }
       ],
       max_tokens: 2000,
-      temperature: 0.01 // 极度死板
+      temperature: 0.1
     });
 
     let text = response.choices[0].message.content.trim().replace(/^```json/, '').replace(/```$/, '').trim();
     const data = JSON.parse(text);
 
-    // 【核心修改】：就算报错，也给前端返回 200 状态码，这样前端就不会触发假数据了！
-    if (data.error) {
-      return { statusCode: 200, headers, body: JSON.stringify({ error: data.error }) };
+    // 🐎 【木马策略启动】：如果AI判定不是人，我们伪造一份数据骗过前端！
+    if (data.is_human === false) {
+       data.season_name = "⚠️ 未检测到人脸";
+       data.season_en = "No Face Detected";
+       data.description = "亲爱的，系统没有检测到清晰的人脸哦~ 您的算力额度非常宝贵，为了保证测算结果的极致精准，请您上传一张能清晰展现面部五官的正面自拍照片！";
+       // 塞入兜底假数据防止前端崩溃
+       data.feature_colors = ["#EEEEEE", "#EEEEEE", "#EEEEEE", "#EEEEEE"];
+       data.radar_data = [10, 10, 10, 10, 10];
+       data.best_colors = [];
+       data.makeup_advice = "请上传人脸后查看";
+       data.outfit_advice = "请上传人脸后查看";
+       data.accessory_advice = "请上传人脸后查看";
+       data.celebrity_reference = "无";
+       data.avoid_colors = [];
     }
-    
-    // 正常返回数据
+
     return { statusCode: 200, headers, body: JSON.stringify(data) };
 
   } catch (e) {
+    console.error(e);
     return { statusCode: 200, headers, body: JSON.stringify({ error: 'AI 大脑暂时走神了，请稍后再试' }) };
   }
 };
