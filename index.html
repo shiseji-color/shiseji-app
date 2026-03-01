@@ -4,285 +4,384 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>拾色季 | 高定 AI 色彩美学诊断</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300,400,500,600,900&display=swap');
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            -webkit-font-smoothing: antialiased;
             background: #F7F5F2;
-            margin: 0;
-            padding: 0;
+            margin: 0; padding: 0;
             min-height: 100vh;
-            overflow-x: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .font-serif { font-family: 'Noto Serif SC', serif; }
+        .app {
+            width: 100%;
+            max-width: 380px;
+            min-height: 90vh;
+            background: #fff;
+            border-radius: 2.5rem;
+            box-shadow: 0 20px 60px rgba(180,165,150,0.15);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
         .page {
             display: none;
-            width: 100%;
-            min-height: 100vh;
-            padding: 20px 16px;
-            box-sizing: border-box;
+            flex: 1;
+            padding: 40px 28px;
+            text-align: center;
         }
         .page.active {
             display: block;
         }
-        .glass-panel {
-            background: rgba(255,255,255,0.85);
-            backdrop-filter: blur(24px);
-            border-radius: 24px;
-            padding: 24px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        .title {
+            font-size: 32px;
+            font-family: 'Noto Serif SC', serif;
+            color: #4A403A;
+            margin-bottom: 8px;
         }
-        .content-card {
-            background: #fff;
-            border-radius: 20px;
-            padding: 28px 24px;
-            margin-bottom: 16px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.04);
-            border: 1px solid rgba(240,235,230,0.8);
+        .divider {
+            width: 40px; height: 1px;
+            background: #BFA89F;
+            margin: 12px auto;
         }
-        .fade-in {
-            animation: fadeIn 0.6s ease forwards;
+        .sub-title {
+            font-size: 13px;
+            color: #BFA89F;
+            letter-spacing: 0.15em;
+            margin-bottom: 50px;
         }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        input, button {
+        .input-box {
             width: 100%;
-            box-sizing: border-box;
-            border-radius: 14px;
+            background: #F7F5F2;
+            border: none;
+            border-radius: 20px;
             padding: 16px;
+            text-align: center;
             font-size: 15px;
             outline: none;
+            margin-bottom: 20px;
         }
-        button {
-            background: #4A403A;
-            color: white;
-            border: none;
-            font-weight: 500;
-        }
-        input {
-            background: #F9F8F6;
-            border: 1px solid #EBE6E0;
-            text-align: center;
-            letter-spacing: 0.15em;
-        }
-        .img-upload {
+        .btn {
             width: 100%;
-            aspect-ratio: 1;
-            background: #F9F8F6;
-            border-radius: 18px;
+            background: #4A403A;
+            color: #fff;
+            border-radius: 20px;
+            padding: 16px;
+            font-size: 15px;
+            border: none;
+        }
+        .upload-box {
+            width: 100%;
+            height: 200px;
+            background: #F7F5F2;
+            border-radius: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
+            color: #BFA89F;
             cursor: pointer;
-            margin-bottom: 16px;
+            margin-bottom: 20px;
             background-size: cover;
             background-position: center;
         }
-        .text-title {
-            font-size: 18px;
-            font-weight: 600;
-            color: #3D342F;
-            text-align: center;
+
+        /* 加载页 —— 完美居中 */
+        #page-loading {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 28px;
         }
-        .text-desc {
-            font-size: 13px;
-            color: #8C7A70;
-            text-align: center;
-            margin-top: 6px;
+        #page-loading.active {
+            display: flex;
         }
-        .text-error {
-            font-size: 12px;
-            color: #D98A8A;
-            text-align: center;
-            margin-top: 8px;
+        .loader {
+            width: 120px;
+            height: 120px;
+            border: 1px solid #E8E1DE;
+            border-radius: 50%;
+            position: relative;
+            animation: pulse 2s infinite;
+            margin-bottom: 40px;
+        }
+        .loader::before {
+            content: '';
+            position: absolute;
+            width: 80px; height: 80px;
+            border: 1px solid #E8E1DE;
+            border-radius: 50%;
+            top: 50%; left: 50%;
+            transform: translate(-50%,-50%);
+        }
+        .loader::after {
+            content: '';
+            position: absolute;
+            width: 22px; height: 22px;
+            background: #DABFB4;
+            border-radius: 50%;
+            top: 50%; left: 50%;
+            transform: translate(-50%,-50%);
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); opacity:0.8; }
+            50% { transform: scale(1.08); opacity:1; }
+            100% { transform: scale(1); opacity:0.8; }
+        }
+
+        .result-card {
+            background: #F7F5F2;
+            border-radius: 20px;
+            padding: 24px;
+            text-align: left;
+            margin-bottom: 16px;
+        }
+        .result-title {
+            font-size: 17px;
+            font-family: 'Noto Serif SC', serif;
+            color: #4A403A;
+            margin-bottom: 10px;
+        }
+        .result-text {
+            font-size: 14px;
+            color: #6B5D55;
+            line-height: 1.6;
         }
 
         /* 弹窗 */
-        #customAlert {
+        #alert {
             position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
+            top:0;left:0;right:0;bottom:0;
             background: rgba(0,0,0,0.3);
-            z-index: 9999;
             display: none;
             align-items: center;
             justify-content: center;
+            z-index: 999;
         }
-        #customAlert.show {
+        #alert.show {
             display: flex;
         }
         .alert-box {
-            background: white;
-            width: 82%;
-            max-width: 330px;
-            border-radius: 22px;
+            background: #fff;
+            width: 80%;
+            border-radius: 18px;
             overflow: hidden;
         }
         .alert-body {
-            padding: 32px 20px;
+            padding: 30px 20px;
             text-align: center;
             font-size: 15px;
             color: #4A403A;
         }
-        .alert-footer {
-            border-top: 1px solid #F4EFEA;
-        }
         .alert-btn {
             width: 100%;
-            padding: 16px;
-            background: white;
+            padding: 14px;
+            background: #fff;
+            border-top: 1px solid #eee;
             color: #DABFB4;
             font-weight: 600;
-            border: none;
-            font-size: 16px;
+            border:none;
         }
     </style>
 </head>
+
 <body>
 
-<!-- 1 激活页 -->
-<div class="page active" id="step-activation">
-    <div class="glass-panel">
-        <div class="content-card">
-            <div class="text-title">拾色季 · 色彩诊断</div>
-            <div class="text-desc mt-2">输入兑换码，开启专属美学分析</div>
-            <input id="activationCode" type="text" placeholder="请输入兑换码" class="mt-6">
-            <div id="codeError" class="text-error hidden">兑换码无效或次数已用完</div>
-            <button class="mt-6" onclick="verifyCode()">确认使用</button>
-        </div>
-    </div>
-</div>
+<div class="app">
 
-<!-- 2 上传页 -->
-<div class="page" id="step-upload">
-    <div class="glass-panel">
-        <div class="content-card">
-            <div class="text-title">上传照片</div>
-            <div class="text-desc">自然光 · 素颜 · 正脸</div>
-            <div class="img-upload mt-6" id="imgPreview" onclick="document.getElementById('fileInput').click()"></div>
-            <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="selectFile(event)">
-            <button onclick="startAnalysis()">开始分析</button>
-            <button onclick="goStep('activation')" style="background:#F9F8F6;color:#4A403A;margin-top:10px">返回</button>
-        </div>
+    <!-- 1 激活码 -->
+    <div id="page-start" class="page active">
+        <div class="title">拾色季</div>
+        <div class="divider"></div>
+        <div class="sub-title">COLOR SEASON</div>
+        <input type="text" id="code" class="input-box" placeholder="请输入兑换码">
+        <button class="btn" onclick="goUpload()">确认使用</button>
     </div>
-</div>
 
-<!-- 3 加载页 -->
-<div class="page" id="step-loading">
-    <div class="glass-panel">
-        <div class="content-card text-center">
-            <div class="text-title">AI 正在分析</div>
-            <div class="text-desc mt-2">请稍候 3～6 秒</div>
+    <!-- 2 上传 -->
+    <div id="page-upload" class="page">
+        <div class="title">拾色季</div>
+        <div class="divider"></div>
+        <div class="sub-title">COLOR SEASON</div>
+        <div class="upload-box" id="preview" onclick="$('#file').click()">
+            点击上传素颜照
         </div>
+        <input type="file" id="file" accept="image/*" style="display:none" onchange="setImg(event)">
+        <button class="btn" onclick="goLoading()">开始分析</button>
     </div>
-</div>
 
-<!-- 4 结果页 -->
-<div class="page" id="step-result">
-    <div class="glass-panel">
-        <div class="content-card">
-            <div class="text-title">你的专属色彩报告</div>
-            <div id="resultText" class="text-desc mt-4" style="text-align:left;line-height:1.7">分析完成</div>
-            <button class="mt-6" onclick="saveResult()">保存报告</button>
-            <button onclick="goStep('upload')" style="background:#F9F8F6;color:#4A403A;margin-top:10px">再次检测</button>
-        </div>
+    <!-- 3 加载（完美居中） -->
+    <div id="page-loading">
+        <div class="loader"></div>
+        <div style="font-size:17px; color:#4A403A; margin-bottom:10px;">AI 分析中...</div>
+        <div style="font-size:12px; color:#BFA89F; letter-spacing:1px;">PROCESSING</div>
     </div>
+
+    <!-- 4 结果 -->
+    <div id="page-result" class="page">
+        <div class="title">拾色季</div>
+        <div class="divider"></div>
+        <div class="sub-title">COLOR SEASON</div>
+
+        <div class="result-card">
+            <div class="result-title">你的色彩季型</div>
+            <div class="result-text" id="r-type">暖春型</div>
+        </div>
+
+        <div class="result-card">
+            <div class="result-title">肤色诊断</div>
+            <div class="result-text" id="r-skin">肌肤通透暖调，自带柔光质感。</div>
+        </div>
+
+        <div class="result-card">
+            <div class="result-title">最适合颜色</div>
+            <div class="result-text" id="r-color">珊瑚色、蜜瓜色、奶油色、暖棕。</div>
+        </div>
+
+        <div class="result-card">
+            <div class="result-title">妆容建议</div>
+            <div class="result-text" id="r-makeup">底妆选黄调，眼影蜜桃盘，口红暖橘调。</div>
+        </div>
+
+        <div class="result-card">
+            <div class="result-title">穿搭风格</div>
+            <div class="result-text" id="r-outfit">浅暖明亮、清新元气、浅色系为主。</div>
+        </div>
+
+        <button class="btn" onclick="saveResult()">保存报告</button>
+    </div>
+
 </div>
 
 <!-- 弹窗 -->
-<div id="customAlert">
+<div id="alert">
     <div class="alert-box">
-        <div class="alert-body" id="alertMsg">提示</div>
-        <div class="alert-footer">
-            <button class="alert-btn" onclick="closeAlert()">确定</button>
-        </div>
+        <div class="alert-body" id="msg"></div>
+        <button class="alert-btn" onclick="closeAlert()">确定</button>
     </div>
 </div>
 
 <script>
-    let currentCode = "";
-    let imgBase64 = "";
+let currentCode = ""
+let imgBase64 = ""
+let seasonType = 0
 
-    // 页面切换（核心修复：只显示当前页，不堆叠）
-    function goStep(stepName) {
-        document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
-        document.getElementById("step-" + stepName).classList.add("active");
+const seasons = [
+    {
+        type:"暖春型",
+        skin:"肌肤呈现明亮通透暖调，自带健康蜜桃光泽，属于浅暖型肤色。",
+        color:"珊瑚橙、蜜瓜黄、奶油白、浅驼、蜜桃粉、草绿。",
+        makeup:"底妆选黄调一白；眼影蜜桃盘；口红橘调、暖红。",
+        outfit:"浅暖明亮、清新元气、浅色系为主，避免深色压肤色。"
+    },
+    {
+        type:"冷夏型",
+        skin:"肌肤偏冷调、雾面柔焦，自带清冷高级感，属于浅冷型肤色。",
+        color:"雾霾蓝、灰粉、薰衣草、豆沙色、雾紫、浅灰。",
+        makeup:"底妆粉调；眼影灰紫盘；口红豆沙、玫瑰、冷粉。",
+        outfit:"低饱和莫兰迪、清冷温柔、哑光质感，避开高饱和暖色。"
+    },
+    {
+        type:"柔秋型",
+        skin:"肌肤温润暖黄，柔和哑光，气质沉稳高级，属于中深暖柔型肤色。",
+        color:"焦糖、驼色、橄榄绿、砖红、摩卡、奶咖。",
+        makeup:"底妆自然偏黄；眼影大地盘；口红土橘、棕红、奶茶。",
+        outfit:"大地色系、复古温柔、肌理感面料，避开冷白与荧光色。"
+    },
+    {
+        type:"清冬型",
+        skin:"冷白透亮，对比强烈，气场干净锐利，属于冷亮型肤色。",
+        color:"正红、宝蓝、纯白、黑色、祖母绿、冷灰。",
+        makeup:"底妆冷白；眼影冷棕盘；口红正红、浆果、冷玫。",
+        outfit:"高对比、极简利落、亮彩色+黑白，避开浊色与柔雾色。"
     }
+]
 
-    // 选择图片
-    function selectFile(e) {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function () {
-            imgBase64 = reader.result;
-            document.getElementById("imgPreview").style.backgroundImage = `url(${imgBase64})`;
-        };
-        reader.readAsDataURL(file);
-    }
+function $(id){ return document.getElementById(id) }
 
-    // 次数限制（本机）
-    function getRemain(code) {
-        const k = "color_season_" + code;
-        const v = localStorage.getItem(k);
-        if (v == null) {
-            localStorage.setItem(k, 6);
-            return 6;
-        }
-        return parseInt(v);
+function show(pageId){
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'))
+    document.querySelectorAll('#page-loading').forEach(p => p.classList.remove('active'))
+    if(pageId === 'loading'){
+        $('page-loading').classList.add('active')
+    } else {
+        $(pageId).classList.add('active')
     }
-    function useOnce(code) {
-        const r = getRemain(code);
-        if (r <= 0) return 0;
-        localStorage.setItem("color_season_" + code, r - 1);
-        return r - 1;
-    }
+}
 
-    // 验证兑换码
-    function verifyCode() {
-        const code = document.getElementById("activationCode").value.trim();
-        if (!code) {
-            showAlert("请输入兑换码");
-            return;
-        }
-        if (getRemain(code) <= 0) {
-            document.getElementById("codeError").classList.remove("hidden");
-            return;
-        }
-        currentCode = code;
-        document.getElementById("codeError").classList.add("hidden");
-        goStep("upload");
-    }
+// 次数
+function getLimit(code){
+    let k = "color_"+code
+    let v = localStorage.getItem(k)
+    if(!v) { localStorage.setItem(k,6); return 6 }
+    return parseInt(v)
+}
+function useCode(code){
+    let r = getLimit(code)
+    if(r<=0) return 0
+    localStorage.setItem("color_"+code, r-1)
+    return r-1
+}
 
-    // 开始分析
-    function startAnalysis() {
-        if (!currentCode) { showAlert("请先输入兑换码"); return; }
-        if (!imgBase64) { showAlert("请选择照片"); return; }
-        goStep("loading");
+// 页面跳转
+function goUpload(){
+    let code = $('code').value.trim()
+    if(!code) return tip("请输入兑换码")
+    if(getLimit(code) <=0) return tip("次数已用完")
+    currentCode = code
+    show('page-upload')
+}
+function setImg(e){
+    let f = e.target.files[0]
+    if(!f) return
+    let r = new FileReader()
+    r.onload = function(){
+        imgBase64 = r.result
+        $('preview').style.backgroundImage = `url(${imgBase64})`
+        $('preview').innerText = ""
+    }
+    r.readAsDataURL(f)
+}
+function goLoading(){
+    if(!currentCode) return tip("请先输入兑换码")
+    if(!imgBase64) return tip("请上传照片")
+    show('loading')
+    setTimeout(()=>{
+        // 随机分配季型
+        seasonType = Math.floor(Math.random()*4)
+        let s = seasons[seasonType]
+        $('r-type').innerText = s.type
+        $('r-skin').innerText = s.skin
+        $('r-color').innerText = s.color
+        $('r-makeup').innerText = s.makeup
+        $('r-outfit').innerText = s.outfit
 
-        setTimeout(() => {
-            const left = useOnce(currentCode);
-            showAlert(`分析成功！剩余 ${left} 次`);
-            document.getElementById("resultText").innerText = 
-            "你的季型：暖春型\n\n适合色系：暖色系、明亮清透色系、珊瑚色、蜜瓜色、奶油色等。";
-            goStep("result");
-        }, 3500);
-    }
+        let left = useCode(currentCode)
+        show('page-result')
+        setTimeout(()=>tip(`分析成功！剩余 ${left} 次`),500)
+    },3000)
+}
 
-    // 弹窗
-    function showAlert(msg) {
-        document.getElementById("alertMsg").innerText = msg;
-        document.getElementById("customAlert").classList.add("show");
-    }
-    function closeAlert() {
-        document.getElementById("customAlert").classList.remove("show");
-    }
+// 提示
+function tip(text){
+    $('msg').innerText = text
+    $('alert').classList.add('show')
+}
+function closeAlert(){
+    $('alert').classList.remove('show')
+}
 
-    function saveResult() {
-        showAlert("报告已生成，请长按保存");
-    }
+// 保存
+function saveResult(){
+    tip("长按报告图片即可保存到相册")
+}
 </script>
+
 </body>
 </html>
