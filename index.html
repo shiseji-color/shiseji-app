@@ -144,7 +144,7 @@
                             <p class="text-[10px] text-[#8C7A70] tracking-widest font-medium bg-white/70 px-2 py-0.5 rounded-full mt-1">本地加密渲染 · 阅后即焚</p>
                         </div>
                         
-                        <input id="dropzone-file" type="file" class="hidden" accept="image/jpeg, image/png, image/jpg, image/heic" capture="user" onchange="handleImageUpload(event)" />
+                        <input id="dropzone-file" type="file" class="hidden" accept="image/jpeg, image/png, image/jpg, image/heic" onchange="handleImageUpload(event)" />
                     </label>
                 </div>
                 
@@ -495,7 +495,6 @@
         initRadarChart(r);
     }
 
-    /* 【关键修改 1：关闭 Chart.js 动画，确保瞬间截取有图】 */
     function initRadarChart(data) {
         const ctx = document.getElementById('radarChart').getContext('2d');
         if(window.myRadarChart) window.myRadarChart.destroy();
@@ -520,7 +519,7 @@
                 }]
             },
             options: {
-                animation: false, // 禁用图表动画，确保 html2canvas 立刻抓取到画面
+                animation: false, 
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: { legend: false },
@@ -536,7 +535,6 @@
         });
     }
 
-    /* 【关键修改 2：终极解决滚动截断与动画遮挡 Bug】 */
     async function saveAsImage() {
         const btn = document.getElementById('saveBtn');
         const ogText = btn.innerText;
@@ -544,7 +542,6 @@
         btn.classList.add('opacity-70', 'cursor-wait');
 
         try {
-            // 保证回到顶部，防错位
             const mainContainer = document.getElementById('mainContainer');
             const originalScrollTop = mainContainer.scrollTop;
             mainContainer.scrollTop = 0;
@@ -556,19 +553,17 @@
                 useCORS: true,
                 backgroundColor: '#F7F5F2',
                 width: captureArea.offsetWidth,
-                height: captureArea.scrollHeight, // 强制获取完整的真实高度
+                height: captureArea.scrollHeight,
                 logging: false,
                 onclone: (doc) => {
                     const cloneArea = doc.getElementById('captureArea');
                     cloneArea.style.padding = '24px 20px';
                     
-                    // 1. 破解滚动截断：在克隆DOM中强制解除所有父元素的 height 和 overflow 限制
                     const cloneMain = doc.getElementById('mainContainer');
                     const cloneApp = doc.querySelector('.app-container');
                     if(cloneMain) { cloneMain.style.overflow = 'visible'; cloneMain.style.height = 'auto'; }
                     if(cloneApp) { cloneApp.style.overflow = 'visible'; cloneApp.style.height = 'auto'; }
 
-                    // 2. 破解动画隐形：强制让所有还没走完动画的元素立刻现形
                     const animatedEls = cloneArea.querySelectorAll('.fade-in, .stagger-1, .stagger-2, .stagger-3, .stagger-4');
                     animatedEls.forEach(el => {
                         el.style.opacity = '1';
@@ -578,21 +573,18 @@
                 }
             });
 
-            // 恢复页面原本的滚动位置
             mainContainer.scrollTop = originalScrollTop;
 
             const dataURL = canvas.toDataURL('image/jpeg', 0.95);
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
             if (!isMobile) {
-                // PC 端：直接触发下载行为，不再弹遮罩层
                 const link = document.createElement('a');
                 link.download = '拾色季_高定美学分析报告.jpg';
                 link.href = dataURL;
                 link.click();
                 showToast("报告已自动下载，请查看浏览器下载记录");
             } else {
-                // 移动端：保持长按保存的高级交互
                 const overlay = document.getElementById('saveOverlay');
                 const overlayImg = document.getElementById('saveOverlayImg');
                 
