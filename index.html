@@ -144,7 +144,7 @@
                             <p class="text-[10px] text-[#8C7A70] tracking-widest font-medium bg-white/70 px-2 py-0.5 rounded-full mt-1">本地加密渲染 · 阅后即焚</p>
                         </div>
                         
-                        <input id="dropzone-file" type="file" class="hidden" accept="image/jpeg, image/png, image/jpg, image/heic" onchange="handleImageUpload(event)" />
+                        <input id="dropzone-file" type="file" class="hidden" onchange="handleImageUpload(event)" />
                     </label>
                 </div>
                 
@@ -286,6 +286,20 @@
 </div>
 
 <script>
+    // 【核心修复：动态适配苹果与安卓的上传限制】
+    document.addEventListener('DOMContentLoaded', () => {
+        const dropzoneInput = document.getElementById('dropzone-file');
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        
+        if (isIOS) {
+            // iOS：指定格式可隐藏“选取文件”选项
+            dropzoneInput.setAttribute('accept', 'image/jpeg, image/png, image/jpg, image/heic');
+        } else {
+            // 安卓/PC：使用 image/* 唤起纯净的图库和相机，屏蔽通讯录/音乐等无关选项
+            dropzoneInput.setAttribute('accept', 'image/*');
+        }
+    });
+
     let userImageBase64 = "";
     window.currentCode = ""; 
 
