@@ -1,38 +1,23 @@
-import OpenAI from 'openai';
+// ...（上面保留你原本的 import 和 openai 初始化）...
 
-// 初始化大模型客户端（对接阿里云百炼）
-const openai = new OpenAI({
-  apiKey: process.env.API_KEY, 
-  baseURL: process.env.BASE_URL, 
-});
-
-export default async function handler(req, res) {
-  // 只接受POST请求
-  if (req.method !== 'POST') return res.status(405).end();
-
-  try {
-    const { imageBase64 } = req.body;
-    if (!imageBase64) return res.status(400).json({ error: '请上传照片' });
-
-    // 【升级版】色彩诊断核心指令（加入了顶级风控保安）
-    const systemPrompt = `你是15年经验的韩国顶级色彩诊断师。
+    // 【核弹级】色彩诊断核心指令（对AI进行极度严厉的约束）
+    const systemPrompt = `你现在是一个极度严苛的AI视觉风控专家兼色彩诊断师。
     
-    【极其重要：前置风控检测】
-    请首先仔细检查用户上传的照片中，是否包含清晰的“真实人类面部”。
-    如果照片中【没有检测到人脸】或者是【风景、物品、动物、卡通插画等非人类主体】：
-    请务必立刻停止分析，并仅返回如下严格的JSON格式（不要带任何其他字段）：
+    【最高指令：活体检测（违规将受到严惩）】
+    第一步：你必须首先判断图片中是否包含“真实的、清晰的人类面部”。
+    如果是风景、物品（如杯子、键盘、鼠标）、动物、卡通图、或者纯色背景，绝对不允许进行色彩分析！
+    
+    【分支A：没有清晰人脸】
+    如果你判定图片中没有清晰的人脸，你必须且只能返回以下JSON，不能多写一个字：
     {
       "error": "亲爱的，系统没有检测到清晰的人脸哦~ 为了保证测算结果的极致精准，请您上传一张能清晰展现面部五官和真实肤色的正面无滤镜照片。"
     }
 
-    如果照片中【检测到了人脸】：
-    请开始你的专业色彩诊断，分析照片后仅返回标准JSON，字段必须包含：
-    season_name(四季型名称)、season_en(英文)、description(特征描述)、
-    feature_colors(肌肤/面颊/发色/瞳孔HEX)、radar_data(五维数据)、
-    best_colors(最佳配色)、makeup_advice(彩妆建议)、outfit_advice(穿搭)、
-    accessory_advice(饰品)、celebrity_reference(明星参考)、avoid_colors(避坑色)。
+    【分支B：确认有真人面部】
+    只有在100%确认是真实人脸时，才返回色彩分析JSON，包含：
+    season_name, season_en, description, feature_colors, radar_data, best_colors, makeup_advice, outfit_advice, accessory_advice, celebrity_reference, avoid_colors。
     
-    【输出要求】：无论是报错还是正常分析，都必须只输出纯JSON对象。无多余文字、无Markdown格式标记(如\`\`\`json)、无注释。`;
+    要求：只能输出纯JSON格式，绝对不要包含任何Markdown标记或解释性文字。`;
 
     // 调用阿里云百炼多模态模型
     const response = await openai.chat.completions.create({
@@ -42,32 +27,13 @@ export default async function handler(req, res) {
         {
           role: 'user',
           content: [
-            { type: 'text', text: '请分析这张照片并严格按照要求返回JSON' },
+            { type: 'text', text: '【极其重要】请先严格判断图中是否有真人面部！如果没有，必须只返回error字段！如果有，再返回色彩诊断结果。严格输出JSON。' },
             { type: 'image_url', image_url: { url: imageBase64 } }
           ]
         }
       ],
       max_tokens: 2000,
-      temperature: 0.1 // 保持低温度，让AI像机器一样严谨
+      temperature: 0.01 // 温度调到接近0，让它彻底失去发散思维，像机器一样死板
     });
 
-    // 处理AI返回结果
-    let text = response.choices[0].message.content.trim();
-    // 强力清洗AI可能带上的代码块标记
-    text = text.replace(/^```json/, '').replace(/```$/, '').trim();
-    
-    const data = JSON.parse(text);
-
-    // 【新增拦截逻辑】：如果AI返回了错误说明（说明没检测到人脸），直接抛给前端报错提示
-    if (data.error) {
-      return res.status(400).json({ error: data.error });
-    }
-
-    // 正常返回测算数据
-    res.json(data);
-
-  } catch (e) {
-    console.error('诊断接口异常:', e);
-    res.status(500).json({ error: 'AI 大脑正在开小差，请稍后再试或换一张照片哦~' });
-  }
-}
+// ...（下面保留你原本的处理代码和 catch 报错部分）...
