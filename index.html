@@ -33,7 +33,7 @@
         }
         .fade-in { animation: fadeIn 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
-        .premium-loader { position: relative; width: 120px; height: 120px; display: flex; align-items: center; justify-content: center; }
+        .premium-loader { position: relative; width: 120px; height: 120px; display: flex; align-items-center; justify-content: center; }
         .loader-ring { position: absolute; border-radius: 50%; border: 1px solid #DABFB4; animation: ripple 2.5s infinite cubic-bezier(0.21, 0.53, 0.56, 0.8); }
         .loader-ring:nth-child(2) { animation-delay: 0.8s; }
         .loader-ring:nth-child(3) { animation-delay: 1.6s; }
@@ -42,7 +42,7 @@
         .hex-color-swatch { box-shadow: inset 0 2px 6px rgba(0,0,0,0.08); border: 2px solid #FFFFFF; }
         .progress-bar-fill { transition: width 1.5s cubic-bezier(0.4, 0, 0.2, 1); }
 
-        /* 安卓浏览器兜底样式，防止 Tailwind 加载失败导致界面崩掉 */
+        /* 安卓浏览器兜底样式 */
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: #F7F5F2;
@@ -153,7 +153,8 @@
                     <p class="text-[12px] text-[#6B5D55] tracking-widest mb-1 font-medium" id="uploadText">从相册选择照片</p>
                     <p class="text-[9px] text-[#BFA89F] tracking-widest">本地渲染 · 阅后即焚</p>
                 </div>
-                <input id="dropzone-file" type="file" class="hidden" accept="image/*" capture="user" onchange="handleImageUpload(event)" />
+                <!-- 这行已经去掉 capture，恢复相册选择 -->
+                <input id="dropzone-file" type="file" class="hidden" accept="image/*" onchange="handleImageUpload(event)" />
             </label>
         </div>
         
@@ -256,7 +257,6 @@
     </div>
 </div>
 </div>
-<!-- 保存到相册按钮 -->
 <div class="mt-4 mb-8 text-center px-1">
     <button id="saveBtn" onclick="saveAsImage()" class="w-full text-white bg-[#4A403A] hover:bg-[#3D342F] shadow-[0_8px_25px_rgba(74,64,58,0.25)] font-medium rounded-[1.25rem] text-[14px] px-5 py-3.5 text-center transition-all duration-300 tracking-[0.2em]">保存您的专属报告到相册</button>
     <p class="text-[9px] text-[#C5B8B2] mt-3 tracking-widest font-serif-custom opacity-70">一键保存 · 永久珍藏</p>
@@ -268,7 +268,6 @@
     let userImageBase64 = "";
     let cameraStream = null;
 
-    // 页面切换逻辑加固（防止错乱）
     function showStep(stepId) {
         ['step-activation','step-upload','step-camera','step-loading','step-result'].forEach(id=>{
             const el = document.getElementById(id);
@@ -288,7 +287,6 @@
         }
     }
 
-    // 处理相册上传
     function handleImageUpload(event) {
         const file = event.target.files[0];
         if(file){
@@ -305,17 +303,11 @@
         }
     }
 
-    // 打开前置摄像头（核心修复）
     async function openCamera() {
         showStep('step-camera');
         try {
-            // 强制使用前置摄像头
             const stream = await navigator.mediaDevices.getUserMedia({
-                video: { 
-                    facingMode: 'user', // 核心：默认前摄
-                    width: { ideal: 1080 },
-                    height: { ideal: 1080 }
-                }
+                video: { facingMode: 'user', width: { ideal: 1080 }, height: { ideal: 1080 } }
             });
             cameraStream = stream;
             const videoEl = document.getElementById('cameraVideo');
@@ -326,7 +318,6 @@
         }
     }
 
-    // 关闭摄像头
     function closeCamera() {
         if(cameraStream) {
             cameraStream.getTracks().forEach(track => track.stop());
@@ -335,7 +326,6 @@
         showStep('step-upload');
     }
 
-    // 拍摄照片
     function capturePhoto() {
         const videoEl = document.getElementById('cameraVideo');
         const canvas = document.createElement('canvas');
@@ -344,8 +334,6 @@
         const ctx = canvas.getContext('2d');
         ctx.drawImage(videoEl, 0, 0, canvas.width, canvas.height);
         userImageBase64 = canvas.toDataURL('image/png');
-        
-        // 关闭摄像头并进入分析
         closeCamera();
         setTimeout(startAnalysis, 500);
     }
@@ -417,14 +405,12 @@
         document.getElementById('res-celebrity').innerText=d.celebrity_reference;
         document.getElementById('res-avoid').innerText=d.avoid_colors;
 
-        // 面部色值提取
         const f=document.getElementById('res-hex-extraction');
         f.innerHTML='';
         d.feature_colors.forEach(i=>{
             f.innerHTML+=`<div class="flex flex-col items-center"><div class="w-10 h-10 rounded-full hex-color-swatch mb-2" style="background-color:${i.hex};"></div><span class="text-[10px] text-[#6B5D55] font-medium">${i.label}</span><span class="text-[8px] text-[#8C7A70] scale-90 mt-0.5 uppercase tracking-wide">${i.hex}</span></div>`;
         });
 
-        // 进度条
         const p=document.getElementById('res-progress-bars');
         p.innerHTML='';
         const r=[];
@@ -439,7 +425,6 @@
             });
         },100);
 
-        // 天命色彩
         const c=document.getElementById('res-best-colors');
         c.innerHTML='';
         d.best_colors.forEach(i=>{
@@ -487,7 +472,6 @@
         });
     }
 
-    // 最终修复：电脑端直接下载，手机端长按保存
     async function saveAsImage() {
         try {
             const captureArea = document.getElementById('captureArea');
