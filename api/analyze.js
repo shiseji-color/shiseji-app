@@ -1,39 +1,47 @@
-// ...（上面保留你原本的 import 和 openai 初始化）...
+import OpenAI from 'openai';
 
-    // 【核弹级】色彩诊断核心指令（对AI进行极度严厉的约束）
-    const systemPrompt = `你现在是一个极度严苛的AI视觉风控专家兼色彩诊断师。
-    
-    【最高指令：活体检测（违规将受到严惩）】
-    第一步：你必须首先判断图片中是否包含“真实的、清晰的人类面部”。
-    如果是风景、物品（如杯子、键盘、鼠标）、动物、卡通图、或者纯色背景，绝对不允许进行色彩分析！
-    
-    【分支A：没有清晰人脸】
-    如果你判定图片中没有清晰的人脸，你必须且只能返回以下JSON，不能多写一个字：
-    {
-      "error": "亲爱的，系统没有检测到清晰的人脸哦~ 为了保证测算结果的极致精准，请您上传一张能清晰展现面部五官和真实肤色的正面无滤镜照片。"
-    }
+const openai = new OpenAI({
+  apiKey: process.env.API_KEY, 
+  baseURL: process.env.BASE_URL, 
+});
 
-    【分支B：确认有真人面部】
-    只有在100%确认是真实人脸时，才返回色彩分析JSON，包含：
-    season_name, season_en, description, feature_colors, radar_data, best_colors, makeup_advice, outfit_advice, accessory_advice, celebrity_reference, avoid_colors。
-    
-    要求：只能输出纯JSON格式，绝对不要包含任何Markdown标记或解释性文字。`;
+// Netlify 专属的 (event) 语法
+export const handler = async (event) => {
+  // 跨域通行证
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+  };
+  
+  if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers, body: '' };
+  if (event.httpMethod !== 'POST') return { statusCode: 405, headers, body: 'Method Not Allowed' };
 
-    // 调用阿里云百炼多模态模型
+  try {
+    const { imageBase64 } = JSON.parse(event.body);
+    if (!imageBase64) return { statusCode: 400, headers, body: JSON.stringify({ error: '请上传照片' }) };
+
+    // 【终极保安指令】
+    const systemPrompt = `你是一个极其严格的视觉审核员兼顶级色彩诊断师。
+    【第一步：活体检测】如果是风景、物品（如水杯、键盘）、动物等非真实人脸，必须且只能输出JSON：{"error": "亲爱的，系统没有检测到清晰的人脸哦~ 请上传一张清晰的正面无滤镜照片。"}
+    【第二步：如果是真人】输出色彩分析JSON包含：season_name, season_en, description, feature_colors, radar_data, best_colors, makeup_advice, outfit_advice, accessory_advice, celebrity_reference, avoid_colors。`;
+
     const response = await openai.chat.completions.create({
       model: process.env.MODEL_NAME || 'qwen-vl-max',
       messages: [
         { role: 'system', content: systemPrompt },
-        {
-          role: 'user',
-          content: [
-            { type: 'text', text: '【极其重要】请先严格判断图中是否有真人面部！如果没有，必须只返回error字段！如果有，再返回色彩诊断结果。严格输出JSON。' },
-            { type: 'image_url', image_url: { url: imageBase64 } }
-          ]
-        }
+        { role: 'user', content: [{ type: 'text', text: '严格判断并输出JSON' }, { type: 'image_url', image_url: { url: imageBase64 } }] }
       ],
       max_tokens: 2000,
-      temperature: 0.01 // 温度调到接近0，让它彻底失去发散思维，像机器一样死板
+      temperature: 0.01 // 极度死板，杜绝胡编乱造
     });
 
-// ...（下面保留你原本的处理代码和 catch 报错部分）...
+    let text = response.choices[0].message.content.trim().replace(/^```json/, '').replace(/```$/, '').trim();
+    const data = JSON.parse(text);
+
+    if (data.error) return { statusCode: 400, headers, body: JSON.stringify({ error: data.error }) };
+    return { statusCode: 200, headers, body: JSON.stringify(data) };
+
+  } catch (e) {
+    return { statusCode: 500, headers, body: JSON.stringify({ error: 'AI 大脑暂时走神了，请稍后再试' }) };
+  }
+};
