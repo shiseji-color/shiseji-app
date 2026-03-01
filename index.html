@@ -487,41 +487,51 @@
         });
     }
 
-    // 修复：一键保存长图到相册（兼容微信 + Safari）
+    // 最终修复：电脑端直接下载，手机端长按保存
     async function saveAsImage() {
         try {
-            // 定位报告区域，生成高清长图
             const captureArea = document.getElementById('captureArea');
             const canvas = await html2canvas(captureArea, {
-                scale: 2, // 高清
+                scale: 2,
                 useCORS: true,
                 backgroundColor: '#F7F5F2',
                 logging: false
             });
 
-            // 转换为 Base64
-            const dataURL = canvas.toDataURL('image/png');
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
-            // 创建一个隐藏的图片元素，插入到页面中
-            const img = document.createElement('img');
-            img.src = dataURL;
-            img.style.position = 'fixed';
-            img.style.top = '0';
-            img.style.left = '0';
-            img.style.width = '100%';
-            img.style.height = '100%';
-            img.style.objectFit = 'contain';
-            img.style.zIndex = '9999';
-            img.style.backgroundColor = '#F7F5F2';
-            document.body.appendChild(img);
+            if (isMobile) {
+                const dataURL = canvas.toDataURL('image/png');
+                const img = document.createElement('img');
+                img.src = dataURL;
+                img.style.position = 'fixed';
+                img.style.top = '0';
+                img.style.left = '0';
+                img.style.width = '100%';
+                img.style.height = '100%';
+                img.style.objectFit = 'contain';
+                img.style.zIndex = '9999';
+                img.style.backgroundColor = '#F7F5F2';
+                document.body.appendChild(img);
 
-            // 提示用户长按保存
-            alert('✅ 图片已生成，请长按图片选择「保存图片」到相册。');
+                alert('✅ 图片已生成，请长按图片选择「保存图片」到相册。');
 
-            // 点击图片时，移除它，返回报告页
-            img.onclick = function() {
-                document.body.removeChild(img);
-            };
+                img.onclick = function() {
+                    document.body.removeChild(img);
+                };
+            } else {
+                canvas.toBlob(function(blob) {
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = '拾色季_专属色彩报告.png';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    setTimeout(() => URL.revokeObjectURL(url), 100);
+                    alert('✅ 您的专属色彩报告已成功保存到本地！');
+                }, 'image/png');
+            }
         } catch (e) {
             alert('💡 保存失败，可使用截图功能：电源键 + 音量键');
         }
