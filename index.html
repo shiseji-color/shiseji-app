@@ -465,7 +465,7 @@
             setTimeout(() => { loadingText.innerText = states[i]; loadingText.style.opacity = 1; }, 200);
         }, 1500);
 
-        fetch('/.netlify/functions/analyze', {
+        fetch('/analyze', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ imageBase64: userImageBase64 })
