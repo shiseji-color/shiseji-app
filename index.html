@@ -21,12 +21,8 @@
         .loader-ring { position: absolute; border-radius: 50%; border: 1.5px solid var(--accent-color); animation: ripple 2.5s infinite cubic-bezier(0.21, 0.53, 0.56, 0.8); }
         .loader-ring:nth-child(2) { animation-delay: 0.8s; } .loader-ring:nth-child(3) { animation-delay: 1.6s; }
         @keyframes ripple { 0% { width: 0; height: 0; opacity: 1; } 100% { width: 100%; height: 100%; opacity: 0; } }
-        ::-webkit-scrollbar { display: none; }
-        .scrollbar-hide { scrollbar-width: none; -ms-overflow-style: none; } .scrollbar-hide::-webkit-scrollbar { display: none; }
         .hex-color-swatch { box-shadow: inset 0 2px 8px rgba(0,0,0,0.06); border: 2px solid #FFFFFF; }
         .progress-bar-fill { transition: width 1.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
-        input, button { -webkit-appearance: none; appearance: none; outline: none; }
-        button:active { transform: scale(0.98); transition: transform 0.1s; }
         .app-container { height: 90vh; height: 90dvh; }
         @media (max-width: 480px) { body { padding: 0 !important; } .app-container { height: 100vh; height: 100dvh; border-radius: 0; border: none; max-width: 100%; } }
     </style>
@@ -37,6 +33,7 @@
     <header class="pt-10 pb-4 px-8 text-center shrink-0 z-10 bg-gradient-to-b from-white to-white/0">
         <h1 class="text-[28px] font-serif-custom font-semibold text-[#3D342F] tracking-[0.25em] ml-1">拾色季</h1>
     </header>
+
     <div class="flex-1 overflow-y-auto px-6 pb-12" id="mainContainer">
         <div id="step-activation" class="fade-in mt-8">
             <div class="content-card p-8">
@@ -44,6 +41,7 @@
                 <button onclick="verifyCode()" class="w-full text-white bg-[#4A403A] rounded-[1rem] py-4 mt-6 tracking-[0.2em]">开启专属测试</button>
             </div>
         </div>
+
         <div id="step-upload" class="hidden fade-in mt-6">
             <div class="content-card p-8 text-center">
                 <label for="dropzone-file" class="block cursor-pointer">
@@ -53,21 +51,24 @@
                 <input id="dropzone-file" type="file" class="hidden" onchange="handleImageUpload(event)" />
             </div>
         </div>
+
         <div id="step-loading" class="hidden fade-in mt-32 flex flex-col items-center">
             <div class="premium-loader mb-10"><div class="loader-ring"></div><div class="loader-ring"></div><div class="loader-ring"></div></div>
             <h3 id="loadingText" class="text-[15px] font-serif-custom">系统正在唤醒...</h3>
         </div>
+
         <div id="step-result" class="hidden fade-in">
             <div id="captureArea" class="space-y-5 pb-4 pt-2 bg-[var(--primary-bg)] px-1">
-                <div class="content-card p-8 text-center">
+                <div class="content-card p-8 text-center fade-in stagger-1">
                     <img id="userAvatarResult" src="" class="w-20 h-20 rounded-full mx-auto mb-4 hidden" alt="avatar">
-                    <h2 id="res-season-name" class="text-3xl font-bold"></h2>
-                    <p id="res-desc" class="text-sm mt-4 text-justify"></p>
+                    <h2 id="res-season-name" class="text-3xl font-bold font-serif-custom"></h2>
+                    <h3 id="res-season-en" class="text-sm text-gray-400 italic"></h3>
+                    <p id="res-desc" class="text-sm mt-4 text-justify leading-relaxed"></p>
                 </div>
-                <div class="content-card p-6"><div class="text-center mb-4">面部色值提取</div><div class="grid grid-cols-4 gap-2" id="res-hex-extraction"></div></div>
-                <div class="content-card p-6"><canvas id="radarChart"></canvas></div>
-                <div class="content-card p-6"><div class="text-center mb-4">专属天命色彩</div><div class="grid grid-cols-4 gap-2" id="res-best-colors"></div></div>
-                <div class="content-card p-6 space-y-4 text-xs">
+                <div class="content-card p-6 fade-in stagger-2"><div class="text-center mb-4 text-sm font-semibold">面部色值提取</div><div class="grid grid-cols-4 gap-2" id="res-hex-extraction"></div></div>
+                <div class="content-card p-6 fade-in stagger-3"><div class="relative w-full h-[190px]"><canvas id="radarChart"></canvas></div></div>
+                <div class="content-card p-6 fade-in stagger-4"><div class="text-center mb-4 text-sm font-semibold">专属天命色彩</div><div class="grid grid-cols-4 gap-2" id="res-best-colors"></div></div>
+                <div class="content-card p-6 space-y-4 text-xs fade-in stagger-4">
                     <div><b>妆容：</b><span id="res-makeup"></span></div>
                     <div><b>穿搭：</b><span id="res-outfit"></span></div>
                     <div><b>饰品：</b><span id="res-accessory"></span></div>
@@ -75,25 +76,39 @@
                     <div class="text-red-400"><b>避雷：</b><span id="res-avoid"></span></div>
                 </div>
             </div>
-            <button id="saveBtn" onclick="saveAsImage()" class="w-full text-white bg-[#4A403A] py-4 rounded-[1rem] mt-6">生成长图</button>
+            <button id="saveBtn" onclick="saveAsImage()" class="w-full text-white bg-[#4A403A] py-4 rounded-[1rem] mt-6 tracking-widest">生成长图</button>
         </div>
     </div>
 </div>
+
+<div id="customAlert" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 hidden opacity-0 transition-opacity"><div class="bg-white p-7 rounded-[1.5rem] w-[80%] max-w-sm text-center"><p id="alertMessage" class="text-[#4A403A]"></p><button onclick="closeCustomAlert()" class="mt-6 w-full py-3 bg-[#F4EFEA] rounded-lg">知道了</button></div></div>
+<div id="saveOverlay" class="fixed inset-0 z-[200] bg-black/90 hidden flex-col items-center justify-center p-4 opacity-0 transition-opacity"><img id="saveOverlayImg" class="max-w-full max-h-[70vh] mb-4 rounded-lg"><button onclick="closeSaveOverlay()" class="text-white border px-8 py-2 rounded-full">关闭</button></div>
 
 <script>
     let userImageBase64 = "";
     window.currentCode = ""; 
 
+    function showCustomAlert(m) {
+        document.getElementById('alertMessage').innerText = m;
+        const modal = document.getElementById('customAlert');
+        modal.classList.remove('hidden');
+        setTimeout(() => modal.classList.remove('opacity-0'), 10);
+    }
+    function closeCustomAlert() { document.getElementById('customAlert').classList.add('opacity-0'); setTimeout(() => document.getElementById('customAlert').classList.add('hidden'), 300); }
+
+    // 🔥 升级版防伪锁 🔥
     function verifyCode() {
         const input = document.getElementById('activationCode').value.trim().toUpperCase();
         const masterKeys = ['VIP888', 'MY666', 'SHISEJI2026'];
-        if (masterKeys.includes(input) || (input.startsWith('SSJ') && input.length === 7)) {
+        const isValid = input.startsWith('SSJ') && input.length === 7;
+        if (masterKeys.includes(input) || isValid) {
             window.currentCode = input;
             document.getElementById('step-activation').classList.add('hidden');
             document.getElementById('step-upload').classList.remove('hidden');
-        } else { alert("密钥无效"); }
+        } else { showCustomAlert("密钥无效，请重新输入"); }
     }
 
+    // 🔥 压缩版图片上传引擎 🔥
     function handleImageUpload(event) {
         const file = event.target.files[0];
         if(!file) return;
@@ -115,7 +130,7 @@
                 document.getElementById('imagePreview').src = userImageBase64;
                 document.getElementById('imagePreview').classList.remove('hidden');
                 document.getElementById('uploadText').classList.add('hidden');
-                setTimeout(startAnalysis, 500);
+                setTimeout(startAnalysis, 600);
             };
             img.src = e.target.result;
         };
@@ -136,7 +151,7 @@
             document.getElementById('step-loading').classList.add('hidden');
             document.getElementById('step-result').classList.remove('hidden');
         })
-        .catch(e => { alert('网络错误'); location.reload(); });
+        .catch(e => { showCustomAlert('网络异常或图片过大'); document.getElementById('step-upload').classList.remove('hidden'); document.getElementById('step-loading').classList.add('hidden'); });
     }
 
     function renderAIResult(d) {
@@ -151,15 +166,15 @@
         document.getElementById('res-avoid').innerText = Array.isArray(d.avoid_colors) ? d.avoid_colors.join(", ") : d.avoid_colors;
         
         const f = document.getElementById('res-hex-extraction'); f.innerHTML = '';
-        d.feature_colors.forEach(c => f.innerHTML += `<div class="w-10 h-10 rounded-full" style="background:${c.hex}"></div>`);
+        d.feature_colors.forEach(c => f.innerHTML += `<div class="flex flex-col items-center"><div class="w-10 h-10 rounded-full hex-color-swatch" style="background:${c.hex}"></div><span class="text-[9px] mt-1">${c.label}</span></div>`);
         
         const c = document.getElementById('res-best-colors'); c.innerHTML = '';
-        d.best_colors.forEach(b => c.innerHTML += `<div class="w-12 h-12 rounded-full" style="background:${b.hex}"></div>`);
+        d.best_colors.forEach(b => c.innerHTML += `<div class="flex flex-col items-center"><div class="w-12 h-12 rounded-full hex-color-swatch" style="background:${b.hex}"></div><span class="text-[9px] mt-1">${b.name}</span></div>`);
 
-        const r = d.radar_data.map(v => v.value);
-        new Chart(document.getElementById('radarChart'), { type: 'radar', data: { labels: ['冷暖','明度','彩度','清浊','对比'], datasets: [{ data: r, backgroundColor: '#DABFB4' }] } });
+        new Chart(document.getElementById('radarChart'), { type: 'radar', data: { labels: ['冷暖','明度','彩度','清浊','对比'], datasets: [{ data: d.radar_data.map(v=>v.value), backgroundColor: '#DABFB4' }] }, options: { plugins: { legend: false } } });
     }
 
+    // 🔥 影分身长图渲染 🔥
     async function saveAsImage() {
         const btn = document.getElementById('saveBtn');
         btn.innerText = "生成中...";
@@ -172,8 +187,10 @@
         document.getElementById('saveOverlayImg').src = canvas.toDataURL('image/jpeg', 0.95);
         document.getElementById('saveOverlay').classList.remove('hidden');
         document.getElementById('saveOverlay').classList.add('flex');
+        setTimeout(() => document.getElementById('saveOverlay').classList.remove('opacity-0'), 10);
         btn.innerText = "生成专属长图海报";
     }
+    function closeSaveOverlay() { document.getElementById('saveOverlay').classList.add('opacity-0'); setTimeout(() => document.getElementById('saveOverlay').classList.add('hidden'), 300); }
 </script>
 </body>
 </html>
