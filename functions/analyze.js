@@ -3,16 +3,12 @@ export async function onRequestPost({ request, env }) {
         const body = await request.json();
         const imageBase64 = body.imageBase64;
 
-        if (!imageBase64) {
-            return new Response(JSON.stringify({ error: '未收到图片数据' }), { status: 400 });
-        }
+        if (!imageBase64) return new Response(JSON.stringify({ error: '未收到图片数据' }), { status: 400 });
 
         const API_KEY = env.API_KEY;
         const BASE_URL = env.BASE_URL;
 
-        if (!API_KEY || !BASE_URL) {
-            return new Response(JSON.stringify({ error: '环境变量未配置' }), { status: 500 });
-        }
+        if (!API_KEY || !BASE_URL) return new Response(JSON.stringify({ error: '环境变量丢失：请回 Cloudflare 检查 API_KEY 和 BASE_URL' }), { status: 500 });
 
         const systemPrompt = `
 【CRITICAL & MANDATORY FIRST STEP: FACE DETECTION】
@@ -50,13 +46,15 @@ Expected JSON structure for valid faces:
   ],
   "best_colors": [
     {"name": "Sophisticated Chinese name", "hex": "#HEX"},
-    ...4 best colors
+    {"name": "Sophisticated Chinese name", "hex": "#HEX"},
+    {"name": "Sophisticated Chinese name", "hex": "#HEX"},
+    {"name": "Sophisticated Chinese name", "hex": "#HEX"}
   ],
   "makeup_advice": "A paragraph with specific luxury product code recommendations (e.g., YSL #B10, DIOR #999, NARS Orgasm).",
   "outfit_advice": "A paragraph covering fashion, silhouette, and high-end fabrics.",
   "accessory_advice": "A paragraph covering metal, leather, and jewelry texture.",
-  "celebrity_reference": "Provide a full, descriptive Chinese sentence mentioning a famous person known for styling in this season's colors. CRITICAL RULE: You MUST randomly select a DIFFERENT celebrity each time to ensure '千人千面'. Randomly choose from high-fashion icons such as Shu Qi (舒淇), Tang Wei (汤唯), Ni Ni (倪妮), Anne Hathaway, Jun Ji-hyun (全智贤), Zendaya, Liu Yifei (刘亦菲), Gao Yuanyuan (高圆圆), etc. Describe a specific classic look they pulled off.",
-  "avoid_colors": "Provide Chinese names for 2-3 colors this season should avoid. Never output hex codes for avoid colors, use plain text descriptive names (e.g., '荧光绿', '亮橙色')."
+  "celebrity_reference": "Provide a full, descriptive Chinese sentence mentioning a famous person known for styling in this season's colors. CRITICAL RULE: You MUST randomly select a DIFFERENT celebrity each time.",
+  "avoid_colors": "Provide Chinese names for 2-3 colors this season should avoid."
 }`;
 
         const response = await fetch(`${BASE_URL}/chat/completions`, {
@@ -81,7 +79,23 @@ Expected JSON structure for valid faces:
             })
         });
 
-        const data = await response.json();
+        // 核心诊断逻辑：捕获阿里的真实返回
+        const responseText = await response.text();
+        let data;
+        try {
+            data = JSON.parse(responseText);
+        } catch (e) {
+            return new Response(JSON.stringify({ error: `无法解析阿里返回的数据: ${responseText.substring(0, 100)}` }), { status: 500 });
+        }
+
+        if (!response.ok || data.error) {
+            return new Response(JSON.stringify({ error: `阿里接口报错: ${JSON.stringify(data)}` }), { status: 500 });
+        }
+
+        if (!data.choices || data.choices.length === 0) {
+            return new Response(JSON.stringify({ error: `阿里返回了空数据` }), { status: 500 });
+        }
+
         const rawContent = data.choices[0].message.content;
         const cleanedJSON = rawContent.replace(/```json|```/g, '').trim();
         const finalJSON = JSON.parse(cleanedJSON);
@@ -91,6 +105,7 @@ Expected JSON structure for valid faces:
         });
 
     } catch (error) {
-        return new Response(JSON.stringify({ error: '服务器内部错误或响应超时' }), { status: 500 });
+        // 把代码崩溃的真实原因抛出来
+        return new Response(JSON.stringify({ error: `后端执行崩溃: ${error.message}` }), { status: 500 });
     }
 }
