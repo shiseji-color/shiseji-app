@@ -20,18 +20,28 @@ export const handler = async (event, context) => {
 
     const openai = new OpenAI({ apiKey: API_KEY, baseURL: BASE_URL });
 
-    // 🔥 CTO 亲自调教的核心大语言模型提示词（Prompt）- 极速优化版
+    // 🔥 CTO 亲自重构：加入“钢铁防线”的核心大语言模型提示词（Prompt）
     const systemPrompt = `
-    You are a luxury high-end AI color美学美学家 for "拾色季". Your goal is to output color analysis in rigid JSON format with zero conversational text.
-    Your analysis should be high-end, inspiring, sophisticated, and detailed.
+    【CRITICAL & MANDATORY FIRST STEP: FACE DETECTION】
+    Before analyzing any colors, you MUST verify that the image contains a clear, distinct human face. 
+    If the image contains NO HUMAN FACE (e.g., landscapes, neon lights, objects, animals, cartoons, mice, keyboards, heavily obscured faces, or dark scenes without visible features), YOU MUST IMMEDIATELY ABORT the color analysis!
+    If no face is detected, your output MUST BE EXACTLY this JSON and nothing else. Do not hallucinate colors from the background:
+    {
+      "season_name": "⚠️ 未检测到人脸",
+      "season_en": "No Face Detected",
+      "description": "抱歉，未能清晰识别到您的面部特征。系统无法为风景、物品或非清晰人像进行高定色彩诊断，请尝试更换一张正面无遮挡的素颜照片哦~"
+    }
+
+    If and ONLY if a clear human face is detected, proceed with the luxury high-end AI color analysis for "拾色季".
+    You are a luxury high-end AI color美学美学家. Your output must be high-end, inspiring, sophisticated, and detailed.
 
     ### CRITICAL: Output ONLY the JSON object, no markdown, no code blocks, no other text.
 
-    Expected JSON structure:
+    Expected JSON structure for valid faces:
     {
-      "season_name": "The 12-season type (e.g., Warm Spring, Deep Autumn, Cool Summer). If no face is detected, output '⚠️ 未检测到人脸'",
+      "season_name": "The 12-season type (e.g., 暖春型, 深秋型, 冷夏型)",
       "season_en": "English name of the season",
-      "description": "A poetic, detailed, and inspirational Chinese paragraph describing the client's skin tone and overall color palette. If no face is detected, use plain language explaining the failure.",
+      "description": "A poetic, detailed, and inspirational Chinese paragraph describing the client's skin tone and overall color palette.",
       "feature_colors": [
         {"label": "肌肤底色", "hex": "#HEX"},
         {"label": "面颊色调", "hex": "#HEX"},
@@ -52,10 +62,9 @@ export const handler = async (event, context) => {
       "makeup_advice": "A paragraph with specific luxury product code recommendations (e.g., YSL #B10, DIOR #999, NARS Orgasm).",
       "outfit_advice": "A paragraph covering fashion, silhouette, and high-end fabrics.",
       "accessory_advice": "A paragraph covering metal, leather, and jewelry texture.",
-      // 🔥 优化细节1: 要求输出完整的、带夸赞的明星参考语句
-      "celebrity_reference": "provide a full, descriptive sentence that mentions a famous person known for styling in this season's colors, describing a classic look they pulled off. For example: 'Zhang Ziyi's classic大地色系风衣造型, 慵懒且散发着智性美.'",
-      // 🔥 优化细节2: 严禁输出 Hex 代码，必须使用中文人话颜色名，2-3个
-      "avoid_colors": "provide Chinese names for 2-3 colors this season should avoid, such as '亮橙色' (Bright Orange), '荧光粉' (Fluorescent Pink). Never output hex codes (e.g., #FF6600) for avoid colors, use plain text descriptive names."
+      // 🔥 反幻觉防线：强制要求千人千面，禁止重复同一个明星
+      "celebrity_reference": "Provide a full, descriptive Chinese sentence mentioning a famous person known for styling in this season's colors. CRITICAL RULE: You must dynamically and randomly select DIFFERENT celebrities (domestic or international) and DIFFERENT specific looks for every single request. NEVER repeatedly use the same celebrity (e.g., do not always output Fan Bingbing). Ensure '千人千面' (a thousand faces, a thousand styles).",
+      "avoid_colors": "Provide Chinese names for 2-3 colors this season should avoid. Never output hex codes for avoid colors, use plain text descriptive names (e.g., '荧光绿', '亮橙色')."
     }`;
 
     try {
@@ -67,11 +76,12 @@ export const handler = async (event, context) => {
                 {
                     role: 'user', content: [
                         { type: 'text', text: '请对我进行拾色季的高定 AI 色彩诊断。' },
-                        { type: 'image_url', image_url: { url: imageBase64 } } // 阿里云要求直接发 Base64 字符串
+                        { type: 'image_url', image_url: { url: imageBase64 } } 
                     ]
                 }
             ],
-            temperature: 0.1, // 降低创造性，确保 rigid JSON 格式
+            // 🔥 关键改动：将发散度从 0.1 调高到 0.4。既能保证 JSON 不乱，又能激发 AI 的创造力，让明星参考每次都不一样！
+            temperature: 0.4, 
             max_tokens: 1500,
         });
 
