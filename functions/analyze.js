@@ -53,3 +53,4 @@ Fields required: season_name, season_en, description, feature_colors (label/hex)
     }
 } 
   
+ 
