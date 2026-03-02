@@ -503,7 +503,7 @@
         
         ['season-name','season-en','desc','makeup','outfit','accessory','celebrity','avoid'].forEach(key => {
             const id = `res-${key}`;
-           const map = {'season-name':'season_name','season-en':'season_en','desc':'description','makeup':'makeup_advice','outfit':'outfit_advice','accessory':'accessory_advice','celebrity':'celebrity','avoid':'avoid_colors'};
+          const map = {'season-name':'season_name','season-en':'season_en','desc':'description','makeup':'makeup_advice','outfit':'outfit_advice','accessory':'accessory_advice','celebrity':'celebrity','avoid':'avoid_colors'};
             if(document.getElementById(id)) document.getElementById(id).innerText = d[map[key]];
         });
 
