@@ -183,12 +183,12 @@
                                 <img id="userAvatarResult" src="" alt="avatar" class="w-full h-full object-cover hidden" />
                             </div>
                             <div>
-                                <h2 id="res-season-name" class="text-[30px] font-serif-custom font-bold text-[#3D342F] tracking-widest leading-none"></h2>
-                                <h3 id="res-season-en" class="text-[13px] text-[#BFA89F] font-serif-custom italic tracking-wider mt-2"></h3>
+                                <h2 id="res-season-name" class="text-[30px] font-serif-custom font-bold text-[#3D342F] tracking-widest leading-none">柔秋型</h2>
+                                <h3 id="res-season-en" class="text-[13px] text-[#BFA89F] font-serif-custom italic tracking-wider mt-2">Soft Autumn</h3>
                             </div>
                         </div>
                     </div>
-                    <p id="res-desc" class="text-[13px] text-[#6B5D55] leading-[2.2] text-justify tracking-wide"></p>
+                    <p id="res-desc" class="text-[13px] text-[#6B5D55] leading-[2.2] text-justify tracking-wide">生成中...</p>
                 </div>
 
                 <div class="content-card p-6 fade-in stagger-2">
@@ -222,23 +222,23 @@
                     <div class="space-y-6">
                         <div class="border-b border-[#F4EFEA] pb-5">
                             <h4 class="text-[12px] font-semibold text-[#6B5D55] mb-2 tracking-widest flex items-center"><span class="w-1.5 h-1.5 rounded-full bg-[#DABFB4] mr-2.5"></span> 妆容 & 色号直抄</h4>
-                            <p id="res-makeup" class="text-[12px] text-[#8C7A70] leading-[2] tracking-wide text-justify"></p>
+                            <p id="res-makeup" class="text-[12px] text-[#8C7A70] leading-[2] tracking-wide text-justify">...</p>
                         </div>
                         <div class="border-b border-[#F4EFEA] pb-5">
                             <h4 class="text-[12px] font-semibold text-[#6B5D55] mb-2 tracking-widest flex items-center"><span class="w-1.5 h-1.5 rounded-full bg-[#DABFB4] mr-2.5"></span> 穿搭 & 面料灵感</h4>
-                            <p id="res-outfit" class="text-[12px] text-[#8C7A70] leading-[2] tracking-wide text-justify"></p>
+                            <p id="res-outfit" class="text-[12px] text-[#8C7A70] leading-[2] tracking-wide text-justify">...</p>
                         </div>
                         <div class="border-b border-[#F4EFEA] pb-5">
                             <h4 class="text-[12px] font-semibold text-[#6B5D55] mb-2 tracking-widest flex items-center"><span class="w-1.5 h-1.5 rounded-full bg-[#DABFB4] mr-2.5"></span> 饰品 & 质感建议</h4>
-                            <p id="res-accessory" class="text-[12px] text-[#8C7A70] leading-[2] tracking-wide text-justify"></p>
+                            <p id="res-accessory" class="text-[12px] text-[#8C7A70] leading-[2] tracking-wide text-justify">...</p>
                         </div>
                         <div class="border-b border-[#F4EFEA] pb-5">
                             <h4 class="text-[12px] font-semibold text-[#6B5D55] mb-2 tracking-widest flex items-center"><span class="w-1.5 h-1.5 rounded-full bg-[#DABFB4] mr-2.5"></span> 同季型明星参考</h4>
-                            <p id="res-celebrity" class="text-[12px] text-[#8C7A70] leading-[2] tracking-wide text-justify"></p>
+                            <p id="res-celebrity" class="text-[12px] text-[#8C7A70] leading-[2] tracking-wide text-justify">...</p>
                         </div>
                         <div>
                             <h4 class="text-[12px] font-semibold text-[#D98A8A] mb-2 tracking-widest flex items-center"><span class="w-1.5 h-1.5 rounded-full bg-[#D98A8A] mr-2.5"></span> 绝对避雷区</h4>
-                            <p id="res-avoid" class="text-[12px] text-[#8C7A70] leading-[2] tracking-wide text-justify"></p>
+                            <p id="res-avoid" class="text-[12px] text-[#8C7A70] leading-[2] tracking-wide text-justify">...</p>
                         </div>
                     </div>
                 </div>
@@ -286,105 +286,382 @@
 </div>
 
 <script>
-    // --- 【新增】图片压缩功能 ---
-    function handleImageUpload(event) {
-        const file = event.target.files[0];
-        if(!file) return;
-        document.getElementById('uploadText').innerText = "图片引擎处理中...";
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const img = new Image();
-            img.onload = function() {
-                const canvas = document.createElement('canvas');
-                let width = img.width, height = img.height;
-                const MAX_SIZE = 800;
-                if (width > MAX_SIZE || height > MAX_SIZE) {
-                    if (width > height) { height *= MAX_SIZE / width; width = MAX_SIZE; }
-                    else { width *= MAX_SIZE / height; height = MAX_SIZE; }
-                }
-                canvas.width = width; canvas.height = height;
-                canvas.getContext('2d').drawImage(img, 0, 0, width, height);
-                userImageBase64 = canvas.toDataURL('image/jpeg', 0.7);
-                const preview = document.getElementById('imagePreview');
-                preview.src = userImageBase64;
-                preview.classList.remove('hidden');
-                document.getElementById('uploadText').innerText = "已加载，轻触可重选";
-                setTimeout(startAnalysis, 600);
-            };
-            img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-    }
+    document.addEventListener('DOMContentLoaded', () => {
+        const dropzoneInput = document.getElementById('dropzone-file');
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+        if (isIOS) {
+            dropzoneInput.setAttribute('accept', 'image/jpeg, image/png, image/jpg, image/heic');
+        } else {
+            dropzoneInput.setAttribute('accept', 'image/*');
+        }
+    });
 
-    // --- 【新增】防伪密钥验证 ---
-    function verifyCode() {
-        const inputElement = document.getElementById('activationCode');
-        const code = inputElement.value.trim().toUpperCase();
-        const masterKeys = ['VIP888', 'MY666', 'SHISEJI2026'];
-        const isValid = code.startsWith('SSJ') && code.length === 7;
-        if (masterKeys.includes(code) || isValid) {
-            window.currentCode = code;
-            document.getElementById('step-activation').classList.add('hidden');
-            document.getElementById('step-upload').classList.remove('hidden');
-        } else { showCustomAlert('密钥无效或已过期'); }
-    }
-
-    // --- 【新增】影分身渲染长图 ---
-    async function saveAsImage() {
-        const btn = document.getElementById('saveBtn');
-        btn.innerText = "引擎渲染中...";
-        const originalArea = document.getElementById('captureArea');
-        const clone = originalArea.cloneNode(true);
-        clone.style.position = 'absolute'; clone.style.top = '0'; clone.style.left = '0'; clone.style.width = originalArea.offsetWidth + 'px'; clone.style.height = 'auto'; clone.style.zIndex = '-9999';
-        clone.style.backgroundColor = '#F7F5F2';
-        
-        const originalCanvases = originalArea.querySelectorAll('canvas');
-        const clonedCanvases = clone.querySelectorAll('canvas');
-        originalCanvases.forEach((canvas, index) => {
-            const ctx = clonedCanvases[index].getContext('2d');
-            ctx.drawImage(canvas, 0, 0);
-        });
-
-        document.body.appendChild(clone);
-        const canvas = await html2canvas(clone, { scale: 2, useCORS: true, backgroundColor: '#F7F5F2', scrollY: 0, windowHeight: clone.scrollHeight });
-        document.body.removeChild(clone);
-        
-        const overlay = document.getElementById('saveOverlay');
-        document.getElementById('saveOverlayImg').src = canvas.toDataURL('image/jpeg', 0.95);
-        overlay.classList.remove('hidden');
-        setTimeout(() => overlay.classList.remove('opacity-0'), 10);
-        btn.innerText = "生成专属长图海报";
-    }
-
-    // --- 【原版】其他逻辑（保持不变） ---
     let userImageBase64 = "";
     window.currentCode = ""; 
-    function showCustomAlert(m) { document.getElementById('alertMessage').innerText = m; const modal = document.getElementById('customAlert'); modal.classList.remove('hidden'); setTimeout(() => { modal.classList.remove('opacity-0'); modal.querySelector('div').classList.remove('scale-95'); }, 10); }
-    function closeCustomAlert() { document.getElementById('customAlert').classList.add('opacity-0'); setTimeout(() => document.getElementById('customAlert').classList.add('hidden'), 300); }
-    function closeSaveOverlay() { document.getElementById('saveOverlay').classList.add('opacity-0'); setTimeout(() => document.getElementById('saveOverlay').classList.add('hidden'), 300); }
-    function startAnalysis() {
-        document.getElementById('step-upload').classList.add('hidden');
-        document.getElementById('step-loading').classList.remove('hidden');
-        fetch('/.netlify/functions/analyze', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ imageBase64: userImageBase64 }) })
-        .then(res => res.json())
-        .then(data => { renderAIResult(data); document.getElementById('step-loading').classList.add('hidden'); document.getElementById('step-result').classList.remove('hidden'); })
-        .catch(e => { showCustomAlert('网络异常'); document.getElementById('step-upload').classList.remove('hidden'); document.getElementById('step-loading').classList.add('hidden'); });
+
+    function getRemainingUses(code) {
+        const key = `color_season_code_${code}`;
+        const stored = localStorage.getItem(key);
+        if (stored !== null) return parseInt(stored, 10);
+        localStorage.setItem(key, 6); 
+        return 6;
     }
+
+    function useCodeOnce(code) {
+        const key = `color_season_code_${code}`;
+        const remaining = getRemainingUses(code);
+        if (remaining <= 0) return 0;
+        localStorage.setItem(key, remaining - 1);
+        return remaining - 1;
+    }
+
+    function showToast(message) {
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
+        toast.className = 'bg-[#3D342F]/90 backdrop-blur-md text-[#F4EFEA] text-[13px] tracking-widest px-6 py-3 rounded-full shadow-xl mb-3 toast-enter flex items-center gap-2';
+        toast.innerHTML = `<svg class="w-4 h-4 text-[#DABFB4]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>${message}`;
+        container.appendChild(toast);
+        setTimeout(() => {
+            toast.classList.replace('toast-enter', 'toast-exit');
+            setTimeout(() => toast.remove(), 400);
+        }, 2500);
+    }
+
+    function showCustomAlert(message) {
+        document.getElementById('alertMessage').innerText = message;
+        const modal = document.getElementById('customAlert');
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            modal.querySelector('div').classList.remove('scale-95');
+        }, 10);
+    }
+
+    function closeCustomAlert() {
+        const modal = document.getElementById('customAlert');
+        modal.classList.add('opacity-0');
+        modal.querySelector('div').classList.add('scale-95');
+        setTimeout(() => modal.classList.add('hidden'), 300);
+    }
+
+    function showStep(stepId) {
+        ['step-activation','step-upload','step-loading','step-result'].forEach(id => {
+            document.getElementById(id).classList.add('hidden');
+        });
+        document.getElementById(stepId).classList.remove('hidden');
+    }
+
+    // 🔥 1. 防伪门锁修复版 🔥
+    function verifyCode() {
+        const inputElement = document.getElementById('activationCode');
+        const code = inputElement.value.trim().toUpperCase(); // 自动转大写
+        
+        if (!code) { showCustomAlert("请输入您的专属高定密钥"); return; }
+        
+        // 商业级风控规则：
+        const masterKeys = ['VIP888', 'MY666', 'SHISEJI2026']; // 万能后门
+        const isValidCustomerKey = code.startsWith('SSJ') && code.length === 7; // 客户规则：SSJ加4位数字
+
+        if (masterKeys.includes(code) || isValidCustomerKey) {
+            if (getRemainingUses(code) <= 0) { 
+                showCustomAlert("该密钥权益已耗尽，请重新获取"); 
+                return; 
+            }
+            window.currentCode = code;
+            inputElement.value = code; // 让框里的字也变成漂亮的大写
+            showStep('step-upload');
+        } else {
+            showCustomAlert('密钥无效或已过期，请联系主理人获取最新授权~');
+            return;
+        }
+    }
+
+    // 🔥 2. 纯前端无损压缩引擎修复版 🔥
+    function handleImageUpload(event) {
+        const file = event.target.files[0];
+        if(file) {
+            document.getElementById('uploadText').innerText = "图像引擎处理中...";
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    const MAX_SIZE = 800; // 强制缩放至800px以内
+
+                    if (width > height) {
+                        if (width > MAX_SIZE) {
+                            height *= MAX_SIZE / width;
+                            width = MAX_SIZE;
+                        }
+                    } else {
+                        if (height > MAX_SIZE) {
+                            width *= MAX_SIZE / height;
+                            height = MAX_SIZE;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    // 压缩生成新的 Base64
+                    userImageBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                    
+                    const preview = document.getElementById('imagePreview');
+                    preview.src = userImageBase64;
+                    preview.classList.remove('hidden');
+                    document.getElementById('uploadText').innerText = "已加载，轻触可重选";
+                    event.target.value = ''; 
+                    setTimeout(startAnalysis, 600);
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    // 🔥 3. 严格拦截人脸失败的逻辑修复版 🔥
+    function startAnalysis() {
+        if (!window.currentCode) { showStep('step-activation'); return; }
+        const remaining = useCodeOnce(window.currentCode);
+        if (remaining < 0) { showCustomAlert("次数已用完"); showStep('step-activation'); return; }
+
+        showStep('step-loading');
+        const loadingText = document.getElementById('loadingText');
+        const states = ["连接阿里云百炼大脑...","扫描活体面部特征...","深度运算高定色值...","提取十六型色彩矩阵...","生成专属图文报告..."];
+        let i = 0;
+        
+        const interval = setInterval(() => {
+            i = (i+1) % states.length;
+            loadingText.style.opacity = 0;
+            setTimeout(() => { loadingText.innerText = states[i]; loadingText.style.opacity = 1; }, 200);
+        }, 1500);
+
+        fetch('/.netlify/functions/analyze', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ imageBase64: userImageBase64 })
+        })
+        .then(res => res.json())
+        .then(data => {
+            clearInterval(interval);
+            
+            if (data.error) {
+                showCustomAlert(data.error);
+                showStep('step-upload'); 
+            } else if (data.season_name === "⚠️ 未检测到人脸" || data.season_name.includes("未检测到")) {
+                // 严密拦截：一旦出现未检测到人脸，立刻弹窗报错并退回上传页！
+                showCustomAlert(data.description || "抱歉，未能清晰识别到您的面部特征，请尝试更换一张正面无遮挡的素颜照片哦~");
+                showStep('step-upload');
+            } else {
+                renderAIResult(data);
+                showStep('step-result');
+                setTimeout(() => showToast(`本次诊断成功，密钥剩余 ${remaining} 次`), 800);
+            }
+        })
+        .catch(err => {
+            clearInterval(interval);
+            console.error("AI 连接失败:", err);
+            showCustomAlert('网络连接异常或 AI 大脑正在开小差，请重新上传测算哦~');
+            showStep('step-upload');
+        });
+    }
+
     function renderAIResult(d) {
-        if(userImageBase64) { document.getElementById('userAvatarResult').src = userImageBase64; document.getElementById('userAvatarResult').classList.remove('hidden'); }
-        document.getElementById('res-season-name').innerText = d.season_name;
-        document.getElementById('res-season-en').innerText = d.season_en;
-        document.getElementById('res-desc').innerText = d.description;
-        document.getElementById('res-makeup').innerText = d.makeup_advice;
-        document.getElementById('res-outfit').innerText = d.outfit_advice;
-        document.getElementById('res-accessory').innerText = d.accessory_advice;
-        document.getElementById('res-celebrity').innerText = d.celebrity_reference;
-        document.getElementById('res-avoid').innerText = Array.isArray(d.avoid_colors) ? d.avoid_colors.join(", ") : d.avoid_colors;
+        if(userImageBase64) {
+            const a = document.getElementById('userAvatarResult');
+            a.src = userImageBase64;
+            a.classList.remove('hidden');
+        }
+        
+        ['season-name','season-en','desc','makeup','outfit','accessory','celebrity','avoid'].forEach(key => {
+            const id = `res-${key}`;
+            const map = {'season-name':'season_name','season-en':'season_en','desc':'description','makeup':'makeup_advice','outfit':'outfit_advice','accessory':'accessory_advice','celebrity':'celebrity_reference','avoid':'avoid_colors'};
+            if(document.getElementById(id)) document.getElementById(id).innerText = d[map[key]];
+        });
+
         const f = document.getElementById('res-hex-extraction'); f.innerHTML = '';
-        d.feature_colors.forEach(c => f.innerHTML += `<div class="flex flex-col items-center"><div class="w-10 h-10 rounded-full hex-color-swatch" style="background:${c.hex}"></div><span class="text-[9px] mt-1">${c.label}</span></div>`);
+        if (d.feature_colors && Array.isArray(d.feature_colors)) {
+            const labels = ["肌肤底色", "面颊色调", "原生发色", "瞳孔特征"];
+            d.feature_colors.forEach((hexValue, index) => {
+                let colorHex = typeof hexValue === 'string' ? hexValue : hexValue.hex;
+                let colorLabel = typeof hexValue === 'string' ? labels[index] || "特征色" : hexValue.label;
+                f.innerHTML += `<div class="flex flex-col items-center"><div class="w-10 h-10 rounded-full hex-color-swatch mb-2 shadow-inner" style="background-color:${colorHex};"></div><span class="text-[11px] text-[#6B5D55] font-medium tracking-widest">${colorLabel}</span><span class="text-[9px] text-[#8C7A70] scale-90 mt-1 uppercase tracking-wider">${colorHex}</span></div>`;
+            });
+        }
+
+        const p = document.getElementById('res-progress-bars'); p.innerHTML = '';
+        const r = [];
+        if (d.radar_data && Array.isArray(d.radar_data)) {
+            const labels = ['色调(冷暖)', '明度(深浅)', '彩度(饱和)', '清浊(清透)', '对比(反差)'];
+            d.radar_data.forEach((val, index) => {
+                let value = typeof val === 'number' ? val : val.value;
+                let name = typeof val === 'number' ? labels[index] || "维度" : val.name;
+                let desc = typeof val === 'number' ? "" : val.desc;
+                r.push(value);
+                p.innerHTML += `<div class="mb-3"><div class="flex justify-between items-end mb-1.5"><span class="text-[12px] text-[#6B5D55] font-medium tracking-widest">${name}</span><span class="text-[12px] font-serif-custom font-bold text-[#3D342F]">${value}</span></div><div class="w-full bg-[#F4EFEA] rounded-full h-[5px] mb-1.5 overflow-hidden"><div class="bg-gradient-to-r from-[#DABFB4] to-[#CBAAA0] h-full rounded-full progress-bar-fill" style="width:0%" data-target-width="${value}%"></div></div><span class="text-[10px] text-[#BFA89F] tracking-widest">${desc || ''}</span></div>`;
+            });
+        }
+        
+        setTimeout(() => {
+            document.querySelectorAll('.progress-bar-fill').forEach(e => e.style.width = e.getAttribute('data-target-width'));
+        }, 600); 
+
         const c = document.getElementById('res-best-colors'); c.innerHTML = '';
-        d.best_colors.forEach(b => c.innerHTML += `<div class="flex flex-col items-center"><div class="w-12 h-12 rounded-full hex-color-swatch" style="background:${b.hex}"></div><span class="text-[9px] mt-1">${b.name}</span></div>`);
-        new Chart(document.getElementById('radarChart'), { type: 'radar', data: { labels: ['冷暖','明度','彩度','清浊','对比'], datasets: [{ data: d.radar_data.map(v=>v.value), backgroundColor: '#DABFB4' }] }, options: { plugins: { legend: false } } });
+        if (d.best_colors && Array.isArray(d.best_colors)) {
+            d.best_colors.forEach((val, index) => {
+                let colorHex = typeof val === 'string' ? val : val.hex;
+                let colorName = typeof val === 'string' ? "推荐色" : val.name;
+                c.innerHTML += `<div class="flex flex-col items-center"><div class="w-12 h-12 rounded-full hex-color-swatch mb-2.5 shadow-sm" style="background-color:${colorHex};"></div><span class="text-[11px] text-[#6B5D55] tracking-widest font-medium">${colorName}</span><span class="text-[9px] text-[#BFA89F] scale-90 mt-1 uppercase tracking-wider">${colorHex}</span></div>`;
+            });
+        }
+
+        if (d.avoid_colors && Array.isArray(d.avoid_colors) && typeof d.avoid_colors[0] === 'string' && d.avoid_colors[0].startsWith('#')) {
+             document.getElementById('res-avoid').innerText = "避雷色系推荐：" + d.avoid_colors.join(", ");
+        } else if (Array.isArray(d.avoid_colors)) {
+             document.getElementById('res-avoid').innerText = d.avoid_colors.join("、");
+        }
+
+        initRadarChart(r);
+    }
+
+    function initRadarChart(data) {
+        const ctx = document.getElementById('radarChart').getContext('2d');
+        if(window.myRadarChart) window.myRadarChart.destroy();
+        
+        Chart.defaults.font.family = "'Noto Serif SC', serif";
+        Chart.defaults.color = "#8C7A70";
+        
+        window.myRadarChart = new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['冷暖色调','深浅明度','饱和彩度','清透清浊','明暗对比'],
+                datasets: [{
+                    data: data,
+                    backgroundColor: 'rgba(218,191,180,0.25)',
+                    borderColor: 'rgba(218,191,180,0.9)',
+                    borderWidth: 1.5,
+                    pointBackgroundColor: '#FFFFFF',
+                    pointBorderColor: '#CBAAA0',
+                    pointBorderWidth: 2,
+                    pointRadius: 3.5,
+                    pointHoverRadius: 5
+                }]
+            },
+            options: {
+                animation: false, 
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: false },
+                scales: {
+                    r: {
+                        angleLines: { color: 'rgba(235,230,225,0.7)', lineWidth: 1 },
+                        grid: { color: 'rgba(235,230,225,0.8)', circular: false },
+                        pointLabels: { font: { size: 10, weight: 500, family: "'Noto Serif SC', serif" }, color: '#6B5D55', padding: 12 },
+                        ticks: { display: false, min: 0, max: 100 }
+                    }
+                }
+            }
+        });
+    }
+
+    // 🔥 4. “物理展开”截图防白屏修复版 🔥
+    async function saveAsImage() {
+        const btn = document.getElementById('saveBtn');
+        const ogText = btn.innerText;
+        btn.innerText = "引擎渲染中...";
+        btn.classList.add('opacity-70', 'cursor-wait');
+
+        try {
+            const mainContainer = document.getElementById('mainContainer');
+            const captureArea = document.getElementById('captureArea');
+            const appContainer = document.querySelector('.app-container');
+
+            // 1. 临时解除滚动限制
+            const originalScrollTop = mainContainer.scrollTop;
+            const originalAppHeight = appContainer.style.height;
+            const originalMainOverflow = mainContainer.style.overflow;
+            const originalMainHeight = mainContainer.style.height;
+
+            mainContainer.scrollTop = 0;
+            appContainer.style.height = 'auto';
+            mainContainer.style.overflow = 'visible';
+            mainContainer.style.height = 'auto';
+
+            // 极其关键：给苹果内核留出 300ms 重新排版时间，不加这段 iOS 必白屏！
+            await new Promise(resolve => setTimeout(resolve, 300));
+
+            // 2. 高清拍摄
+            const canvas = await html2canvas(captureArea, {
+                scale: window.devicePixelRatio > 1 ? window.devicePixelRatio : 2, 
+                useCORS: true,
+                backgroundColor: '#F7F5F2',
+                logging: false, 
+                onclone: (doc) => {
+                    const cloneArea = doc.getElementById('captureArea');
+                    cloneArea.style.padding = '24px 20px';
+                    
+                    // 冻结动画，防止残影
+                    const animatedEls = cloneArea.querySelectorAll('.fade-in, .stagger-1, .stagger-2, .stagger-3, .stagger-4');
+                    animatedEls.forEach(el => {
+                        el.style.opacity = '1';
+                        el.style.transform = 'none';
+                        el.style.animation = 'none';
+                    });
+                }
+            });
+
+            // 3. 瞬间折叠恢复原样
+            appContainer.style.height = originalAppHeight;
+            mainContainer.style.overflow = originalMainOverflow;
+            mainContainer.style.height = originalMainHeight;
+            mainContainer.scrollTop = originalScrollTop;
+
+            // 4. 生成交付长图
+            const dataURL = canvas.toDataURL('image/jpeg', 0.95);
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+            if (!isMobile) {
+                const link = document.createElement('a');
+                link.download = '拾色季_高定美学分析报告.jpg';
+                link.href = dataURL;
+                link.click();
+                showToast("报告已自动下载，请查看浏览器下载记录");
+            } else {
+                const overlay = document.getElementById('saveOverlay');
+                const overlayImg = document.getElementById('saveOverlayImg');
+                
+                overlayImg.src = dataURL;
+                overlay.classList.remove('hidden');
+                
+                setTimeout(() => {
+                    overlay.classList.remove('opacity-0');
+                    overlayImg.classList.remove('scale-95');
+                    overlayImg.classList.add('scale-100');
+                }, 10);
+
+                showToast("报告生成成功，请长按保存");
+            }
+            
+        } catch (e) {
+            console.error(e);
+            showCustomAlert('渲染失败，建议直接使用系统长截屏功能。');
+        } finally {
+            btn.innerText = ogText;
+            btn.classList.remove('opacity-70', 'cursor-wait');
+        }
+    }
+
+    function closeSaveOverlay() {
+        const overlay = document.getElementById('saveOverlay');
+        const overlayImg = document.getElementById('saveOverlayImg');
+        overlay.classList.add('opacity-0');
+        overlayImg.classList.remove('scale-100');
+        overlayImg.classList.add('scale-95');
+        setTimeout(() => overlay.classList.add('hidden'), 300);
     }
 </script>
 </body>
