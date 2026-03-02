@@ -51,4 +51,4 @@ Fields required: season_name, season_en, description, feature_colors (label/hex)
     } catch (error) {
         return new Response(JSON.stringify({ error: `执行崩溃: ${error.message}` }), { status: 500 });
     }
-}
+} 
