@@ -351,12 +351,29 @@
         document.getElementById(stepId).classList.remove('hidden');
     }
 
+    // 🔥 CTO亲自操刀：高定防伪门锁 🔥
     function verifyCode() {
-        const code = document.getElementById('activationCode').value.trim();
-        if (!code) { showCustomAlert("请输入高定密钥"); return; }
-        if (getRemainingUses(code) <= 0) { showCustomAlert("该密钥权益已耗尽，请重新获取"); return; }
-        window.currentCode = code;
-        showStep('step-upload');
+        const inputElement = document.getElementById('activationCode');
+        const code = inputElement.value.trim().toUpperCase(); // 自动转大写
+        
+        if (!code) { showCustomAlert("请输入您的专属高定密钥"); return; }
+        
+        // 商业级风控规则：
+        const masterKeys = ['VIP888', 'MY666', 'SHISEJI2026']; // 万能后门
+        const isValidCustomerKey = code.startsWith('SSJ') && code.length === 7; // 客户规则：SSJ加4位数字
+
+        if (masterKeys.includes(code) || isValidCustomerKey) {
+            if (getRemainingUses(code) <= 0) { 
+                showCustomAlert("该密钥权益已耗尽，请重新获取"); 
+                return; 
+            }
+            window.currentCode = code;
+            inputElement.value = code; // 让框里的字也变成漂亮的大写
+            showStep('step-upload');
+        } else {
+            showCustomAlert('密钥无效或已过期，请联系主理人获取最新授权~');
+            return;
+        }
     }
 
     function handleImageUpload(event) {
@@ -376,7 +393,6 @@
         }
     }
 
-    // 🔥 CTO亲自操刀的核心大脑连接代码 🔥
     function startAnalysis() {
         if (!window.currentCode) { showStep('step-activation'); return; }
         const remaining = useCodeOnce(window.currentCode);
@@ -393,7 +409,6 @@
             setTimeout(() => { loadingText.innerText = states[i]; loadingText.style.opacity = 1; }, 200);
         }, 1500);
 
-        // 正式呼叫 Netlify 大脑！
         fetch('/.netlify/functions/analyze', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -403,7 +418,6 @@
         .then(data => {
             clearInterval(interval);
             
-            // 拦截我们写的木马保安或者普通报错
             if (data.error) {
                 showCustomAlert(data.error);
                 showStep('step-upload'); 
@@ -411,7 +425,6 @@
                 showCustomAlert(data.description);
                 showStep('step-upload');
             } else {
-                // 真正的动态高定数据！
                 renderAIResult(data);
                 showStep('step-result');
                 setTimeout(() => showToast(`本次诊断成功，密钥剩余 ${remaining} 次`), 800);
@@ -440,7 +453,6 @@
 
         const f = document.getElementById('res-hex-extraction'); f.innerHTML = '';
         if (d.feature_colors && Array.isArray(d.feature_colors)) {
-            // 如果后端返回的是单纯的字符串数组 ["#xxx", "#yyy"]
             const labels = ["肌肤底色", "面颊色调", "原生发色", "瞳孔特征"];
             d.feature_colors.forEach((hexValue, index) => {
                 let colorHex = typeof hexValue === 'string' ? hexValue : hexValue.hex;
@@ -522,6 +534,7 @@
         });
     }
 
+    // 🔥 CTO亲自操刀：影分身渲染长图大法 🔥
     async function saveAsImage() {
         const btn = document.getElementById('saveBtn');
         const ogText = btn.innerText;
@@ -529,39 +542,60 @@
         btn.classList.add('opacity-70', 'cursor-wait');
 
         try {
-            const mainContainer = document.getElementById('mainContainer');
-            const originalScrollTop = mainContainer.scrollTop;
-            mainContainer.scrollTop = 0;
-
-            const captureArea = document.getElementById('captureArea');
+            const originalArea = document.getElementById('captureArea');
             
-            const canvas = await html2canvas(captureArea, {
+            // 1. 制造“影分身”：完整克隆原本的节点
+            const clone = originalArea.cloneNode(true);
+            
+            // 2. 将影分身放到页面最外层，彻底摆脱所有滚动条和高度的“紧箍咒”
+            clone.style.position = 'absolute';
+            clone.style.top = '0';
+            clone.style.left = '0';
+            clone.style.width = originalArea.offsetWidth + 'px'; 
+            clone.style.height = 'auto'; // 高度无限制延伸
+            clone.style.zIndex = '-9999'; // 藏在最底层，肉眼看不见
+            clone.style.overflow = 'visible';
+            clone.style.backgroundColor = '#F7F5F2'; 
+            
+            // 3. 极其关键的抢救：复制雷达图 Canvas
+            const originalCanvases = originalArea.querySelectorAll('canvas');
+            const clonedCanvases = clone.querySelectorAll('canvas');
+            originalCanvases.forEach((canvas, index) => {
+                const clonedCanvas = clonedCanvases[index];
+                clonedCanvas.width = canvas.width;
+                clonedCanvas.height = canvas.height;
+                const ctx = clonedCanvas.getContext('2d');
+                ctx.drawImage(canvas, 0, 0);
+            });
+
+            // 挂载到 DOM 里
+            document.body.appendChild(clone);
+
+            // 4. 解除影分身上的动画残留，防止截图闪烁
+            const animatedEls = clone.querySelectorAll('.fade-in, .stagger-1, .stagger-2, .stagger-3, .stagger-4');
+            animatedEls.forEach(el => {
+                el.style.opacity = '1';
+                el.style.transform = 'none';
+                el.style.animation = 'none';
+            });
+
+            // 稍微等 150 毫秒，让浏览器把超长的影分身排版整齐
+            await new Promise(resolve => setTimeout(resolve, 150));
+
+            // 5. 对着毫无限制的“影分身”进行高清拍照
+            const canvas = await html2canvas(clone, {
                 scale: window.devicePixelRatio > 1 ? window.devicePixelRatio : 2, 
                 useCORS: true,
                 backgroundColor: '#F7F5F2',
-                width: captureArea.offsetWidth,
-                height: captureArea.scrollHeight,
                 logging: false,
-                onclone: (doc) => {
-                    const cloneArea = doc.getElementById('captureArea');
-                    cloneArea.style.padding = '24px 20px';
-                    
-                    const cloneMain = doc.getElementById('mainContainer');
-                    const cloneApp = doc.querySelector('.app-container');
-                    if(cloneMain) { cloneMain.style.overflow = 'visible'; cloneMain.style.height = 'auto'; }
-                    if(cloneApp) { cloneApp.style.overflow = 'visible'; cloneApp.style.height = 'auto'; }
-
-                    const animatedEls = cloneArea.querySelectorAll('.fade-in, .stagger-1, .stagger-2, .stagger-3, .stagger-4');
-                    animatedEls.forEach(el => {
-                        el.style.opacity = '1';
-                        el.style.transform = 'none';
-                        el.style.animation = 'none';
-                    });
-                }
+                scrollY: 0, 
+                windowHeight: clone.scrollHeight 
             });
 
-            mainContainer.scrollTop = originalScrollTop;
+            // 6. 拍完照，立刻把影分身“毁尸灭迹”
+            document.body.removeChild(clone);
 
+            // 7. 生成图片并交付
             const dataURL = canvas.toDataURL('image/jpeg', 0.95);
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
