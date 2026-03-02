@@ -286,89 +286,18 @@
 </div>
 
 <script>
-    // 【核心修复：动态适配苹果与安卓的上传限制】
     document.addEventListener('DOMContentLoaded', () => {
         const dropzoneInput = document.getElementById('dropzone-file');
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-        
         if (isIOS) {
-            // iOS：指定格式可隐藏“选取文件”选项
             dropzoneInput.setAttribute('accept', 'image/jpeg, image/png, image/jpg, image/heic');
         } else {
-            // 安卓/PC：使用 image/* 唤起纯净的图库和相机，屏蔽通讯录/音乐等无关选项
             dropzoneInput.setAttribute('accept', 'image/*');
         }
     });
 
     let userImageBase64 = "";
     window.currentCode = ""; 
-
-    const seasonDataList = [
-        {
-            season_name:"暖春型", season_en:"Warm Spring",
-            description:"您的肌肤基调呈现出明亮通透的暖调，在自然光下如同春日暖阳般鲜活。您的肤色自带健康的蜜桃粉调，能够完美驾驭珊瑚橙、蜜瓜色等明亮暖色系，尽显元气与活力。",
-            feature_colors:[ {label:"肌肤底色",hex:"#F8D4B8"}, {label:"面颊色调",hex:"#F5B7A0"}, {label:"原生发色",hex:"#4A382E"}, {label:"瞳孔特征",hex:"#3A2F26"} ],
-            radar_data:[ {name:"色调(冷暖)",value:85,desc:"明显暖色调"}, {name:"明度(深浅)",value:75,desc:"高明度"}, {name:"彩度(饱和)",value:70,desc:"中高饱和"}, {name:"清浊(清透)",value:80,desc:"清透明亮"}, {name:"对比(反差)",value:65,desc:"中高对比度"} ],
-            best_colors:[ {name:"蜜瓜橘",hex:"#F9A66C"}, {name:"蜜桃粉",hex:"#F28B8B"}, {name:"嫩草绿",hex:"#90EE90"}, {name:"奶油黄",hex:"#FFFACD"} ],
-            makeup_advice:"底妆首选黄调二白，推荐 YSL 恒久粉底液 #B20。眼影推荐 NARS 'Orgasm' 蜜桃金盘。口红必选 MAC Chili 小辣椒，显白又提气。",
-            outfit_advice:"优先选择高饱和度的暖色系，面料推荐真丝、醋酸等光泽感材质。日常可尝试撞色穿搭（如橘色+草绿）。",
-            accessory_advice:"首饰首选黄金、K金材质。包包推荐明黄色、橘色，配饰可选择珍珠、亚克力等通透材质。",
-            celebrity_reference:"参考刘亦菲的春日系穿搭，浅色系+暖调配饰尽显温柔；男星可参考吴磊的橘色系造型。",
-            avoid_colors:"绝对避开冷调的宝蓝、墨绿、深紫，这些颜色会让您的肤色显得暗沉。"
-        },
-        {
-            season_name:"冷夏型", season_en:"Cool Summer",
-            description:"您的肌肤基调呈现出清冷雅致的冷调，在自然光下自带雾面柔光效果。如同夏日傍晚的海风，清爽又高级。您适合低饱和的冷色系，能够凸显出独有的清冷气质。",
-            feature_colors:[ {label:"肌肤底色",hex:"#E8E0E5"}, {label:"面颊色调",hex:"#D8C8D5"}, {label:"原生发色",hex:"#3A3A48"}, {label:"瞳孔特征",hex:"#2A2A38"} ],
-            radar_data:[ {name:"色调(冷暖)",value:20,desc:"明显冷色调"}, {name:"明度(深浅)",value:70,desc:"中高明度"}, {name:"彩度(饱和)",value:30,desc:"低饱和"}, {name:"清浊(清透)",value:75,desc:"清透偏冷"}, {name:"对比(反差)",value:40,desc:"中低对比度"} ],
-            best_colors:[ {name:"雾霾蓝",hex:"#B0C4DE"}, {name:"灰粉色",hex:"#D8BFD8"}, {name:"鼠尾草绿",hex:"#B6C4A9"}, {name:"燕麦灰",hex:"#D9D2C5"} ],
-            makeup_advice:"底妆首选粉调一白，推荐雅诗兰黛沁水 #1C0。眼影推荐 3CE 'SMOOTHER' 水泥盘。口红推荐兰蔻 296 冷茶玫瑰。",
-            outfit_advice:"优先选择低饱和的莫兰迪色系，面料推荐亚麻、天丝等哑光材质。日常可尝试同色系穿搭，打造极简高级感。",
-            accessory_advice:"首饰首选白金、银色，避免金色。包包推荐雾霾蓝、大象灰，配饰选择贝母、水晶。",
-            celebrity_reference:"参考刘诗诗的清冷系穿搭，低饱和色系+简约剪裁尽显高级。",
-            avoid_colors:"避开暖调的橘色、焦糖色、姜黄色，这些颜色会让您的肤色显得蜡黄。"
-        },
-        {
-            season_name:"柔秋型", season_en:"Soft Autumn",
-            description:"您的肌肤基调呈现出极其平衡的中性偏暖色，在自然光下散发着温润如玉的光泽。正如初秋的枫叶晚霞，深沉而温暖。您能够完美驾驭莫兰迪色系，呈现出不费力的高级感。",
-            feature_colors:[ {label:"肌肤底色",hex:"#EABD9B"}, {label:"面颊色调",hex:"#E9B79A"}, {label:"原生发色",hex:"#2F2F2F"}, {label:"瞳孔特征",hex:"#1C1C1C"} ],
-            radar_data:[ {name:"色调(冷暖)",value:75,desc:"偏暖色调"}, {name:"明度(深浅)",value:60,desc:"中等明度"}, {name:"彩度(饱和)",value:45,desc:"中低饱和"}, {name:"清浊(清透)",value:55,desc:"柔和偏浊"}, {name:"对比(反差)",value:30,desc:"低对比度"} ],
-            best_colors:[ {name:"燕麦米白",hex:"#F5F0E6"}, {name:"焦糖甜橙",hex:"#D48054"}, {name:"莫兰迪绿",hex:"#81937A"}, {name:"深茶褐",hex:"#5D3F4F"} ],
-            makeup_advice:"底妆首选黄调一二白，推荐 NARS Light Reflecting #02。眼影推荐 CT 'The Sophisticate' 大地盘。口红必选 MAC Velvet Teddy。",
-            outfit_advice:"避免高光泽度的真丝，多选择羊绒、粗花呢、棉麻等自然肌理面料。日常采用同色系渐变穿搭。",
-            accessory_advice:"首饰盲选玫瑰金或哑光古铜色。包包选择深棕复古牛皮，丝巾推荐含有姜黄的佩斯利印花。",
-            celebrity_reference:"参考汤唯的经典大地色系风衣造型，慵懒且散发着智性美。",
-            avoid_colors:"绝对避开高饱和荧光色（荧光粉、电光蓝）以及冷硬的纯黑纯白。"
-        },
-        {
-            season_name:"清冬型", season_en:"Clear Winter",
-            description:"您的肌肤基调呈现出冷冽鲜明的冷调，在自然光下对比强烈，如同冬日的冰雪般剔透。您适合高对比、高饱和的冷色系，能够凸显出强大的气场与高级感。",
-            feature_colors:[ {label:"肌肤底色",hex:"#F0E6F2"}, {label:"面颊色调",hex:"#E6D7E3"}, {label:"原生发色",hex:"#121212"}, {label:"瞳孔特征",hex:"#0A0A0A"} ],
-            radar_data:[ {name:"色调(冷暖)",value:15,desc:"极冷色调"}, {name:"明度(深浅)",value:80,desc:"高明度"}, {name:"彩度(饱和)",value:85,desc:"高饱和"}, {name:"清浊(清透)",value:90,desc:"极致清透"}, {name:"对比(反差)",value:95,desc:"极高对比度"} ],
-            best_colors:[ {name:"正红色",hex:"#FF0000"}, {name:"宝蓝色",hex:"#0000FF"}, {name:"祖母绿",hex:"#008080"}, {name:"纯白色",hex:"#FFFFFF"} ],
-            makeup_advice:"底妆首选冷调一白，推荐迪奥凝脂 #0N。眼影推荐 Tom Ford '01 Golden Mink' 金棕盘。口红推荐迪奥 999 哑光正红。",
-            outfit_advice:"优先选择高对比配色（如黑白配），面料推荐皮革、丝绒等质感材质。日常尝试极简剪裁外套。",
-            accessory_advice:"首饰首选铂金、白K金，搭配钻石、水晶等闪耀材质。包包推荐黑色、正红色。",
-            celebrity_reference:"参考范冰冰的红毯造型，高饱和冷色系+高对比搭配尽显女王气场。",
-            avoid_colors:"避开低饱和的莫兰迪色系、暖调的大地色系，会让您的气场减弱。"
-        }
-    ];
-
-    function robustHash(str) {
-        let hash = 0;
-        const len = str.length;
-        const sample = str.substring(Math.floor(len/2), Math.floor(len/2) + 1000) + len.toString();
-        for (let i = 0; i < sample.length; i++) {
-            hash = ((hash << 5) - hash) + sample.charCodeAt(i);
-            hash |= 0;
-        }
-        return Math.abs(hash);
-    }
-
-    function getSeasonDataByImage(imageData) {
-        const hash = robustHash(imageData);
-        return seasonDataList[hash % seasonDataList.length];
-    }
 
     function getRemainingUses(code) {
         const key = `color_season_code_${code}`;
@@ -447,6 +376,7 @@
         }
     }
 
+    // 🔥 CTO亲自操刀的核心大脑连接代码 🔥
     function startAnalysis() {
         if (!window.currentCode) { showStep('step-activation'); return; }
         const remaining = useCodeOnce(window.currentCode);
@@ -454,22 +384,45 @@
 
         showStep('step-loading');
         const loadingText = document.getElementById('loadingText');
-        const states = ["扫描面部色彩矩阵...","提取肤色与瞳孔色值...","多维数据量化分析...","匹配高定美学库...","生成专属长图报告..."];
+        const states = ["连接阿里云百炼大脑...","扫描活体面部特征...","深度运算高定色值...","提取十六型色彩矩阵...","生成专属图文报告..."];
         let i = 0;
         
         const interval = setInterval(() => {
             i = (i+1) % states.length;
             loadingText.style.opacity = 0;
             setTimeout(() => { loadingText.innerText = states[i]; loadingText.style.opacity = 1; }, 200);
-        }, 1200);
+        }, 1500);
 
-        setTimeout(() => {
+        // 正式呼叫 Netlify 大脑！
+        fetch('/.netlify/functions/analyze', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ imageBase64: userImageBase64 })
+        })
+        .then(res => res.json())
+        .then(data => {
             clearInterval(interval);
-            const seasonData = getSeasonDataByImage(userImageBase64);
-            renderAIResult(seasonData);
-            showStep('step-result');
-            setTimeout(() => showToast(`本次诊断成功，密钥剩余 ${remaining} 次`), 800);
-        }, 5000);
+            
+            // 拦截我们写的木马保安或者普通报错
+            if (data.error) {
+                showCustomAlert(data.error);
+                showStep('step-upload'); 
+            } else if (data.season_name === "⚠️ 未检测到人脸") {
+                showCustomAlert(data.description);
+                showStep('step-upload');
+            } else {
+                // 真正的动态高定数据！
+                renderAIResult(data);
+                showStep('step-result');
+                setTimeout(() => showToast(`本次诊断成功，密钥剩余 ${remaining} 次`), 800);
+            }
+        })
+        .catch(err => {
+            clearInterval(interval);
+            console.error("AI 连接失败:", err);
+            showCustomAlert('网络连接异常或 AI 大脑正在开小差，请重新上传测算哦~');
+            showStep('step-upload');
+        });
     }
 
     function renderAIResult(d) {
@@ -486,25 +439,45 @@
         });
 
         const f = document.getElementById('res-hex-extraction'); f.innerHTML = '';
-        d.feature_colors.forEach(i => {
-            f.innerHTML += `<div class="flex flex-col items-center"><div class="w-10 h-10 rounded-full hex-color-swatch mb-2 shadow-inner" style="background-color:${i.hex};"></div><span class="text-[11px] text-[#6B5D55] font-medium tracking-widest">${i.label}</span><span class="text-[9px] text-[#8C7A70] scale-90 mt-1 uppercase tracking-wider">${i.hex}</span></div>`;
-        });
+        if (d.feature_colors && Array.isArray(d.feature_colors)) {
+            // 如果后端返回的是单纯的字符串数组 ["#xxx", "#yyy"]
+            const labels = ["肌肤底色", "面颊色调", "原生发色", "瞳孔特征"];
+            d.feature_colors.forEach((hexValue, index) => {
+                let colorHex = typeof hexValue === 'string' ? hexValue : hexValue.hex;
+                let colorLabel = typeof hexValue === 'string' ? labels[index] || "特征色" : hexValue.label;
+                f.innerHTML += `<div class="flex flex-col items-center"><div class="w-10 h-10 rounded-full hex-color-swatch mb-2 shadow-inner" style="background-color:${colorHex};"></div><span class="text-[11px] text-[#6B5D55] font-medium tracking-widest">${colorLabel}</span><span class="text-[9px] text-[#8C7A70] scale-90 mt-1 uppercase tracking-wider">${colorHex}</span></div>`;
+            });
+        }
 
         const p = document.getElementById('res-progress-bars'); p.innerHTML = '';
         const r = [];
-        d.radar_data.forEach(i => {
-            r.push(i.value);
-            p.innerHTML += `<div class="mb-3"><div class="flex justify-between items-end mb-1.5"><span class="text-[12px] text-[#6B5D55] font-medium tracking-widest">${i.name}</span><span class="text-[12px] font-serif-custom font-bold text-[#3D342F]">${i.value}</span></div><div class="w-full bg-[#F4EFEA] rounded-full h-[5px] mb-1.5 overflow-hidden"><div class="bg-gradient-to-r from-[#DABFB4] to-[#CBAAA0] h-full rounded-full progress-bar-fill" style="width:0%" data-target-width="${i.value}%"></div></div><span class="text-[10px] text-[#BFA89F] tracking-widest">${i.desc}</span></div>`;
-        });
+        if (d.radar_data && Array.isArray(d.radar_data)) {
+            const labels = ['色调(冷暖)', '明度(深浅)', '彩度(饱和)', '清浊(清透)', '对比(反差)'];
+            d.radar_data.forEach((val, index) => {
+                let value = typeof val === 'number' ? val : val.value;
+                let name = typeof val === 'number' ? labels[index] || "维度" : val.name;
+                let desc = typeof val === 'number' ? "" : val.desc;
+                r.push(value);
+                p.innerHTML += `<div class="mb-3"><div class="flex justify-between items-end mb-1.5"><span class="text-[12px] text-[#6B5D55] font-medium tracking-widest">${name}</span><span class="text-[12px] font-serif-custom font-bold text-[#3D342F]">${value}</span></div><div class="w-full bg-[#F4EFEA] rounded-full h-[5px] mb-1.5 overflow-hidden"><div class="bg-gradient-to-r from-[#DABFB4] to-[#CBAAA0] h-full rounded-full progress-bar-fill" style="width:0%" data-target-width="${value}%"></div></div><span class="text-[10px] text-[#BFA89F] tracking-widest">${desc || ''}</span></div>`;
+            });
+        }
         
         setTimeout(() => {
             document.querySelectorAll('.progress-bar-fill').forEach(e => e.style.width = e.getAttribute('data-target-width'));
         }, 600); 
 
         const c = document.getElementById('res-best-colors'); c.innerHTML = '';
-        d.best_colors.forEach(i => {
-            c.innerHTML += `<div class="flex flex-col items-center"><div class="w-12 h-12 rounded-full hex-color-swatch mb-2.5 shadow-sm" style="background-color:${i.hex};"></div><span class="text-[11px] text-[#6B5D55] tracking-widest font-medium">${i.name}</span><span class="text-[9px] text-[#BFA89F] scale-90 mt-1 uppercase tracking-wider">${i.hex}</span></div>`;
-        });
+        if (d.best_colors && Array.isArray(d.best_colors)) {
+            d.best_colors.forEach((val, index) => {
+                let colorHex = typeof val === 'string' ? val : val.hex;
+                let colorName = typeof val === 'string' ? "推荐色" : val.name;
+                c.innerHTML += `<div class="flex flex-col items-center"><div class="w-12 h-12 rounded-full hex-color-swatch mb-2.5 shadow-sm" style="background-color:${colorHex};"></div><span class="text-[11px] text-[#6B5D55] tracking-widest font-medium">${colorName}</span><span class="text-[9px] text-[#BFA89F] scale-90 mt-1 uppercase tracking-wider">${colorHex}</span></div>`;
+            });
+        }
+
+        if (d.avoid_colors && Array.isArray(d.avoid_colors) && typeof d.avoid_colors[0] === 'string' && d.avoid_colors[0].startsWith('#')) {
+             document.getElementById('res-avoid').innerText = "避雷色系推荐：" + d.avoid_colors.join(", ");
+        }
 
         initRadarChart(r);
     }
