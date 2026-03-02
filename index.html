@@ -4,6 +4,32 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>拾色季 | 高定 AI 色彩美学诊断</title>
+    
+    <script>
+        // 1. 禁用鼠标右键菜单 (防止另存为和检查)
+        document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+        
+        // 2. 禁用文本选中和拖拽 (防止直接复制文案和图片)
+        document.addEventListener('selectstart', function(e) { 
+            // 【极其关键】必须对输入框“网开一面”，否则客户无法输入密码！
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                return; 
+            }
+            e.preventDefault(); 
+        });
+        document.addEventListener('dragstart', function(e) { e.preventDefault(); });
+        
+        // 3. 拦截常见的开发者工具快捷键 (防止同行看源码)
+        document.addEventListener('keydown', function(e) {
+            if(e.keyCode === 123 || // F12
+              (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74)) || // Ctrl+Shift+I / J
+              (e.ctrlKey && e.keyCode === 85) || // Ctrl+U
+              (e.metaKey && e.altKey && e.keyCode === 73) // Cmd+Option+I (Mac)
+              ) {
+                e.preventDefault();
+            }
+        });
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -354,13 +380,13 @@
     // 🔥 1. 防伪门锁修复版 🔥
     function verifyCode() {
         const inputElement = document.getElementById('activationCode');
-        const code = inputElement.value.trim().toUpperCase(); // 自动转大写
+        const code = inputElement.value.trim().toUpperCase(); 
         
         if (!code) { showCustomAlert("请输入您的专属高定密钥"); return; }
         
         // 商业级风控规则：
-        const masterKeys = ['VIP888', 'MY666', 'SHISEJI2026']; // 万能后门
-        const isValidCustomerKey = code.startsWith('SSJ') && code.length === 7; // 客户规则：SSJ加4位数字
+        const masterKeys = ['VIP888', 'MY666', 'SHISEJI2026']; 
+        const isValidCustomerKey = code.startsWith('SSJ') && code.length === 7; 
 
         if (masterKeys.includes(code) || isValidCustomerKey) {
             if (getRemainingUses(code) <= 0) { 
@@ -368,7 +394,7 @@
                 return; 
             }
             window.currentCode = code;
-            inputElement.value = code; // 让框里的字也变成漂亮的大写
+            inputElement.value = code; 
             showStep('step-upload');
         } else {
             showCustomAlert('密钥无效或已过期，请联系主理人获取最新授权~');
@@ -388,7 +414,7 @@
                     const canvas = document.createElement('canvas');
                     let width = img.width;
                     let height = img.height;
-                    const MAX_SIZE = 800; // 强制缩放至800px以内
+                    const MAX_SIZE = 800; 
 
                     if (width > height) {
                         if (width > MAX_SIZE) {
@@ -407,7 +433,6 @@
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
 
-                    // 压缩生成新的 Base64
                     userImageBase64 = canvas.toDataURL('image/jpeg', 0.7);
                     
                     const preview = document.getElementById('imagePreview');
@@ -453,7 +478,6 @@
                 showCustomAlert(data.error);
                 showStep('step-upload'); 
             } else if (data.season_name === "⚠️ 未检测到人脸" || data.season_name.includes("未检测到")) {
-                // 严密拦截：一旦出现未检测到人脸，立刻弹窗报错并退回上传页！
                 showCustomAlert(data.description || "抱歉，未能清晰识别到您的面部特征，请尝试更换一张正面无遮挡的素颜照片哦~");
                 showStep('step-upload');
             } else {
@@ -580,7 +604,6 @@
             const captureArea = document.getElementById('captureArea');
             const appContainer = document.querySelector('.app-container');
 
-            // 1. 临时解除滚动限制
             const originalScrollTop = mainContainer.scrollTop;
             const originalAppHeight = appContainer.style.height;
             const originalMainOverflow = mainContainer.style.overflow;
@@ -591,10 +614,8 @@
             mainContainer.style.overflow = 'visible';
             mainContainer.style.height = 'auto';
 
-            // 极其关键：给苹果内核留出 300ms 重新排版时间，不加这段 iOS 必白屏！
             await new Promise(resolve => setTimeout(resolve, 300));
 
-            // 2. 高清拍摄
             const canvas = await html2canvas(captureArea, {
                 scale: window.devicePixelRatio > 1 ? window.devicePixelRatio : 2, 
                 useCORS: true,
@@ -604,7 +625,6 @@
                     const cloneArea = doc.getElementById('captureArea');
                     cloneArea.style.padding = '24px 20px';
                     
-                    // 冻结动画，防止残影
                     const animatedEls = cloneArea.querySelectorAll('.fade-in, .stagger-1, .stagger-2, .stagger-3, .stagger-4');
                     animatedEls.forEach(el => {
                         el.style.opacity = '1';
@@ -614,13 +634,11 @@
                 }
             });
 
-            // 3. 瞬间折叠恢复原样
             appContainer.style.height = originalAppHeight;
             mainContainer.style.overflow = originalMainOverflow;
             mainContainer.style.height = originalMainHeight;
             mainContainer.scrollTop = originalScrollTop;
 
-            // 4. 生成交付长图
             const dataURL = canvas.toDataURL('image/jpeg', 0.95);
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
