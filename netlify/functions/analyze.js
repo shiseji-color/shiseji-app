@@ -62,8 +62,8 @@ export const handler = async (event, context) => {
       "makeup_advice": "A paragraph with specific luxury product code recommendations (e.g., YSL #B10, DIOR #999, NARS Orgasm).",
       "outfit_advice": "A paragraph covering fashion, silhouette, and high-end fabrics.",
       "accessory_advice": "A paragraph covering metal, leather, and jewelry texture.",
-      // 🔥 反幻觉防线：强制要求千人千面，禁止重复同一个明星
-      "celebrity_reference": "Provide a full, descriptive Chinese sentence mentioning a famous person known for styling in this season's colors. CRITICAL RULE: You must dynamically and randomly select DIFFERENT celebrities (domestic or international) and DIFFERENT specific looks for every single request. NEVER repeatedly use the same celebrity (e.g., do not always output Fan Bingbing). Ensure '千人千面' (a thousand faces, a thousand styles).",
+      // 🔥 反幻觉防线升级版：彻底切断粉红大象效应，强行注入高级感代餐库
+      "celebrity_reference": "Provide a full, descriptive Chinese sentence mentioning a famous person known for styling in this season's colors. CRITICAL RULE: You MUST randomly select a DIFFERENT celebrity each time to ensure '千人千面'. Randomly choose from high-fashion icons such as Shu Qi (舒淇), Tang Wei (汤唯), Ni Ni (倪妮), Anne Hathaway, Jun Ji-hyun (全智贤), Zendaya, Liu Yifei (刘亦菲), Gao Yuanyuan (高圆圆), etc. Describe a specific classic look they pulled off.",
       "avoid_colors": "Provide Chinese names for 2-3 colors this season should avoid. Never output hex codes for avoid colors, use plain text descriptive names (e.g., '荧光绿', '亮橙色')."
     }`;
 
