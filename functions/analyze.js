@@ -21,6 +21,7 @@ First, check if the image contains a clear human face. If it is NOT a human face
 2. DO NOT use generic brand templates. 
 3. Output ONLY valid JSON, no markdown, no code blocks.
 4. "avoid_colors" MUST be a single String, NOT an array or object.
+5. "radar_data" values MUST be positive integers between 0 and 100. DO NOT use decimals or negative numbers.
 
 REQUIRED JSON structure for human face:
 {
@@ -64,7 +65,9 @@ REQUIRED JSON structure for human face:
             return new Response(JSON.stringify({ error: `AI返回格式错误，无法解析JSON: ${rawContent}` }), { status: 500 });
         }
 
-        // 数据清洗：修复 undefined 和 [object Object] 问题
+        // ================= 数据清洗防崩溃区域 =================
+
+        // 1. 修复 undefined 和 [object Object] 问题
         finalJSON.celebrity_reference = finalJSON.celebrity_reference || finalJSON.celebrity || finalJSON.star || "需参考专属形象顾问，定制您的个人风格";
 
         if (Array.isArray(finalJSON.avoid_colors)) {
@@ -77,6 +80,17 @@ REQUIRED JSON structure for human face:
 
         finalJSON.season_name = finalJSON.season_name || "专属高定季";
         finalJSON.season_en = finalJSON.season_en || "Exclusive Season";
+
+        // 2. 🌟 强制洗净雷达图数据，绝对防空包
+        if (Array.isArray(finalJSON.radar_data)) {
+            finalJSON.radar_data = finalJSON.radar_data.map(item => {
+                let val = parseFloat(item.value);
+                if (isNaN(val)) val = 85; // 如果遇到完全不是数字的情况，给个兜底值
+                if (val <= 1 && val >= -1) val = Math.abs(val) * 100; // 处理类似 0.8 或 -0.8 的小数，放大成 80
+                item.value = Math.max(0, Math.min(100, Math.round(val))); // 死锁在 0-100 整数
+                return item;
+            });
+        }
 
         return new Response(JSON.stringify(finalJSON), { headers: { 'Content-Type': 'application/json' } });
 
