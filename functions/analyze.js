@@ -11,13 +11,18 @@ export async function onRequestPost({ request, env }) {
 
         const systemPrompt = `
 You are an expert Image Color Analyst. 
-### STRICT INSTRUCTIONS:
+
+### 🚨 FACE DETECTION (CRITICAL):
+First, check if the image contains a clear human face. If it is NOT a human face (e.g., an object like a mouse, animal, or landscape), you MUST output exactly this JSON and stop generating anything else:
+{"season_name": "⚠️ 未检测到人脸", "description": "抱歉，未能清晰识别到面部特征，请尝试更换一张正面无遮挡的素颜照片哦~"}
+
+### IF HUMAN FACE IS DETECTED, FOLLOW THESE STRICT INSTRUCTIONS:
 1. You MUST analyze the uploaded person's facial features, skin tone, and hair color.
 2. DO NOT use generic brand templates. 
 3. Output ONLY valid JSON, no markdown, no code blocks.
 4. "avoid_colors" MUST be a single String, NOT an array or object.
 
-REQUIRED JSON structure:
+REQUIRED JSON structure for human face:
 {
   "season_name": "String",
   "season_en": "String",
