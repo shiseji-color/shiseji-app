@@ -7,16 +7,30 @@ export async function onRequestPost({ request, env }) {
         const API_KEY = env.API_KEY;
         const BASE_URL = env.BASE_URL;
 
-        // 优化后的 System Prompt：严禁生成固定的拾色季介绍，强迫 AI 必须根据图片分析
+        if (!API_KEY || !BASE_URL) return new Response(JSON.stringify({ error: '环境变量缺失' }), { status: 500 });
+
         const systemPrompt = `
 You are an expert Image Color Analyst. 
-### INSTRUCTION: 
-1. Analyze the provided image ONLY. Do not use generic brand templates.
-2. If the image is not a human face, output specific error JSON.
-3. You MUST provide real-time analysis based on the actual visual data.
-4. Output ONLY JSON, no markdown. 
-Fields required: season_name, season_en, description, feature_colors (label/hex), radar_data (name/value), best_colors (name/hex), makeup_advice, outfit_advice, accessory_advice, celebrity_reference, avoid_colors.
-`;
+### STRICT INSTRUCTIONS:
+1. You MUST analyze the uploaded person's facial features, skin tone, and hair color.
+2. DO NOT use generic brand templates. 
+3. Output ONLY valid JSON, no markdown, no code blocks.
+4. "avoid_colors" MUST be a single String, NOT an array or object.
+
+REQUIRED JSON structure:
+{
+  "season_name": "String",
+  "season_en": "String",
+  "description": "String",
+  "feature_colors": [{"label": "String", "hex": "#HEX"}],
+  "radar_data": [{"name": "String", "value": Number}],
+  "best_colors": [{"name": "String", "hex": "#HEX"}],
+  "makeup_advice": "String",
+  "outfit_advice": "String",
+  "accessory_advice": "String",
+  "celebrity_reference": "String",
+  "avoid_colors": "String"
+}`;
 
         const response = await fetch(`${BASE_URL}/chat/completions`, {
             method: 'POST',
@@ -25,32 +39,43 @@ Fields required: season_name, season_en, description, feature_colors (label/hex)
                 model: 'qwen-vl-plus',
                 messages: [
                     { role: 'system', content: systemPrompt },
-                    { role: 'user', content: [{ type: 'text', text: 'Analyze this person and provide a detailed color analysis report in Chinese.' }, { type: 'image_url', image_url: { url: imageBase64 } }] }
+                    { role: 'user', content: [{ type: 'text', text: 'Analyze the person in this image and provide a high-end color diagnosis in Chinese.' }, { type: 'image_url', image_url: { url: imageBase64 } }] }
                 ],
-                temperature: 0.2, // 调低温度，减少 AI 瞎编
-                max_tokens: 1500
+                temperature: 0.1,
+                max_tokens: 2000
             })
         });
 
         const data = await response.json();
+        if (!data.choices || !data.choices[0].message.content) {
+            return new Response(JSON.stringify({ error: 'AI接口无返回内容' }), { status: 500 });
+        }
+
         const rawContent = data.choices[0].message.content.replace(/```json|```/g, '').trim();
-        
-        // 调试窗口：如果解析报错，我们把 AI 的“胡言乱语”直接抛出来
         let finalJSON;
         try {
             finalJSON = JSON.parse(rawContent);
         } catch (e) {
-            return new Response(JSON.stringify({ error: `AI解析失败，原始输出为: ${rawContent}` }), { status: 500 });
+            return new Response(JSON.stringify({ error: `AI返回格式错误，无法解析JSON: ${rawContent}` }), { status: 500 });
         }
 
-        // 强行对齐字段，防止 undefined
-        finalJSON.celebrity_reference = finalJSON.celebrity_reference || "需参考专属形象顾问";
+        // 数据清洗：修复 undefined 和 [object Object] 问题
+        finalJSON.celebrity_reference = finalJSON.celebrity_reference || finalJSON.celebrity || finalJSON.star || "需参考专属形象顾问，定制您的个人风格";
+
+        if (Array.isArray(finalJSON.avoid_colors)) {
+            finalJSON.avoid_colors = finalJSON.avoid_colors.map(item => typeof item === 'object' ? (item.name || JSON.stringify(item)) : item).join('、');
+        } else if (typeof finalJSON.avoid_colors === 'object' && finalJSON.avoid_colors !== null) {
+            finalJSON.avoid_colors = finalJSON.avoid_colors.name || "深灰黑、冷冽银灰、暗淡土黄";
+        } else if (!finalJSON.avoid_colors) {
+            finalJSON.avoid_colors = "深灰黑、冷冽银灰、暗淡土黄";
+        }
+
+        finalJSON.season_name = finalJSON.season_name || "专属高定季";
+        finalJSON.season_en = finalJSON.season_en || "Exclusive Season";
 
         return new Response(JSON.stringify(finalJSON), { headers: { 'Content-Type': 'application/json' } });
 
     } catch (error) {
-        return new Response(JSON.stringify({ error: `执行崩溃: ${error.message}` }), { status: 500 });
+        return new Response(JSON.stringify({ error: `代码执行异常: ${error.message}` }), { status: 500 });
     }
-} 
-  
- 
+}
