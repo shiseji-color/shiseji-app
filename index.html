@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>拾色季 | 高定 AI 色彩美学诊断</title>
+    <title>拾色季 | 高定色彩美学诊断</title>
     
     <script>
         // 1. 禁用鼠标右键菜单 (防止另存为和检查)
@@ -110,6 +110,35 @@
             body { padding: 0 !important; }
             .app-container { height: 100vh; height: 100dvh; border-radius: 0; border: none; max-width: 100%; }
         }
+
+        /* --- 拾色季：高定视觉补丁包 --- */
+        .color-capsule {
+            display: inline-block;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            margin: 0 2px;
+            position: relative;
+            top: -1px;
+            letter-spacing: 1px;
+            border: 1px solid rgba(0,0,0,0.03);
+        }
+        .report-footer {
+            text-align: center;
+            padding: 24px 0 10px;
+            margin-top: 15px;
+            position: relative;
+        }
+        .report-footer::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 50%; transform: translateX(-50%);
+            width: 40px; height: 1px;
+            background: linear-gradient(90deg, transparent, #DABFB4, transparent);
+        }
+        .footer-title { font-size: 10px; letter-spacing: 0.3em; color: #8C7A70; margin-bottom: 6px; }
+        .footer-archive { font-family: "Helvetica Neue", Arial, sans-serif; font-size: 9px; color: #BFA89F; letter-spacing: 0.1em; }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-3 text-[#4A403A]">
@@ -134,7 +163,7 @@
                         <span class="text-[10px] text-[#8C7A70] tracking-widest font-medium">✨ 官方高定色彩诊断系统</span>
                     </div>
                     <h2 class="text-[22px] font-serif-custom font-medium text-[#3D342F] tracking-wider mb-3">唤醒原生美学</h2>
-                    <p class="text-[13px] text-[#8C7A70] leading-relaxed">输入您的专属高定密钥<br>AI 将通过 16 型算法为您精准定调</p>
+                    <p class="text-[13px] text-[#8C7A70] leading-relaxed">输入您的专属高定密钥<br>算法将为您精准定调</p>
                 </div>
                 
                 <div class="relative">
@@ -155,7 +184,7 @@
         <div id="step-upload" class="hidden fade-in mt-6">
             <div class="content-card p-8">
                 <h2 class="text-xl font-serif-custom font-medium text-center mb-3 text-[#3D342F] tracking-wider">遇见真实的自己</h2>
-                <p class="text-[13px] text-[#8C7A70] mb-8 text-center leading-relaxed">请在自然光下拍摄或选择一张素颜照<br>供 AI 提取原生肤色与瞳孔特征</p>
+                <p class="text-[13px] text-[#8C7A70] mb-8 text-center leading-relaxed">请在自然光下拍摄或选择一张素颜照<br>供系统提取原生肤色与瞳孔特征</p>
                 
                 <div class="mb-6">
                     <label for="dropzone-file" class="flex flex-col items-center justify-center w-full h-48 border border-[#E8E1DE] border-dashed rounded-[1.5rem] cursor-pointer bg-[#F9F8F6] hover:bg-[#F2EDE8] transition-all duration-300 group relative overflow-hidden shadow-sm">
@@ -190,7 +219,7 @@
                 <div class="w-3.5 h-3.5 bg-[#DABFB4] rounded-full animate-pulse shadow-[0_0_20px_rgba(218,191,180,0.8)]"></div>
             </div>
             <h3 class="text-[15px] font-serif-custom font-medium text-[#4A403A] tracking-[0.25em]" id="loadingText">系统正在唤醒...</h3>
-            <p class="text-[10px] text-[#BFA89F] tracking-[0.4em] mt-3 uppercase font-medium">AI Engine Processing</p>
+            <p class="text-[10px] text-[#BFA89F] tracking-[0.4em] mt-3 uppercase font-medium">System Processing</p>
         </div>
 
         <div id="step-result" class="hidden fade-in">
@@ -247,19 +276,31 @@
                     </div>
                     <div class="space-y-6">
                         <div class="border-b border-[#F4EFEA] pb-5">
-                            <h4 class="text-[12px] font-semibold text-[#6B5D55] mb-2 tracking-widest flex items-center"><span class="w-1.5 h-1.5 rounded-full bg-[#DABFB4] mr-2.5"></span> 妆容 & 色号直抄</h4>
+                            <h4 class="text-[12px] font-semibold text-[#6B5D55] mb-2 tracking-widest flex items-center">
+                                <svg class="w-3.5 h-3.5 text-[#DABFB4] mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 21h10M9 17v4m6-4v4M12 3l-3 5h6l-3-5zm0 0v14" /></svg>
+                                妆容 & 色号直抄
+                            </h4>
                             <p id="res-makeup" class="text-[12px] text-[#8C7A70] leading-[2] tracking-wide text-justify">...</p>
                         </div>
                         <div class="border-b border-[#F4EFEA] pb-5">
-                            <h4 class="text-[12px] font-semibold text-[#6B5D55] mb-2 tracking-widest flex items-center"><span class="w-1.5 h-1.5 rounded-full bg-[#DABFB4] mr-2.5"></span> 穿搭 & 面料灵感</h4>
+                            <h4 class="text-[12px] font-semibold text-[#6B5D55] mb-2 tracking-widest flex items-center">
+                                <svg class="w-3.5 h-3.5 text-[#DABFB4] mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" /></svg>
+                                穿搭 & 面料灵感
+                            </h4>
                             <p id="res-outfit" class="text-[12px] text-[#8C7A70] leading-[2] tracking-wide text-justify">...</p>
                         </div>
                         <div class="border-b border-[#F4EFEA] pb-5">
-                            <h4 class="text-[12px] font-semibold text-[#6B5D55] mb-2 tracking-widest flex items-center"><span class="w-1.5 h-1.5 rounded-full bg-[#DABFB4] mr-2.5"></span> 饰品 & 质感建议</h4>
+                            <h4 class="text-[12px] font-semibold text-[#6B5D55] mb-2 tracking-widest flex items-center">
+                                <svg class="w-3.5 h-3.5 text-[#DABFB4] mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
+                                饰品 & 质感建议
+                            </h4>
                             <p id="res-accessory" class="text-[12px] text-[#8C7A70] leading-[2] tracking-wide text-justify">...</p>
                         </div>
                         <div class="border-b border-[#F4EFEA] pb-5">
-                            <h4 class="text-[12px] font-semibold text-[#6B5D55] mb-2 tracking-widest flex items-center"><span class="w-1.5 h-1.5 rounded-full bg-[#DABFB4] mr-2.5"></span> 同季型明星参考</h4>
+                            <h4 class="text-[12px] font-semibold text-[#6B5D55] mb-2 tracking-widest flex items-center">
+                                <svg class="w-3.5 h-3.5 text-[#DABFB4] mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                                同季型明星参考
+                            </h4>
                             <p id="res-celebrity" class="text-[12px] text-[#8C7A70] leading-[2] tracking-wide text-justify">...</p>
                         </div>
                         <div>
@@ -268,13 +309,18 @@
                         </div>
                     </div>
                 </div>
+                
+                <div class="report-footer mt-4">
+                    <p class="footer-title">—— 拾色季 · 专属高定色彩档案 ——</p>
+                    <p class="footer-archive" id="archive-no"></p>
+                </div>
             </div>
 
             <div class="mt-6 mb-8 text-center px-1 fade-in stagger-4">
                 <button id="saveBtn" onclick="saveAsImage()" class="w-full text-white bg-[#4A403A] hover:bg-[#3D342F] shadow-[0_12px_30px_rgba(74,64,58,0.25)] font-medium rounded-[1.25rem] text-[15px] px-5 py-4 text-center transition-all duration-300 tracking-[0.2em]">
                     生成专属长图海报
                 </button>
-                <p class="text-[10px] text-[#C5B8B2] mt-4 tracking-widest font-serif-custom opacity-70">拾色季 AI COLOR ANALYSIS © 2026</p>
+                <p class="text-[10px] text-[#C5B8B2] mt-4 tracking-widest font-serif-custom opacity-70">拾色季 COLOR ANALYSIS © 2026</p>
             </div>
         </div>
     </div>
@@ -312,6 +358,26 @@
 </div>
 
 <script>
+    // --- 拾色季：高定色彩胶囊渲染引擎 ---
+    function highlightColors(text) {
+        if (!text) return text;
+        const colorMap = {
+            "玫瑰粉": "#FFF0F5", "珊瑚红": "#FFE4E1", "奶油黄": "#FFFFE0", 
+            "薄荷绿": "#F0FFF0", "雾霾蓝": "#F0F8FF", "奶茶色": "#FDF5E6", 
+            "炭灰色": "#F5F5F5", "藏青色": "#F0F4F8", "酒红色": "#FFF0F0",
+            "香槟色": "#FFF8E7", "燕麦色": "#FDF9F1", "莫兰迪": "#F4F4F4",
+            "卡其色": "#F5E6D3", "豆沙色": "#E8C8C8", "裸粉色": "#F7E1D7",
+            "樱花粉": "#FDE6E8", "抹茶绿": "#E8F0E4", "克莱因蓝": "#E6EEF8"
+        };
+        let processedText = text;
+        for (const [colorName, bgColor] of Object.entries(colorMap)) {
+            const regex = new RegExp(colorName, "g");
+            const capsuleHTML = `<span class="color-capsule" style="background-color: ${bgColor}; color: #5A504B;">${colorName}</span>`;
+            processedText = processedText.replace(regex, capsuleHTML);
+        }
+        return processedText;
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
         const dropzoneInput = document.getElementById('dropzone-file');
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
@@ -377,14 +443,12 @@
         document.getElementById(stepId).classList.remove('hidden');
     }
 
-    // 🔥 1. 防伪门锁修复版 🔥
     function verifyCode() {
         const inputElement = document.getElementById('activationCode');
         const code = inputElement.value.trim().toUpperCase(); 
         
         if (!code) { showCustomAlert("请输入您的专属高定密钥"); return; }
         
-        // 商业级风控规则：
         const masterKeys = ['VIP888', 'MY666', 'SHISEJI2026']; 
         const isValidCustomerKey = code.startsWith('SSJ') && code.length === 7; 
 
@@ -402,7 +466,6 @@
         }
     }
 
-    // 🔥 2. 纯前端无损压缩引擎修复版 🔥
     function handleImageUpload(event) {
         const file = event.target.files[0];
         if(file) {
@@ -448,7 +511,6 @@
         }
     }
 
-    // 🔥 3. 严格拦截人脸失败的逻辑修复版 🔥
     function startAnalysis() {
         if (!window.currentCode) { showStep('step-activation'); return; }
         const remaining = useCodeOnce(window.currentCode);
@@ -456,7 +518,7 @@
 
         showStep('step-loading');
         const loadingText = document.getElementById('loadingText');
-        const states = ["连接阿里云百炼大脑...","扫描活体面部特征...","深度运算高定色值...","提取十六型色彩矩阵...","生成专属图文报告..."];
+        const states = ["连接私有分析引擎...","扫描活体面部特征...","深度运算高定色值...","提取色彩美学矩阵...","生成专属图文报告..."];
         let i = 0;
         
         const interval = setInterval(() => {
@@ -489,7 +551,7 @@
         .catch(err => {
             clearInterval(interval);
             console.error("AI 连接失败:", err);
-            showCustomAlert('网络连接异常或 AI 大脑正在开小差，请重新上传测算哦~');
+            showCustomAlert('网络连接异常或处理超时，请重新上传测算哦~');
             showStep('step-upload');
         });
     }
@@ -501,11 +563,40 @@
             a.classList.remove('hidden');
         }
         
-        ['season-name','season-en','desc','makeup','outfit','accessory','celebrity','avoid'].forEach(key => {
-            const id = `res-${key}`;
-         const map = {'season-name':'season_name','season-en':'season_en','desc':'description','makeup':'makeup_advice','outfit':'outfit_advice','accessory':'accessory_advice','celebrity':'celebrity_reference','avoid':'avoid_colors'};
-            if(document.getElementById(id)) document.getElementById(id).innerText = d[map[key]];
+        const map = {'season-name':'season_name','season-en':'season_en','desc':'description','makeup':'makeup_advice','outfit':'outfit_advice','accessory':'accessory_advice','celebrity':'celebrity_reference'};
+        
+        // 1. 基础信息保持纯文本（防标签错乱）
+        ['season-name','season-en','desc'].forEach(key => {
+            if(document.getElementById(`res-${key}`)) document.getElementById(`res-${key}`).innerText = d[map[key]] || "生成中...";
         });
+
+        // 2. 建议类信息通过高定引擎渲染富文本胶囊
+        ['makeup','outfit','accessory','celebrity'].forEach(key => {
+            if(document.getElementById(`res-${key}`)) document.getElementById(`res-${key}`).innerHTML = highlightColors(d[map[key]] || "...");
+        });
+        
+        // 3. 高健壮性避雷区处理（兼容数组和纯文本，并支持胶囊）
+        let avoidText = "...";
+        if (d.avoid_colors) {
+            if (Array.isArray(d.avoid_colors)) {
+                if (typeof d.avoid_colors[0] === 'string' && d.avoid_colors[0].startsWith('#')) {
+                    avoidText = "避雷色系推荐：" + d.avoid_colors.join(", ");
+                } else {
+                    avoidText = d.avoid_colors.join("、");
+                }
+            } else {
+                avoidText = d.avoid_colors;
+            }
+        }
+        if(document.getElementById('res-avoid')) {
+            document.getElementById('res-avoid').innerHTML = highlightColors(avoidText);
+        }
+
+        // 4. 动态生成底部专属档案编号
+        const today = new Date();
+        const dateStr = today.getFullYear().toString() + (today.getMonth() + 1).toString().padStart(2, '0') + today.getDate().toString().padStart(2, '0');
+        const randomSuffix = String.fromCharCode(65 + Math.floor(Math.random() * 26)) + Math.floor(Math.random() * 10);
+        if(document.getElementById('archive-no')) document.getElementById('archive-no').innerText = `Archive No. ${dateStr}-${randomSuffix}`;
 
         const f = document.getElementById('res-hex-extraction'); f.innerHTML = '';
         if (d.feature_colors && Array.isArray(d.feature_colors)) {
@@ -526,7 +617,8 @@
                 let name = typeof val === 'number' ? labels[index] || "维度" : val.name;
                 let desc = typeof val === 'number' ? "" : val.desc;
                 r.push(value);
-                p.innerHTML += `<div class="mb-3"><div class="flex justify-between items-end mb-1.5"><span class="text-[12px] text-[#6B5D55] font-medium tracking-widest">${name}</span><span class="text-[12px] font-serif-custom font-bold text-[#3D342F]">${value}</span></div><div class="w-full bg-[#F4EFEA] rounded-full h-[5px] mb-1.5 overflow-hidden"><div class="bg-gradient-to-r from-[#DABFB4] to-[#CBAAA0] h-full rounded-full progress-bar-fill" style="width:0%" data-target-width="${value}%"></div></div><span class="text-[10px] text-[#BFA89F] tracking-widest">${desc || ''}</span></div>`;
+                // 进度条高度已由 5px 改为更精致的 3px
+                p.innerHTML += `<div class="mb-3"><div class="flex justify-between items-end mb-1.5"><span class="text-[12px] text-[#6B5D55] font-medium tracking-widest">${name}</span><span class="text-[12px] font-serif-custom font-bold text-[#3D342F]">${value}</span></div><div class="w-full bg-[#F4EFEA] rounded-full h-[3px] mb-1.5 overflow-hidden"><div class="bg-gradient-to-r from-[#DABFB4] to-[#CBAAA0] h-full rounded-full progress-bar-fill" style="width:0%" data-target-width="${value}%"></div></div><span class="text-[10px] text-[#BFA89F] tracking-widest">${desc || ''}</span></div>`;
             });
         }
         
@@ -541,12 +633,6 @@
                 let colorName = typeof val === 'string' ? "推荐色" : val.name;
                 c.innerHTML += `<div class="flex flex-col items-center"><div class="w-12 h-12 rounded-full hex-color-swatch mb-2.5 shadow-sm" style="background-color:${colorHex};"></div><span class="text-[11px] text-[#6B5D55] tracking-widest font-medium">${colorName}</span><span class="text-[9px] text-[#BFA89F] scale-90 mt-1 uppercase tracking-wider">${colorHex}</span></div>`;
             });
-        }
-
-        if (d.avoid_colors && Array.isArray(d.avoid_colors) && typeof d.avoid_colors[0] === 'string' && d.avoid_colors[0].startsWith('#')) {
-             document.getElementById('res-avoid').innerText = "避雷色系推荐：" + d.avoid_colors.join(", ");
-        } else if (Array.isArray(d.avoid_colors)) {
-             document.getElementById('res-avoid').innerText = d.avoid_colors.join("、");
         }
 
         initRadarChart(r);
@@ -592,11 +678,10 @@
         });
     }
 
-    // 🔥 4. “物理展开”截图防白屏修复版 🔥
     async function saveAsImage() {
         const btn = document.getElementById('saveBtn');
         const ogText = btn.innerText;
-        btn.innerText = "引擎渲染中...";
+        btn.innerText = "高定渲染中...";
         btn.classList.add('opacity-70', 'cursor-wait');
 
         try {
@@ -644,7 +729,7 @@
 
             if (!isMobile) {
                 const link = document.createElement('a');
-                link.download = '拾色季_高定美学分析报告.jpg';
+                link.download = '专属高定美学分析报告.jpg';
                 link.href = dataURL;
                 link.click();
                 showToast("报告已自动下载，请查看浏览器下载记录");
