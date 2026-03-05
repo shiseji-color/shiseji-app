@@ -2,14 +2,14 @@ export async function onRequestPost({ request, env }) {
     try {
         const body = await request.json();
         const imageBase64 = body.imageBase64;
-        if (!imageBase64) return new Response(JSON.stringify({ error: '未收到图片数据' }), { status: 400 });
+        if (!imageBase64) return new Response(JSON.stringify({ error: '未收到面部图像数据，请重新上传' }), { status: 400 });
 
         const API_KEY = env.API_KEY;
         const BASE_URL = env.BASE_URL;
 
-        if (!API_KEY || !BASE_URL) return new Response(JSON.stringify({ error: '环境变量缺失' }), { status: 500 });
+        if (!API_KEY || !BASE_URL) return new Response(JSON.stringify({ error: '核心系统组件未配置，请联系主理人' }), { status: 500 });
 
-        // 🔥 安全升级版 Prompt：在原版基础上注入词库，明确雷达图5个维度
+        // Prompt 保持原样，AI 依然在后台按照最高标准干活
         const systemPrompt = `
 You are an expert Image Color Analyst. 
 
@@ -58,36 +58,36 @@ REQUIRED JSON structure for human face:
                     { role: 'system', content: systemPrompt },
                     { role: 'user', content: [{ type: 'text', text: 'Analyze the person in this image and provide a high-end color diagnosis in Chinese.' }, { type: 'image_url', image_url: { url: imageBase64 } }] }
                 ],
-                temperature: 0.2, // 微调到 0.2，让 AI 更灵活地抓取颜色词
+                temperature: 0.2, 
                 max_tokens: 2000
             })
         });
 
         const data = await response.json();
+        // 替换报错 1：去 AI 化
         if (!data.choices || !data.choices[0].message.content) {
-            return new Response(JSON.stringify({ error: 'AI接口无返回内容' }), { status: 500 });
+            return new Response(JSON.stringify({ error: '专属引擎生成超时，请稍后再试' }), { status: 500 });
         }
 
-        // 🔥 安全提取防线：用正则精准挖出 JSON，防止 AI 回答前后带废话导致崩溃
         const rawContent = data.choices[0].message.content;
         let cleanedJSONStr = "";
         const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
             cleanedJSONStr = jsonMatch[0];
         } else {
-            return new Response(JSON.stringify({ error: 'AI 引擎返回格式错误，未找到有效 JSON' }), { status: 500 });
+            // 替换报错 2：去 AI 化
+            return new Response(JSON.stringify({ error: '高定图文档案生成异常，请重新上传' }), { status: 500 });
         }
 
         let finalJSON;
         try {
             finalJSON = JSON.parse(cleanedJSONStr);
         } catch (e) {
-            return new Response(JSON.stringify({ error: `AI返回格式错误，无法解析JSON: ${cleanedJSONStr}` }), { status: 500 });
+            // 替换报错 3：去 AI 化
+            return new Response(JSON.stringify({ error: '色彩矩阵数据解析失败，请重新测算' }), { status: 500 });
         }
 
-        // ================= 数据清洗防崩溃区域 (保留你的原版兜底，一字未改) =================
-
-        // 1. 修复 undefined 和 [object Object] 问题
+        // ================= 数据清洗防崩溃区域 =================
         finalJSON.celebrity_reference = finalJSON.celebrity_reference || finalJSON.celebrity || finalJSON.star || "需参考专属形象顾问，定制您的个人风格";
 
         if (Array.isArray(finalJSON.avoid_colors)) {
@@ -101,13 +101,12 @@ REQUIRED JSON structure for human face:
         finalJSON.season_name = finalJSON.season_name || "专属高定季";
         finalJSON.season_en = finalJSON.season_en || "Exclusive Season";
 
-        // 2. 🌟 强制洗净雷达图数据，绝对防空包
         if (Array.isArray(finalJSON.radar_data)) {
             finalJSON.radar_data = finalJSON.radar_data.map(item => {
                 let val = parseFloat(item.value);
-                if (isNaN(val)) val = 85; // 如果遇到完全不是数字的情况，给个兜底值
-                if (val <= 1 && val >= -1) val = Math.abs(val) * 100; // 处理类似 0.8 或 -0.8 的小数，放大成 80
-                item.value = Math.max(0, Math.min(100, Math.round(val))); // 死锁在 0-100 整数
+                if (isNaN(val)) val = 85; 
+                if (val <= 1 && val >= -1) val = Math.abs(val) * 100; 
+                item.value = Math.max(0, Math.min(100, Math.round(val))); 
                 return item;
             });
         }
@@ -115,6 +114,7 @@ REQUIRED JSON structure for human face:
         return new Response(JSON.stringify(finalJSON), { headers: { 'Content-Type': 'application/json' } });
 
     } catch (error) {
-        return new Response(JSON.stringify({ error: `代码执行异常: ${error.message}` }), { status: 500 });
+        // 替换报错 4：不暴露真实的代码异常(error.message)，统一包装为引擎波动
+        return new Response(JSON.stringify({ error: `色彩引擎运算波动，请刷新页面重新测算` }), { status: 500 });
     }
 }
