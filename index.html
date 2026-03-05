@@ -3,15 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>拾色季 | 高定 AI 色彩美学诊断</title>
+    <title>拾色季 | 专属高定色彩美学诊断</title>
     
     <script>
-        // 1. 禁用鼠标右键菜单 (防止另存为和检查)
-        document.addEventListener('contextmenu', function(e) { e.preventDefault(); });
+        // 2. 修复 UX：禁用鼠标右键菜单，但对输入框放行（允许长按粘贴）
+        document.addEventListener('contextmenu', function(e) { 
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                return; 
+            }
+            e.preventDefault(); 
+        });
         
-        // 2. 禁用文本选中和拖拽 (防止直接复制文案和图片)
+        // 禁用文本选中和拖拽 (防止直接复制文案和图片)
         document.addEventListener('selectstart', function(e) { 
-            // 【极其关键】必须对输入框“网开一面”，否则客户无法输入密码！
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
                 return; 
             }
@@ -19,7 +23,7 @@
         });
         document.addEventListener('dragstart', function(e) { e.preventDefault(); });
         
-        // 3. 拦截常见的开发者工具快捷键 (防止同行看源码)
+        // 拦截常见的开发者工具快捷键 (防止同行看源码)
         document.addEventListener('keydown', function(e) {
             if(e.keyCode === 123 || // F12
               (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74)) || // Ctrl+Shift+I / J
@@ -72,7 +76,6 @@
             overflow: hidden;
         }
 
-        /* 👑 高定视觉核心：胶囊色块与呼吸排版 */
         .color-capsule {
             display: inline-block; padding: 1px 8px; border-radius: 6px; font-size: 11px;
             font-weight: 500; margin: 0 3px; position: relative; top: -1px;
@@ -143,7 +146,7 @@
                         <span class="text-[10px] text-[#8C7A70] tracking-widest font-medium">✨ 官方高定色彩诊断系统</span>
                     </div>
                     <h2 class="text-[22px] font-serif-custom font-medium text-[#3D342F] tracking-wider mb-3">唤醒原生美学</h2>
-                    <p class="text-[13px] text-[#8C7A70] leading-relaxed">输入您的专属高定密钥<br><b class="text-[#6B5D55]">AI 将通过 16 型面部算法为您精准定调</b></p>
+                    <p class="text-[13px] text-[#8C7A70] leading-relaxed">输入您的专属高定密钥<br><b class="text-[#6B5D55]">独家 16 维面部色彩引擎将为您精准定调</b></p>
                 </div>
                 
                 <div class="relative">
@@ -168,7 +171,7 @@
         <div id="step-upload" class="hidden fade-in mt-6">
             <div class="content-card p-8">
                 <h2 class="text-xl font-serif-custom font-medium text-center mb-3 text-[#3D342F] tracking-wider">遇见真实的自己</h2>
-                <p class="text-[13px] text-[#8C7A70] mb-8 text-center leading-relaxed">请在自然光下拍摄或选择一张素颜照<br><b class="text-[#6B5D55]">供系统提取原生肤色与瞳孔特征</b></p>
+                <p class="text-[13px] text-[#8C7A70] mb-8 text-center leading-relaxed">请在自然光下拍摄或选择一张素颜照<br><b class="text-[#6B5D55]">供视觉引擎提取原生肤色与瞳孔特征</b></p>
                 
                 <div class="mb-6">
                     <label for="dropzone-file" class="flex flex-col items-center justify-center w-full h-48 border border-[#E8E1DE] border-dashed rounded-[1.5rem] cursor-pointer bg-[#F9F8F6] hover:bg-[#F2EDE8] transition-all duration-300 group relative overflow-hidden shadow-sm">
@@ -200,7 +203,7 @@
                 <div class="w-3.5 h-3.5 bg-[#DABFB4] rounded-full animate-pulse shadow-[0_0_20px_rgba(218,191,180,0.8)]"></div>
             </div>
             <h3 class="text-[15px] font-serif-custom font-medium text-[#4A403A] tracking-[0.25em]" id="loadingText">系统正在唤醒...</h3>
-            <p class="text-[10px] text-[#BFA89F] tracking-[0.4em] mt-3 uppercase font-medium">AI Engine Processing</p>
+            <p class="text-[10px] text-[#BFA89F] tracking-[0.4em] mt-3 uppercase font-medium">Color Engine Processing</p>
         </div>
 
         <div id="step-result" class="hidden fade-in">
@@ -279,7 +282,7 @@
                 <button id="saveBtn" onclick="saveAsImage()" class="w-full text-white bg-[#4A403A] hover:bg-[#3D342F] shadow-[0_12px_30px_rgba(74,64,58,0.25)] font-medium rounded-[1.25rem] text-[15px] px-5 py-4 text-center transition-all duration-300 tracking-[0.2em]">
                     生成专属长图海报
                 </button>
-                <p class="text-[10px] text-[#C5B8B2] mt-4 tracking-widest font-serif-custom opacity-70">拾色季 AI COLOR ANALYSIS © 2026</p>
+                <p class="text-[10px] text-[#C5B8B2] mt-4 tracking-widest font-serif-custom opacity-70">拾色季 COLOR ANALYSIS © 2026</p>
             </div>
         </div>
     </div>
@@ -326,7 +329,7 @@
             <p>欢迎使用「拾色季」专属高定色彩诊断系统。为保障您的权益，请在测试前了解：</p>
             <div>
                 <h4 class="font-medium text-[#4A403A] mb-1.5 tracking-widest">1. 数据隐私与安全</h4>
-                <p>本系统仅在您主动上传照片时临时获取图像，用于 AI 矩阵计算。<b>我们承诺：不存储、不备份、不共享您的照片及面部数据。</b>图像均在获取色值后“阅后即焚”。</p>
+                <p>本系统仅在您主动上传照片时临时获取图像，用于核心引擎矩阵计算。<b>我们承诺：不存储、不备份、不共享您的照片及面部数据。</b>图像均在获取色值后“阅后即焚”。</p>
             </div>
             <div>
                 <h4 class="font-medium text-[#4A403A] mb-1.5 tracking-widest">2. 最小必要原则</h4>
@@ -345,7 +348,6 @@
 </div>
 
 <script>
-    // 🎨 注入高定词库替换引擎
     function highlightColors(text) {
         if (!text) return text;
         const colorMap = {
@@ -363,7 +365,6 @@
         return processedText;
     }
 
-    // 弹窗控制逻辑
     function showPrivacyModal() {
         const modal = document.getElementById('privacyModal');
         modal.classList.remove('hidden');
@@ -375,7 +376,6 @@
         setTimeout(() => modal.classList.add('hidden'), 300);
     }
 
-    // ================= 以下是你的原版核心业务逻辑 (一字未改) =================
     document.addEventListener('DOMContentLoaded', () => {
         const dropzoneInput = document.getElementById('dropzone-file');
         const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
@@ -509,7 +509,9 @@
 
         showStep('step-loading');
         const loadingText = document.getElementById('loadingText');
-        const states = ["连接阿里云百炼大脑...","扫描活体面部特征...","深度运算高定色值...","提取十六型色彩矩阵...","生成专属图文报告..."];
+        
+        // 7. 彻底去 AI 化加载状态文案
+        const states = ["连接专属美学引擎...","解析面部色彩特征...","深度运算原生色值...","构建十六型美学矩阵...","生成高定图文档案..."];
         let i = 0;
         
         const interval = setInterval(() => {
@@ -541,8 +543,9 @@
         })
         .catch(err => {
             clearInterval(interval);
-            console.error("AI 连接失败:", err);
-            showCustomAlert('网络连接异常或 AI 大脑正在开小差，请重新上传测算哦~');
+            console.error("引擎连接失败:", err);
+            // 8. 彻底去 AI 化的弹窗报错文案
+            showCustomAlert('专属网络通道波动或色彩引擎正在开小差，请重新上传测算哦~');
             showStep('step-upload');
         });
     }
@@ -554,20 +557,17 @@
             a.classList.remove('hidden');
         }
         
-        // 渲染文本（无胶囊特效的字段）
         ['season-name','season-en','desc'].forEach(key => {
             const map = {'season-name':'season_name','season-en':'season_en','desc':'description'};
             if(document.getElementById(`res-${key}`)) document.getElementById(`res-${key}`).innerText = d[map[key]] || "生成中...";
         });
 
-        // 渲染富文本（带胶囊特效的字段）
         ['makeup','outfit','accessory','celebrity'].forEach(key => {
             const map = {'makeup':'makeup_advice','outfit':'outfit_advice','accessory':'accessory_advice','celebrity':'celebrity_reference'};
             let text = d[map[key]] || "...";
             if(document.getElementById(`res-${key}`)) document.getElementById(`res-${key}`).innerHTML = highlightColors(text);
         });
 
-        // 处理避雷区特殊数组逻辑
         let avoidText = "...";
         if (d.avoid_colors && Array.isArray(d.avoid_colors) && typeof d.avoid_colors[0] === 'string' && d.avoid_colors[0].startsWith('#')) {
              avoidText = "避雷色系推荐：" + d.avoid_colors.join(", ");
@@ -578,7 +578,6 @@
         }
         if(document.getElementById('res-avoid')) document.getElementById('res-avoid').innerHTML = highlightColors(avoidText);
 
-        // 生成高定档案编号
         const today = new Date();
         const dateStr = today.getFullYear().toString() + (today.getMonth() + 1).toString().padStart(2, '0') + today.getDate().toString().padStart(2, '0');
         const randomSuffix = String.fromCharCode(65 + Math.floor(Math.random() * 26)) + Math.floor(Math.random() * 10);
