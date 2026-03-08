@@ -530,7 +530,6 @@
         const loadingPercent = document.getElementById('loading-percent');
         const loadingBarFill = document.getElementById('loading-bar-fill');
         
-        // 🚀 【完美版：16 维洗脑文案已就绪】🚀
         const states = [
             "正在唤醒 16 维高定引擎...",
             "16 维面部特征深度解析中...",
@@ -539,24 +538,29 @@
             "生成高定图文档案..."
         ];
         
-        let textIndex = 0;
+        let textIndex = -1; 
         let progress = 0;
         
         if(progressInterval) clearInterval(progressInterval);
         
         progressInterval = setInterval(() => {
-            if (progress % 20 === 0) {
-                textIndex = (textIndex + 1) % states.length;
-                loadingText.style.opacity = 0;
-                setTimeout(() => { loadingText.innerText = states[textIndex]; loadingText.style.opacity = 1; }, 200);
-            }
-            
             progress += Math.floor(Math.random() * 4) + 1;
             if (progress > 99) progress = 99;
             
             loadingPercent.innerText = progress + '%';
             loadingBarFill.style.width = progress + '%';
             
+            let expectedIndex = Math.floor(progress / 20);
+            if (expectedIndex > 4) expectedIndex = 4;
+            
+            if (expectedIndex !== textIndex) {
+                textIndex = expectedIndex;
+                loadingText.style.opacity = 0;
+                setTimeout(() => { 
+                    loadingText.innerText = states[textIndex]; 
+                    loadingText.style.opacity = 1; 
+                }, 200);
+            }
         }, 500);
 
         fetch('/analyze', {
@@ -610,7 +614,7 @@
             if(document.getElementById(`res-${key}`)) document.getElementById(`res-${key}`).innerHTML = highlightColors(text);
         });
 
-        // 🚀 【完美版：绝对避雷区去顿号纯净渲染】🚀
+        // 升级：绝对避雷区专用渲染逻辑（去顿号纯净版）
         const resAvoidEl = document.getElementById('res-avoid');
         if (resAvoidEl) {
             let avoidContent = '';
@@ -618,7 +622,6 @@
                 avoidContent = "🚫 ";
                 d.avoid_colors.forEach((color) => {
                     let colorName = typeof color === 'string' ? color : color.name;
-                    // 直接拼接胶囊，依靠 CSS margin 隔开，不加顿号！
                     avoidContent += `<span class="color-capsule-avoid">${colorName}</span>`;
                 });
             } else if (d.avoid_colors && typeof d.avoid_colors === 'string') {
@@ -710,9 +713,7 @@
                 labels: ['冷暖色调','深浅明度','饱和彩度','清透清浊','明暗对比'],
                 datasets: [{
                     data: data,
-                    // 升级：雷达图背景填充加深
                     backgroundColor: 'rgba(218,191,180,0.5)',
-                    // 升级：雷达图边框线条加深
                     borderColor: 'rgba(200,180,170,1)',
                     borderWidth: 1.5,
                     pointBackgroundColor: '#FFFFFF',
@@ -729,7 +730,6 @@
                 plugins: { legend: false },
                 scales: {
                     r: {
-                        // 升级：雷达图网格线加深
                         angleLines: { color: 'rgba(200,195,190,0.9)', lineWidth: 1 },
                         grid: { color: 'rgba(235,230,225,0.8)', circular: false },
                         pointLabels: { font: { size: 10, weight: 500, family: "'Noto Serif SC', serif" }, color: '#6B5D55', padding: 12 },
