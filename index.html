@@ -6,7 +6,7 @@
     <title>拾色季 | 专属高定色彩美学诊断</title>
     
     <script>
-        // 2. 修复 UX：禁用鼠标右键菜单，但对输入框放行（允许长按粘贴）
+        // 修复 UX：禁用鼠标右键菜单，但对输入框放行（允许长按粘贴）
         document.addEventListener('contextmenu', function(e) { 
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
                 return; 
@@ -197,13 +197,17 @@
             </div>
         </div>
 
-        <div id="step-loading" class="hidden fade-in mt-32 flex flex-col items-center justify-center">
-            <div class="premium-loader mb-10">
+        <div id="step-loading" class="hidden fade-in mt-28 flex flex-col items-center justify-center">
+            <div class="premium-loader mb-8">
                 <div class="loader-ring"></div><div class="loader-ring"></div><div class="loader-ring"></div>
-                <div class="w-3.5 h-3.5 bg-[#DABFB4] rounded-full animate-pulse shadow-[0_0_20px_rgba(218,191,180,0.8)]"></div>
+                <div id="loading-percent" class="absolute inset-0 flex items-center justify-center text-[22px] font-serif-custom text-[#3D342F] font-semibold tracking-wider">0%</div>
             </div>
-            <h3 class="text-[15px] font-serif-custom font-medium text-[#4A403A] tracking-[0.25em]" id="loadingText">系统正在唤醒...</h3>
-            <p class="text-[10px] text-[#BFA89F] tracking-[0.4em] mt-3 uppercase font-medium">Color Engine Processing</p>
+            <h3 class="text-[15px] font-serif-custom font-medium text-[#4A403A] tracking-[0.25em]" id="loadingText">初始化高定引擎...</h3>
+            
+            <div class="w-48 h-[3px] bg-[#E8E1DE] rounded-full mt-6 overflow-hidden">
+                <div id="loading-bar-fill" class="h-full bg-[#3D342F] transition-all duration-300 w-0"></div>
+            </div>
+            <p class="text-[10px] text-[#BFA89F] tracking-[0.4em] mt-4 uppercase font-medium">Color Engine Processing</p>
         </div>
 
         <div id="step-result" class="hidden fade-in">
@@ -232,7 +236,7 @@
 
                 <div class="content-card p-6 fade-in stagger-2">
                     <div class="text-center mb-5"><span class="text-[12px] font-semibold text-[#6B5D55] tracking-[0.25em]">面部色值提取</span></div>
-                    <div class="grid grid-cols-4 gap-2" id="res-hex-extraction"></div>
+                    <div class="grid grid-cols-2 gap-3" id="res-hex-extraction"></div>
                 </div>
 
                 <div class="content-card p-7 pb-4 fade-in stagger-3">
@@ -243,7 +247,7 @@
 
                 <div class="content-card p-6 pb-8 fade-in stagger-4">
                     <div class="text-center mb-7"><span class="text-[12px] font-semibold text-[#6B5D55] tracking-[0.25em]">专属天命色彩</span></div>
-                    <div class="grid grid-cols-4 gap-3" id="res-best-colors"></div>
+                    <div class="grid grid-cols-2 gap-3" id="res-best-colors"></div>
                 </div>
 
                 <div class="content-card p-8 mb-2 fade-in stagger-4">
@@ -388,6 +392,7 @@
 
     let userImageBase64 = "";
     window.currentCode = ""; 
+    let progressInterval = null; // 用于控制加载进度条
 
     function getRemainingUses(code) {
         const key = `color_season_code_${code}`;
@@ -508,17 +513,34 @@
         if (remaining < 0) { showCustomAlert("次数已用完"); showStep('step-activation'); return; }
 
         showStep('step-loading');
+        
+        // 进度条与文案动画
         const loadingText = document.getElementById('loadingText');
+        const loadingPercent = document.getElementById('loading-percent');
+        const loadingBarFill = document.getElementById('loading-bar-fill');
         
-        // 7. 彻底去 AI 化加载状态文案
         const states = ["连接专属美学引擎...","解析面部色彩特征...","深度运算原生色值...","构建十六型美学矩阵...","生成高定图文档案..."];
-        let i = 0;
+        let textIndex = 0;
+        let progress = 0;
         
-        const interval = setInterval(() => {
-            i = (i+1) % states.length;
-            loadingText.style.opacity = 0;
-            setTimeout(() => { loadingText.innerText = states[i]; loadingText.style.opacity = 1; }, 200);
-        }, 1500);
+        if(progressInterval) clearInterval(progressInterval);
+        
+        progressInterval = setInterval(() => {
+            // 文本循环
+            if (progress % 20 === 0) {
+                textIndex = (textIndex + 1) % states.length;
+                loadingText.style.opacity = 0;
+                setTimeout(() => { loadingText.innerText = states[textIndex]; loadingText.style.opacity = 1; }, 200);
+            }
+            
+            // 进度条增长，最高卡在 99% 等待真实结果
+            progress += Math.floor(Math.random() * 4) + 1;
+            if (progress > 99) progress = 99;
+            
+            loadingPercent.innerText = progress + '%';
+            loadingBarFill.style.width = progress + '%';
+            
+        }, 500);
 
         fetch('/analyze', {
             method: 'POST',
@@ -527,24 +549,27 @@
         })
         .then(res => res.json())
         .then(data => {
-            clearInterval(interval);
+            clearInterval(progressInterval);
+            loadingPercent.innerText = '100%';
+            loadingBarFill.style.width = '100%';
             
-            if (data.error) {
-                showCustomAlert(data.error);
-                showStep('step-upload'); 
-            } else if (data.season_name === "⚠️ 未检测到人脸" || data.season_name.includes("未检测到")) {
-                showCustomAlert(data.description || "抱歉，未能清晰识别到您的面部特征，请尝试更换一张正面无遮挡的素颜照片哦~");
-                showStep('step-upload');
-            } else {
-                renderAIResult(data);
-                showStep('step-result');
-                setTimeout(() => showToast(`本次诊断成功，密钥剩余 ${remaining} 次`), 800);
-            }
+            setTimeout(() => {
+                if (data.error) {
+                    showCustomAlert(data.error);
+                    showStep('step-upload'); 
+                } else if (data.season_name === "⚠️ 未检测到人脸" || data.season_name.includes("未检测到")) {
+                    showCustomAlert(data.description || "抱歉，未能清晰识别到您的面部特征，请尝试更换一张正面无遮挡的素颜照片哦~");
+                    showStep('step-upload');
+                } else {
+                    renderAIResult(data);
+                    showStep('step-result');
+                    setTimeout(() => showToast(`本次诊断成功，密钥剩余 ${remaining} 次`), 800);
+                }
+            }, 500);
         })
         .catch(err => {
-            clearInterval(interval);
+            clearInterval(progressInterval);
             console.error("引擎连接失败:", err);
-            // 8. 彻底去 AI 化的弹窗报错文案
             showCustomAlert('专属网络通道波动或色彩引擎正在开小差，请重新上传测算哦~');
             showStep('step-upload');
         });
@@ -583,16 +608,25 @@
         const randomSuffix = String.fromCharCode(65 + Math.floor(Math.random() * 26)) + Math.floor(Math.random() * 10);
         if(document.getElementById('archive-no')) document.getElementById('archive-no').innerText = `Archive No. ${dateStr}-${randomSuffix}`;
 
+        // 渲染高定潘通色卡 - 面部特征
         const f = document.getElementById('res-hex-extraction'); f.innerHTML = '';
         if (d.feature_colors && Array.isArray(d.feature_colors)) {
             const labels = ["肌肤底色", "面颊色调", "原生发色", "瞳孔特征"];
             d.feature_colors.forEach((hexValue, index) => {
                 let colorHex = typeof hexValue === 'string' ? hexValue : hexValue.hex;
                 let colorLabel = typeof hexValue === 'string' ? labels[index] || "特征色" : hexValue.label;
-                f.innerHTML += `<div class="flex flex-col items-center"><div class="w-10 h-10 rounded-full hex-color-swatch mb-2 shadow-inner" style="background-color:${colorHex};"></div><span class="text-[11px] text-[#6B5D55] font-medium tracking-widest">${colorLabel}</span><span class="text-[9px] text-[#8C7A70] scale-90 mt-1 uppercase tracking-wider">${colorHex}</span></div>`;
+                f.innerHTML += `
+                <div class="bg-white rounded-[12px] p-3 shadow-[0_4px_15px_rgba(0,0,0,0.03)] border border-[#F4EFEA] flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full shadow-inner border border-black/5 flex-shrink-0" style="background-color:${colorHex};"></div>
+                    <div class="flex flex-col">
+                        <span class="text-[12px] text-[#4A403A] font-medium tracking-widest">${colorLabel}</span>
+                        <span class="text-[10px] text-[#A0A0A0] font-mono mt-0.5 uppercase tracking-wider">${colorHex}</span>
+                    </div>
+                </div>`;
             });
         }
 
+        // 渲染极简克制进度条
         const p = document.getElementById('res-progress-bars'); p.innerHTML = '';
         const r = [];
         if (d.radar_data && Array.isArray(d.radar_data)) {
@@ -602,7 +636,17 @@
                 let name = typeof val === 'number' ? labels[index] || "维度" : val.name;
                 let desc = typeof val === 'number' ? "" : val.desc;
                 r.push(value);
-                p.innerHTML += `<div class="mb-3"><div class="flex justify-between items-end mb-1.5"><span class="text-[12px] text-[#6B5D55] font-medium tracking-widest">${name}</span><span class="text-[12px] font-serif-custom font-bold text-[#3D342F]">${value}</span></div><div class="w-full bg-[#F4EFEA] rounded-full h-[5px] mb-1.5 overflow-hidden"><div class="bg-gradient-to-r from-[#DABFB4] to-[#CBAAA0] h-full rounded-full progress-bar-fill" style="width:0%" data-target-width="${value}%"></div></div><span class="text-[10px] text-[#BFA89F] tracking-widest">${desc || ''}</span></div>`;
+                p.innerHTML += `
+                <div class="mb-4">
+                    <div class="flex justify-between items-end mb-1.5">
+                        <span class="text-[12px] text-[#6B5D55] font-medium tracking-widest">${name}</span>
+                        <span class="text-[12px] font-serif-custom font-bold text-[#3D342F]">${value}</span>
+                    </div>
+                    <div class="w-full bg-[#E8E1DE] rounded-full h-[4px] mb-1.5 overflow-hidden">
+                        <div class="bg-gradient-to-r from-[#5A4E47] to-[#2B2420] h-full rounded-full progress-bar-fill" style="width:0%" data-target-width="${value}%"></div>
+                    </div>
+                    <span class="text-[10px] text-[#BFA89F] tracking-widest">${desc || ''}</span>
+                </div>`;
             });
         }
         
@@ -610,12 +654,20 @@
             document.querySelectorAll('.progress-bar-fill').forEach(e => e.style.width = e.getAttribute('data-target-width'));
         }, 600); 
 
+        // 渲染高定潘通色卡 - 推荐色
         const c = document.getElementById('res-best-colors'); c.innerHTML = '';
         if (d.best_colors && Array.isArray(d.best_colors)) {
             d.best_colors.forEach((val, index) => {
                 let colorHex = typeof val === 'string' ? val : val.hex;
                 let colorName = typeof val === 'string' ? "推荐色" : val.name;
-                c.innerHTML += `<div class="flex flex-col items-center"><div class="w-12 h-12 rounded-full hex-color-swatch mb-2.5 shadow-sm" style="background-color:${colorHex};"></div><span class="text-[11px] text-[#6B5D55] tracking-widest font-medium">${colorName}</span><span class="text-[9px] text-[#BFA89F] scale-90 mt-1 uppercase tracking-wider">${colorHex}</span></div>`;
+                c.innerHTML += `
+                <div class="bg-white rounded-[12px] p-3 shadow-[0_4px_15px_rgba(0,0,0,0.03)] border border-[#F4EFEA] flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full shadow-inner border border-black/5 flex-shrink-0" style="background-color:${colorHex};"></div>
+                    <div class="flex flex-col">
+                        <span class="text-[12px] text-[#4A403A] font-medium tracking-widest">${colorName}</span>
+                        <span class="text-[10px] text-[#A0A0A0] font-mono mt-0.5 uppercase tracking-wider">${colorHex}</span>
+                    </div>
+                </div>`;
             });
         }
 
