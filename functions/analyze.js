@@ -9,7 +9,7 @@ export async function onRequestPost({ request, env }) {
 
         if (!API_KEY || !BASE_URL) return new Response(JSON.stringify({ error: '核心系统组件未配置，请联系主理人' }), { status: 500 });
 
-        // 🚀【终极高定版 System Prompt】：修复逻辑幻觉、强制色号统一、增加深度解读
+        // 🚀【终极高定版 System Prompt】：修复逻辑幻觉、强制色号统一、增加深度解读、精细化明星与面料建议
         const systemPrompt = `
 You are an expert Image Color Analyst for a high-end beauty salon. 
 
@@ -22,7 +22,8 @@ First, check if the image contains a clear human face. If it is NOT a human face
 2. 🔴【绝对强约束 - 逻辑自洽】：如果你在 avoid_colors 中建议避开深色/暗色，那么 best_colors 绝对不能出现深色（如 #8B0000 酒红色）！前后逻辑必须 100% 自洽。
 3. 🔴【绝对强约束 - 色号统一】：你在 makeup_advice 和 outfit_advice 中推荐的颜色，必须来源于你生成的 best_colors 数组。绝不要在文本中凭空捏造前面没出现过的颜色！
 4. 🟡【增加深度解读】：radar_data 的每一项必须包含一个 desc 字段，用 1-2 句话解读该数值（例如：“您的皮肤对暖色系适配度极高，冷色易显暗沉”）。
-5. 🟡【多维明星对标】：celebrity_reference 必须列出 2-3 位同季型明星，并附带她们的风格关键词（如温婉风、清冷感）。
+5. 🟡【精细化明星对标】：celebrity_reference 必须列出 2-3 位同季型明星，并用括号精准标注她们的具体风格标签（如：毛晓彤【温婉汉服风】、刘诗诗【清冷气质向】）。
+6. 🟡【落地化穿搭建议】：outfit_advice 必须结合具体的季节或场景给出面料建议（如：春夏推荐真丝雪纺，秋冬推荐羊毛混纺）。
 
 🔥【前端视觉引擎强制触发词库】🔥
 在生成 best_colors 的 name 时，请尽量优先使用以下高级色彩词汇：
@@ -47,9 +48,9 @@ REQUIRED JSON structure for human face:
     {"name": "String (具体颜色名)", "hex": "#HEX"}
   ],
   "makeup_advice": "String",
-  "outfit_advice": "String",
+  "outfit_advice": "String (必须包含季节性面料建议)",
   "accessory_advice": "String",
-  "celebrity_reference": "String (含2-3位明星及风格)",
+  "celebrity_reference": "String (含2-3位明星及带括号的具体风格标签)",
   "avoid_colors": ["String", "String"] // 必须是一个字符串数组，包含2-3个需要避雷的具体颜色名
 }`;
 
