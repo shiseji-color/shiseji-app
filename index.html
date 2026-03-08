@@ -45,9 +45,9 @@
             --accent-color: #DABFB4;
             --text-dark: #3D342F;
             --text-muted: #8C7A70;
-            --avoid-bg: #F8ECEC; /* 微调：避雷区专用淡粉背景 */
-            --avoid-text: #A74E4E; /* 微调：避雷区专用文字色 */
-            --avoid-border: #EAC4C4; /* 微调：避雷区专用边框色 */
+            --avoid-bg: #F8ECEC; 
+            --avoid-text: #A74E4E; 
+            --avoid-border: #EAC4C4; 
         }
 
         body { 
@@ -85,7 +85,6 @@
             border: 1px solid rgba(0,0,0,0.04); box-shadow: 0 2px 4px rgba(0,0,0,0.02); letter-spacing: 1px;
         }
 
-        /* 升级：绝对避雷区专用胶囊样式 */
         .color-capsule-avoid {
             display: inline-block; padding: 1px 8px; border-radius: 6px; font-size: 11px;
             font-weight: 500; margin: 0 3px; position: relative; top: -1px;
@@ -538,23 +537,22 @@
             "生成高定图文档案..."
         ];
         
-        let textIndex = -1; 
+        let textIndex = 0; 
         let progress = 0;
+        let textTick = 0; 
         
         if(progressInterval) clearInterval(progressInterval);
         
         progressInterval = setInterval(() => {
-            progress += Math.floor(Math.random() * 4) + 1;
+            progress += Math.floor(Math.random() * 5) + 2;
             if (progress > 99) progress = 99;
             
             loadingPercent.innerText = progress + '%';
             loadingBarFill.style.width = progress + '%';
             
-            let expectedIndex = Math.floor(progress / 20);
-            if (expectedIndex > 4) expectedIndex = 4;
-            
-            if (expectedIndex !== textIndex) {
-                textIndex = expectedIndex;
+            textTick++;
+            if (textTick % 3 === 0) {
+                textIndex = (textIndex + 1) % states.length;
                 loadingText.style.opacity = 0;
                 setTimeout(() => { 
                     loadingText.innerText = states[textIndex]; 
@@ -614,7 +612,6 @@
             if(document.getElementById(`res-${key}`)) document.getElementById(`res-${key}`).innerHTML = highlightColors(text);
         });
 
-        // 升级：绝对避雷区专用渲染逻辑（去顿号纯净版）
         const resAvoidEl = document.getElementById('res-avoid');
         if (resAvoidEl) {
             let avoidContent = '';
