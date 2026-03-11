@@ -280,7 +280,7 @@
                     生成专属长图海报
                 </button>
                 <button onclick="resetTest()" class="w-full text-[#4A403A] bg-transparent border border-[#4A403A]/30 hover:bg-[#F4EFEA] font-medium rounded-[1.25rem] text-[15px] px-5 py-4 text-center transition-all duration-300 tracking-[0.2em] mt-4">
-                    测算其他人 (消耗 1 次额度)
+                    帮闺蜜也测一测
                 </button>
                 <p class="text-[10px] text-[#C5B8B2] mt-5 tracking-widest font-serif-custom opacity-70">拾色季 COLOR ANALYSIS © 2026</p>
             </div>
@@ -575,21 +575,37 @@
         
         if(progressInterval) clearInterval(progressInterval);
         
+        // 🚀 升级：大厂级“先快后慢”与不回溯文案轮播引擎
         progressInterval = setInterval(() => {
-            progress += Math.floor(Math.random() * 5) + 2;
+            if (progress < 60) {
+                progress += Math.floor(Math.random() * 5) + 3; // 前期快
+            } else if (progress < 90) {
+                progress += Math.floor(Math.random() * 3) + 1; // 中期降速
+            } else {
+                progress += 1; // 90%后极缓慢，制造深度分析拉扯感
+            }
             if (progress > 99) progress = 99;
             
             loadingPercent.innerText = progress + '%';
             loadingBarFill.style.width = progress + '%';
             
             textTick++;
-            if (textTick % 3 === 0) {
-                textIndex = (textIndex + 1) % states.length;
-                loadingText.style.opacity = 0;
-                setTimeout(() => { 
-                    loadingText.innerText = states[textIndex]; 
-                    loadingText.style.opacity = 1; 
-                }, 200);
+            if (textTick % 4 === 0) {
+                if (textIndex < states.length - 1) {
+                    textIndex++;
+                    loadingText.style.opacity = 0;
+                    setTimeout(() => { 
+                        loadingText.innerText = states[textIndex]; 
+                        loadingText.style.opacity = 1; 
+                    }, 200);
+                } else if (progress >= 99) {
+                    // 锁死在最后一句不倒带，99%给出最终安抚
+                    loadingText.style.opacity = 0;
+                    setTimeout(() => { 
+                        loadingText.innerText = "正在进行最终高定渲染，请稍候..."; 
+                        loadingText.style.opacity = 1; 
+                    }, 200);
+                }
             }
         }, 500);
 
