@@ -2,12 +2,25 @@ export async function onRequestPost({ request, env }) {
     try {
         const body = await request.json();
         const imageBase64 = body.imageBase64;
+        
+        // 🔥 核心升级 1：接收前端传来的重试层级，默认是 0
+        const fallbackLevel = body.fallbackLevel || 0;
+
         if (!imageBase64) return new Response(JSON.stringify({ error: '未收到面部图像数据，请重新上传' }), { status: 400 });
 
         const API_KEY = env.API_KEY;
         const BASE_URL = env.BASE_URL;
 
         if (!API_KEY || !BASE_URL) return new Response(JSON.stringify({ error: '核心系统组件未配置，请联系主理人' }), { status: 500 });
+
+        // 🔥 核心升级 2：视觉大模型降级池（必须全用带 -vl- 的视觉模型）
+        const modelPool = [
+            'qwen-vl-plus',       // 0档：主力（速度快，并发高）
+            'qwen-vl-max',        // 1档：备用（高配版，防主力拥堵）
+            'qwen-vl-max-latest'  // 2档：兜底（最新旗舰版，绝对保命）
+        ];
+        // 根据前端传来的层级，智能选定当前使用的模型
+        const currentModel = modelPool[Math.min(fallbackLevel, modelPool.length - 1)];
 
         // 🚀【终极高定版 System Prompt】：修复逻辑幻觉、强制色号统一、增加深度解读、精细化明星与面料建议
         const systemPrompt = `
@@ -58,7 +71,7 @@ REQUIRED JSON structure for human face:
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${API_KEY}` },
             body: JSON.stringify({
-                model: 'qwen-vl-plus',
+                model: currentModel, // 🔥 动态使用当前轮询到的模型
                 messages: [
                     { role: 'system', content: systemPrompt },
                     { role: 'user', content: [{ type: 'text', text: 'Analyze the person in this image and provide a high-end color diagnosis in Chinese.' }, { type: 'image_url', image_url: { url: imageBase64 } }] }
@@ -67,6 +80,11 @@ REQUIRED JSON structure for human face:
                 max_tokens: 2000
             })
         });
+
+        // 🔥 核心升级 3：精准透传 429 限流警报给前端
+        if (response.status === 429) {
+            return new Response(JSON.stringify({ error: `通道 ${currentModel} 拥挤，触发自动切换...` }), { status: 429, headers: { 'Content-Type': 'application/json' } });
+        }
 
         const data = await response.json();
         
