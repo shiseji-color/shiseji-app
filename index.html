@@ -6,30 +6,17 @@
     <title>拾色季 | 专属高定色彩美学诊断</title>
     
     <script>
-        // 修复 UX：禁用鼠标右键菜单，但对输入框放行（允许长按粘贴）
         document.addEventListener('contextmenu', function(e) { 
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
-                return; 
-            }
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return; 
             e.preventDefault(); 
         });
-        
-        // 禁用文本选中和拖拽 (防止直接复制文案和图片)
         document.addEventListener('selectstart', function(e) { 
-            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
-                return; 
-            }
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return; 
             e.preventDefault(); 
         });
         document.addEventListener('dragstart', function(e) { e.preventDefault(); });
-        
-        // 拦截常见的开发者工具快捷键 (防止同行看源码)
         document.addEventListener('keydown', function(e) {
-            if(e.keyCode === 123 || // F12
-              (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74)) || // Ctrl+Shift+I / J
-              (e.ctrlKey && e.keyCode === 85) || // Ctrl+U
-              (e.metaKey && e.altKey && e.keyCode === 73) // Cmd+Option+I (Mac)
-              ) {
+            if(e.keyCode === 123 || (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74)) || (e.ctrlKey && e.keyCode === 85) || (e.metaKey && e.altKey && e.keyCode === 73)) {
                 e.preventDefault();
             }
         });
@@ -63,44 +50,22 @@
         
         .glass-panel { 
             background: linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 100%);
-            backdrop-filter: blur(28px); 
-            -webkit-backdrop-filter: blur(28px);
+            backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px);
             box-shadow: 0 24px 80px rgba(160, 145, 130, 0.15), inset 0 1px 1px rgba(255,255,255,1);
-            border: 1px solid rgba(255, 255, 255, 0.8);
-            border-radius: 2.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.8); border-radius: 2.5rem;
         }
         
-        .content-card {
-            background: #FFFFFF;
-            border-radius: 1.5rem;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.02);
-            border: 1px solid rgba(240, 235, 230, 0.9);
-            position: relative;
-            overflow: hidden;
-        }
+        .content-card { background: #FFFFFF; border-radius: 1.5rem; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.02); border: 1px solid rgba(240, 235, 230, 0.9); position: relative; overflow: hidden; }
 
-        .color-capsule {
-            display: inline-block; padding: 1px 8px; border-radius: 6px; font-size: 11px;
-            font-weight: 500; margin: 0 3px; position: relative; top: -1px;
-            border: 1px solid rgba(0,0,0,0.04); box-shadow: 0 2px 4px rgba(0,0,0,0.02); letter-spacing: 1px;
-        }
-
-        .color-capsule-avoid {
-            display: inline-block; padding: 1px 8px; border-radius: 6px; font-size: 11px;
-            font-weight: 500; margin: 0 3px; position: relative; top: -1px;
-            background-color: var(--avoid-bg); color: var(--avoid-text);
-            border: 1px solid var(--avoid-border); box-shadow: 0 2px 4px rgba(0,0,0,0.02); letter-spacing: 1px;
-        }
+        .color-capsule { display: inline-block; padding: 1px 8px; border-radius: 6px; font-size: 11px; font-weight: 500; margin: 0 3px; position: relative; top: -1px; border: 1px solid rgba(0,0,0,0.04); box-shadow: 0 2px 4px rgba(0,0,0,0.02); letter-spacing: 1px; }
+        .color-capsule-avoid { display: inline-block; padding: 1px 8px; border-radius: 6px; font-size: 11px; font-weight: 500; margin: 0 3px; position: relative; top: -1px; background-color: var(--avoid-bg); color: var(--avoid-text); border: 1px solid var(--avoid-border); box-shadow: 0 2px 4px rgba(0,0,0,0.02); letter-spacing: 1px; }
 
         .leading-luxury { line-height: 2.4 !important; }
         .report-footer { text-align: center; padding: 30px 0 10px; position: relative; }
         .report-footer::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 40px; height: 1px; background: #DABFB4; opacity: 0.5; }
 
         .fade-in { animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        @keyframes slideUpFade { 
-            from { opacity: 0; transform: translateY(20px); } 
-            to { opacity: 1; transform: translateY(0); } 
-        }
+        @keyframes slideUpFade { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         
         .stagger-1 { animation-delay: 0.1s; opacity: 0; animation-fill-mode: both; }
         .stagger-2 { animation-delay: 0.2s; opacity: 0; animation-fill-mode: both; }
@@ -113,6 +78,15 @@
         .loader-ring:nth-child(3) { animation-delay: 1.6s; }
         @keyframes ripple { 0% { width: 0; height: 0; opacity: 1; } 100% { width: 100%; height: 100%; opacity: 0; } }
         
+        /* 🚀 新增：AI动态扫描特效 */
+        .scan-container { position: relative; overflow: hidden; }
+        .scan-line {
+            position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+            background: linear-gradient(to bottom, rgba(218,191,180,0) 0%, rgba(218,191,180,0.3) 50%, rgba(218,191,180,0) 100%);
+            animation: scanning 2.5s infinite ease-in-out; pointer-events: none; z-index: 10;
+        }
+        @keyframes scanning { 0% { transform: translateY(-100%); } 100% { transform: translateY(100%); } }
+
         ::-webkit-scrollbar { display: none; }
         .scrollbar-hide { scrollbar-width: none; -ms-overflow-style: none; }
 
@@ -205,6 +179,13 @@
                     <div class="flex items-center"><span class="w-1.5 h-1.5 rounded-full bg-[#DABFB4] mr-2 shadow-sm"></span><span class="text-[11px] text-[#8C7A70]">面朝自然光</span></div>
                     <div class="flex items-center"><span class="w-1.5 h-1.5 rounded-full bg-[#DABFB4] mr-2 shadow-sm"></span><span class="text-[11px] text-[#8C7A70]">露出原发色</span></div>
                 </div>
+
+                <div id="restoreContainer" class="hidden mt-6 text-center">
+                    <button onclick="restoreLastReport()" class="text-[11px] text-[#8C7A70] tracking-widest border-b border-[#8C7A70]/30 pb-0.5 hover:text-[#4A403A] transition-colors flex items-center justify-center mx-auto">
+                        <svg class="w-3.5 h-3.5 mr-1.5 text-[#DABFB4]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+                        恢复上次高定档案
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -233,8 +214,9 @@
                     <div class="absolute top-0 left-0 w-full h-[4px] bg-gradient-to-r from-[#F4EFEA] via-[#DABFB4] to-[#F4EFEA]"></div>
                     <div class="flex items-center justify-between mb-6">
                         <div class="flex items-center gap-5">
-                            <div class="w-[76px] h-[76px] rounded-full bg-[#F4EFEA] border-[3px] border-white shadow-[0_8px_20px_rgba(0,0,0,0.08)] overflow-hidden relative flex-shrink-0">
+                            <div class="w-[76px] h-[76px] rounded-full bg-[#F4EFEA] border-[3px] border-white shadow-[0_8px_20px_rgba(0,0,0,0.08)] overflow-hidden relative flex-shrink-0 scan-container">
                                 <img id="userAvatarResult" src="" alt="avatar" class="w-full h-full object-cover hidden" />
+                                <div class="scan-line"></div>
                             </div>
                             <div>
                                 <h2 id="res-season-name" class="text-[30px] font-serif-custom font-bold text-[#3D342F] tracking-widest leading-none">生成中</h2>
@@ -297,7 +279,10 @@
                 <button id="saveBtn" onclick="saveAsImage()" class="w-full text-white bg-[#4A403A] hover:bg-[#3D342F] shadow-[0_12px_30px_rgba(74,64,58,0.25)] font-medium rounded-[1.25rem] text-[15px] px-5 py-4 text-center transition-all duration-300 tracking-[0.2em]">
                     生成专属长图海报
                 </button>
-                <p class="text-[10px] text-[#C5B8B2] mt-4 tracking-widest font-serif-custom opacity-70">拾色季 COLOR ANALYSIS © 2026</p>
+                <button onclick="resetTest()" class="w-full text-[#4A403A] bg-transparent border border-[#4A403A]/30 hover:bg-[#F4EFEA] font-medium rounded-[1.25rem] text-[15px] px-5 py-4 text-center transition-all duration-300 tracking-[0.2em] mt-4">
+                    测算其他人 (消耗 1 次额度)
+                </button>
+                <p class="text-[10px] text-[#C5B8B2] mt-5 tracking-widest font-serif-custom opacity-70">拾色季 COLOR ANALYSIS © 2026</p>
             </div>
         </div>
     </div>
@@ -363,6 +348,13 @@
 </div>
 
 <script>
+    // 🚀 新增：触感震动引擎
+    function triggerVibration(pattern) {
+        if (navigator.vibrate) {
+            try { navigator.vibrate(pattern); } catch(e){}
+        }
+    }
+
     function highlightColors(text) {
         if (!text) return text;
         const colorMap = {
@@ -381,14 +373,41 @@
     }
 
     function showPrivacyModal() {
+        triggerVibration(30);
         const modal = document.getElementById('privacyModal');
         modal.classList.remove('hidden');
         setTimeout(() => { modal.classList.remove('opacity-0'); modal.querySelector('div').classList.remove('scale-95'); }, 10);
     }
     function closePrivacyModal() {
+        triggerVibration(30);
         const modal = document.getElementById('privacyModal');
         modal.classList.add('opacity-0'); modal.querySelector('div').classList.add('scale-95');
         setTimeout(() => modal.classList.add('hidden'), 300);
+    }
+
+    // 🚀 新增：检查是否存在历史档案
+    function checkLastReport() {
+        const hasReport = localStorage.getItem('shiseji_last_report');
+        const hasImage = localStorage.getItem('shiseji_last_image');
+        if(hasReport && hasImage) {
+            document.getElementById('restoreContainer').classList.remove('hidden');
+        } else {
+            document.getElementById('restoreContainer').classList.add('hidden');
+        }
+    }
+
+    // 🚀 新增：恢复上次档案
+    function restoreLastReport() {
+        triggerVibration(50);
+        try {
+            const d = JSON.parse(localStorage.getItem('shiseji_last_report'));
+            userImageBase64 = localStorage.getItem('shiseji_last_image');
+            renderAIResult(d);
+            showStep('step-result');
+        } catch(e) {
+            showToast("档案已过期或失效");
+            document.getElementById('restoreContainer').classList.add('hidden');
+        }
     }
 
     document.addEventListener('DOMContentLoaded', () => {
@@ -400,7 +419,6 @@
             dropzoneInput.setAttribute('accept', 'image/*');
         }
 
-        // ======= 新增升级：自动读取本地保存的密钥 =======
         const savedKey = localStorage.getItem('shiseji_vip_key');
         if (savedKey) {
             document.getElementById('activationCode').value = savedKey;
@@ -440,6 +458,7 @@
     }
 
     function showCustomAlert(message) {
+        triggerVibration([50, 50, 50]);
         document.getElementById('alertMessage').innerText = message;
         const modal = document.getElementById('customAlert');
         modal.classList.remove('hidden');
@@ -450,6 +469,7 @@
     }
 
     function closeCustomAlert() {
+        triggerVibration(30);
         const modal = document.getElementById('customAlert');
         modal.classList.add('opacity-0');
         modal.querySelector('div').classList.add('scale-95');
@@ -464,6 +484,7 @@
     }
 
     function verifyCode() {
+        triggerVibration(50);
         const inputElement = document.getElementById('activationCode');
         const code = inputElement.value.trim().toUpperCase(); 
         
@@ -480,9 +501,8 @@
             window.currentCode = code;
             inputElement.value = code; 
 
-            // ======= 新增升级：验证成功后，永久记住密钥 =======
             localStorage.setItem('shiseji_vip_key', code);
-
+            checkLastReport(); // 验证成功后检查是否有历史档案
             showStep('step-upload');
         } else {
             showCustomAlert('密钥无效或已过期，请联系主理人获取最新授权~');
@@ -493,6 +513,7 @@
     function handleImageUpload(event) {
         const file = event.target.files[0];
         if(file) {
+            triggerVibration(50);
             document.getElementById('uploadText').innerText = "图像引擎处理中...";
             const reader = new FileReader();
             reader.onload = function(e) {
@@ -528,12 +549,12 @@
         }
     }
 
-    // ======= 新增升级：改为异步函数，并植入多通道抗并发轮询机制 =======
     async function startAnalysis() {
         if (!window.currentCode) { showStep('step-activation'); return; }
         const remaining = useCodeOnce(window.currentCode);
         if (remaining < 0) { showCustomAlert("次数已用完"); showStep('step-activation'); return; }
 
+        triggerVibration(50);
         showStep('step-loading');
         
         const loadingText = document.getElementById('loadingText');
@@ -572,10 +593,9 @@
             }
         }, 500);
 
-        // ======= 核心改造：无感轮询重试兜底 =======
         try {
             let successData = null;
-            const maxRetries = 2; // 允许重试 2 次（共 3 次通道机会）
+            const maxRetries = 2;
 
             for (let attempt = 0; attempt <= maxRetries; attempt++) {
                 try {
@@ -584,26 +604,22 @@
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ 
                             imageBase64: userImageBase64,
-                            fallbackLevel: attempt // 把当前尝试次数传给后端，后端可依此切换免费/付费模型
+                            fallbackLevel: attempt
                         })
                     });
 
-                    // 如果后端返回了限流状态码 (如 429)，且还有重试机会，则静默轮询下一个
                     if (!response.ok && response.status === 429) {
                         if (attempt < maxRetries) continue; 
                     }
 
-                    // 拿到数据直接跳出循环
                     successData = await response.json();
                     break;
 
                 } catch (err) {
-                    // 如果不是最后一次尝试，就把错误吞掉继续试；如果是最后一次，则抛出大错
                     if (attempt === maxRetries) throw err;
                 }
             }
 
-            // 成功出结果后的交互逻辑
             clearInterval(progressInterval);
             loadingPercent.innerText = '100%';
             loadingBarFill.style.width = '100%';
@@ -616,8 +632,14 @@
                     showCustomAlert(successData.description || "抱歉，未能清晰识别到您的面部特征，请尝试更换一张正面无遮挡的素颜照片哦~");
                     showStep('step-upload');
                 } else if (successData) {
+                    
+                    // 🚀 新增：保存当前档案到本地
+                    localStorage.setItem('shiseji_last_report', JSON.stringify(successData));
+                    if(userImageBase64) localStorage.setItem('shiseji_last_image', userImageBase64);
+
                     renderAIResult(successData);
                     showStep('step-result');
+                    triggerVibration([100, 50, 200]); // 大厂级成功震动反馈
                     setTimeout(() => showToast(`本次诊断成功，密钥剩余 ${remaining} 次`), 800);
                 } else {
                     throw new Error("无数据返回");
@@ -759,10 +781,7 @@
                 }]
             },
             options: {
-                animation: false, 
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: { legend: false },
+                animation: false, responsive: true, maintainAspectRatio: false, plugins: { legend: false },
                 scales: {
                     r: {
                         angleLines: { color: 'rgba(200,195,190,0.9)', lineWidth: 1 },
@@ -776,6 +795,7 @@
     }
 
     async function saveAsImage() {
+        triggerVibration(50);
         const btn = document.getElementById('saveBtn');
         const ogText = btn.innerText;
         btn.innerText = "引擎渲染中...";
@@ -800,19 +820,12 @@
 
             const canvas = await html2canvas(captureArea, {
                 scale: window.devicePixelRatio > 1 ? window.devicePixelRatio : 2, 
-                useCORS: true,
-                backgroundColor: '#F7F5F2',
-                logging: false, 
+                useCORS: true, backgroundColor: '#F7F5F2', logging: false, 
                 onclone: (doc) => {
                     const cloneArea = doc.getElementById('captureArea');
                     cloneArea.style.padding = '24px 20px';
-                    
                     const animatedEls = cloneArea.querySelectorAll('.fade-in, .stagger-1, .stagger-2, .stagger-3, .stagger-4');
-                    animatedEls.forEach(el => {
-                        el.style.opacity = '1';
-                        el.style.transform = 'none';
-                        el.style.animation = 'none';
-                    });
+                    animatedEls.forEach(el => { el.style.opacity = '1'; el.style.transform = 'none'; el.style.animation = 'none'; });
                 }
             });
 
@@ -827,41 +840,42 @@
             if (!isMobile) {
                 const link = document.createElement('a');
                 link.download = '拾色季_高定美学分析报告.jpg';
-                link.href = dataURL;
-                link.click();
+                link.href = dataURL; link.click();
                 showToast("报告已自动下载，请查看浏览器下载记录");
             } else {
                 const overlay = document.getElementById('saveOverlay');
                 const overlayImg = document.getElementById('saveOverlayImg');
-                
-                overlayImg.src = dataURL;
-                overlay.classList.remove('hidden');
-                
-                setTimeout(() => {
-                    overlay.classList.remove('opacity-0');
-                    overlayImg.classList.remove('scale-95');
-                    overlayImg.classList.add('scale-100');
-                }, 10);
-
+                overlayImg.src = dataURL; overlay.classList.remove('hidden');
+                setTimeout(() => { overlay.classList.remove('opacity-0'); overlayImg.classList.remove('scale-95'); overlayImg.classList.add('scale-100'); }, 10);
+                triggerVibration([100, 50, 100]);
                 showToast("报告生成成功，请长按保存");
             }
-            
         } catch (e) {
             console.error(e);
             showCustomAlert('渲染失败，建议直接使用系统长截屏功能。');
         } finally {
-            btn.innerText = ogText;
-            btn.classList.remove('opacity-70', 'cursor-wait');
+            btn.innerText = ogText; btn.classList.remove('opacity-70', 'cursor-wait');
         }
     }
 
     function closeSaveOverlay() {
+        triggerVibration(30);
         const overlay = document.getElementById('saveOverlay');
         const overlayImg = document.getElementById('saveOverlayImg');
-        overlay.classList.add('opacity-0');
-        overlayImg.classList.remove('scale-100');
-        overlayImg.classList.add('scale-95');
+        overlay.classList.add('opacity-0'); overlayImg.classList.remove('scale-100'); overlayImg.classList.add('scale-95');
         setTimeout(() => overlay.classList.add('hidden'), 300);
+    }
+
+    function resetTest() {
+        triggerVibration(50);
+        userImageBase64 = "";
+        const preview = document.getElementById('imagePreview');
+        preview.src = ""; preview.classList.add('hidden');
+        document.getElementById('uploadText').innerText = "从相册选取或拍摄";
+        document.getElementById('dropzone-file').value = '';
+        checkLastReport();
+        showStep('step-upload');
+        document.getElementById('mainContainer').scrollTop = 0;
     }
 </script>
 </body>
