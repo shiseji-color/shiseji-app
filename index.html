@@ -399,6 +399,12 @@
         } else {
             dropzoneInput.setAttribute('accept', 'image/*');
         }
+
+        // ======= 新增升级：自动读取本地保存的密钥 =======
+        const savedKey = localStorage.getItem('shiseji_vip_key');
+        if (savedKey) {
+            document.getElementById('activationCode').value = savedKey;
+        }
     });
 
     let userImageBase64 = "";
@@ -473,6 +479,10 @@
             }
             window.currentCode = code;
             inputElement.value = code; 
+
+            // ======= 新增升级：验证成功后，永久记住密钥 =======
+            localStorage.setItem('shiseji_vip_key', code);
+
             showStep('step-upload');
         } else {
             showCustomAlert('密钥无效或已过期，请联系主理人获取最新授权~');
@@ -518,7 +528,8 @@
         }
     }
 
-    function startAnalysis() {
+    // ======= 新增升级：改为异步函数，并植入多通道抗并发轮询机制 =======
+    async function startAnalysis() {
         if (!window.currentCode) { showStep('step-activation'); return; }
         const remaining = useCodeOnce(window.currentCode);
         if (remaining < 0) { showCustomAlert("次数已用完"); showStep('step-activation'); return; }
@@ -561,37 +572,64 @@
             }
         }, 500);
 
-        fetch('/analyze', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ imageBase64: userImageBase64 })
-        })
-        .then(res => res.json())
-        .then(data => {
+        // ======= 核心改造：无感轮询重试兜底 =======
+        try {
+            let successData = null;
+            const maxRetries = 2; // 允许重试 2 次（共 3 次通道机会）
+
+            for (let attempt = 0; attempt <= maxRetries; attempt++) {
+                try {
+                    const response = await fetch('/analyze', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            imageBase64: userImageBase64,
+                            fallbackLevel: attempt // 把当前尝试次数传给后端，后端可依此切换免费/付费模型
+                        })
+                    });
+
+                    // 如果后端返回了限流状态码 (如 429)，且还有重试机会，则静默轮询下一个
+                    if (!response.ok && response.status === 429) {
+                        if (attempt < maxRetries) continue; 
+                    }
+
+                    // 拿到数据直接跳出循环
+                    successData = await response.json();
+                    break;
+
+                } catch (err) {
+                    // 如果不是最后一次尝试，就把错误吞掉继续试；如果是最后一次，则抛出大错
+                    if (attempt === maxRetries) throw err;
+                }
+            }
+
+            // 成功出结果后的交互逻辑
             clearInterval(progressInterval);
             loadingPercent.innerText = '100%';
             loadingBarFill.style.width = '100%';
             
             setTimeout(() => {
-                if (data.error) {
-                    showCustomAlert(data.error);
+                if (successData && successData.error) {
+                    showCustomAlert(successData.error);
                     showStep('step-upload'); 
-                } else if (data.season_name === "⚠️ 未检测到人脸" || data.season_name.includes("未检测到")) {
-                    showCustomAlert(data.description || "抱歉，未能清晰识别到您的面部特征，请尝试更换一张正面无遮挡的素颜照片哦~");
+                } else if (successData && (successData.season_name === "⚠️ 未检测到人脸" || successData.season_name.includes("未检测到"))) {
+                    showCustomAlert(successData.description || "抱歉，未能清晰识别到您的面部特征，请尝试更换一张正面无遮挡的素颜照片哦~");
                     showStep('step-upload');
-                } else {
-                    renderAIResult(data);
+                } else if (successData) {
+                    renderAIResult(successData);
                     showStep('step-result');
                     setTimeout(() => showToast(`本次诊断成功，密钥剩余 ${remaining} 次`), 800);
+                } else {
+                    throw new Error("无数据返回");
                 }
             }, 500);
-        })
-        .catch(err => {
+
+        } catch (error) {
             clearInterval(progressInterval);
-            console.error("引擎连接失败:", err);
+            console.error("引擎连接失败:", error);
             showCustomAlert('专属网络通道波动或色彩引擎正在开小差，请重新上传测算哦~');
             showStep('step-upload');
-        });
+        }
     }
 
     function renderAIResult(d) {
