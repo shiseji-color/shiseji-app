@@ -610,7 +610,7 @@
             for (let attempt = 0; attempt <= maxRetries; attempt++) {
                 try {
                     // 🚨 核心修改点：路由已精准校准为 /api/engine
-                    const response = await fetch('/api/engine', {
+                    const response = await fetch('/.netlify/functions/engine', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ 
