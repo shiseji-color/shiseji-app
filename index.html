@@ -78,7 +78,6 @@
         .loader-ring:nth-child(3) { animation-delay: 1.6s; }
         @keyframes ripple { 0% { width: 0; height: 0; opacity: 1; } 100% { width: 100%; height: 100%; opacity: 0; } }
         
-        /* 🚀 新增：AI动态扫描特效 */
         .scan-container { position: relative; overflow: hidden; }
         .scan-line {
             position: absolute; left: 0; top: 0; width: 100%; height: 100%;
@@ -348,7 +347,6 @@
 </div>
 
 <script>
-    // 🚀 新增：触感震动引擎
     function triggerVibration(pattern) {
         if (navigator.vibrate) {
             try { navigator.vibrate(pattern); } catch(e){}
@@ -385,7 +383,6 @@
         setTimeout(() => modal.classList.add('hidden'), 300);
     }
 
-    // 🚀 新增：检查是否存在历史档案
     function checkLastReport() {
         const hasReport = localStorage.getItem('shiseji_last_report');
         const hasImage = localStorage.getItem('shiseji_last_image');
@@ -396,7 +393,6 @@
         }
     }
 
-    // 🚀 新增：恢复上次档案
     function restoreLastReport() {
         triggerVibration(50);
         try {
@@ -502,7 +498,7 @@
             inputElement.value = code; 
 
             localStorage.setItem('shiseji_vip_key', code);
-            checkLastReport(); // 验证成功后检查是否有历史档案
+            checkLastReport();
             showStep('step-upload');
         } else {
             showCustomAlert('密钥无效或已过期，请联系主理人获取最新授权~');
@@ -575,14 +571,13 @@
         
         if(progressInterval) clearInterval(progressInterval);
         
-        // 🚀 升级：大厂级“先快后慢”与不回溯文案轮播引擎
         progressInterval = setInterval(() => {
             if (progress < 60) {
-                progress += Math.floor(Math.random() * 5) + 3; // 前期快
+                progress += Math.floor(Math.random() * 5) + 3; 
             } else if (progress < 90) {
-                progress += Math.floor(Math.random() * 3) + 1; // 中期降速
+                progress += Math.floor(Math.random() * 3) + 1; 
             } else {
-                progress += 1; // 90%后极缓慢，制造深度分析拉扯感
+                progress += 1; 
             }
             if (progress > 99) progress = 99;
             
@@ -599,7 +594,6 @@
                         loadingText.style.opacity = 1; 
                     }, 200);
                 } else if (progress >= 99) {
-                    // 锁死在最后一句不倒带，99%给出最终安抚
                     loadingText.style.opacity = 0;
                     setTimeout(() => { 
                         loadingText.innerText = "正在进行最终高定渲染，请稍候..."; 
@@ -615,7 +609,8 @@
 
             for (let attempt = 0; attempt <= maxRetries; attempt++) {
                 try {
-                    const response = await fetch('/analyze', {
+                    // 🚨 核心修改点：路由已精准校准为 /api/engine
+                    const response = await fetch('/api/engine', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ 
@@ -649,13 +644,12 @@
                     showStep('step-upload');
                 } else if (successData) {
                     
-                    // 🚀 新增：保存当前档案到本地
                     localStorage.setItem('shiseji_last_report', JSON.stringify(successData));
                     if(userImageBase64) localStorage.setItem('shiseji_last_image', userImageBase64);
 
                     renderAIResult(successData);
                     showStep('step-result');
-                    triggerVibration([100, 50, 200]); // 大厂级成功震动反馈
+                    triggerVibration([100, 50, 200]);
                     setTimeout(() => showToast(`本次诊断成功，密钥剩余 ${remaining} 次`), 800);
                 } else {
                     throw new Error("无数据返回");
@@ -783,7 +777,7 @@
         window.myRadarChart = new Chart(ctx, {
             type: 'radar',
             data: {
-                labels: ['冷暖色调','深浅明度','饱和彩度','清透清浊','明暗对比'],
+                labels: ['冷暖色调','深浅明度','饱和彩度','清浊(清透)','对比(反差)'],
                 datasets: [{
                     data: data,
                     backgroundColor: 'rgba(218,191,180,0.5)',
