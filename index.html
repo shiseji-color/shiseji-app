@@ -60,7 +60,20 @@
         .color-capsule { display: inline-block; padding: 1px 8px; border-radius: 6px; font-size: 11px; font-weight: 500; margin: 0 3px; position: relative; top: -1px; border: 1px solid rgba(0,0,0,0.04); box-shadow: 0 2px 4px rgba(0,0,0,0.02); letter-spacing: 1px; }
         .color-capsule-avoid { display: inline-block; padding: 1px 8px; border-radius: 6px; font-size: 11px; font-weight: 500; margin: 0 3px; position: relative; top: -1px; background-color: var(--avoid-bg); color: var(--avoid-text); border: 1px solid var(--avoid-border); box-shadow: 0 2px 4px rgba(0,0,0,0.02); letter-spacing: 1px; }
 
-        .leading-luxury { line-height: 2.4 !important; }
+        /* 拾色季 · 高定排版强制接管 */
+        #step-result p.leading-luxury, #res-desc {
+            line-height: 2.2 !important;
+            color: #3D342F !important;
+            letter-spacing: 1.5px !important;
+            text-align: justify;
+        }
+        #step-result p.leading-luxury b, #step-result p.leading-luxury strong,
+        #res-desc b, #res-desc strong {
+            color: #DABFB4 !important;
+            font-weight: 600 !important;
+            border-bottom: 1px solid rgba(218,191,180,0.3);
+        }
+
         .report-footer { text-align: center; padding: 30px 0 10px; position: relative; }
         .report-footer::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 40px; height: 1px; background: #DABFB4; opacity: 0.5; }
 
@@ -202,7 +215,7 @@
         </div>
 
         <div id="step-result" class="hidden fade-in">
-            <div id="captureArea" class="space-y-4 pb-4 pt-2 bg-[var(--primary-bg)] px-1">
+            <div id="captureArea" class="space-y-4 pb-4 pt-2 bg-[var(--primary-bg)] px-1 relative">
                 
                 <div class="text-center pt-3 pb-2">
                     <h2 class="text-[12px] font-medium text-[#8C7A70] tracking-[0.45em] uppercase">拾色季 · 专属高定分析报告</h2>
@@ -271,6 +284,10 @@
                 <div class="report-footer mt-4">
                     <p class="text-[10px] tracking-[0.3em] text-[#8C7A70] mb-2">—— 拾色季 · 专属高定色彩档案 ——</p>
                     <p id="archive-no" class="font-mono text-[9px] text-[#BFA89F] opacity-80 tracking-widest"></p>
+                </div>
+
+                <div style="width: 100%; text-align: center; padding: 24px 0 12px 0; margin-top: 32px; border-top: 1px solid rgba(218, 191, 180, 0.2); color: #DABFB4; font-size: 9px; font-weight: 300; letter-spacing: 2px; opacity: 0.8; transform: scale(0.9);">
+                    🔍 全网搜索：拾色季 · 唤醒原生美学 | 防伪溯源：SSJ2026-F9-001 | 边缘计算·阅后即焚
                 </div>
             </div>
 
