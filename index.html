@@ -263,7 +263,7 @@
                             <p id="res-makeup" class="text-[12px] text-[#8C7A70] leading-luxury tracking-wide text-justify">...</p>
                         </div>
                         <div class="border-b border-[#F4EFEA] pb-4">
-                            <h4 class="text-[12px] font-semibold text-[#6B5D55] mb-2 tracking-widest flex items-center"><svg class="w-3.5 h-3.5 text-[#DABFB4] mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" stroke-width="1.5"/></svg>穿搭 & 面料灵感</h4>
+                            <h4 class="text-[12px] font-semibold text-[#6B5D55] mb-2 tracking-widest flex items-center"><svg class="w-3.5 h-3.5 text-[#DABFB4] mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l12H4L5 9z" stroke-width="1.5"/></svg>穿搭 & 面料灵感</h4>
                             <p id="res-outfit" class="text-[12px] text-[#8C7A70] leading-luxury tracking-wide text-justify">...</p>
                         </div>
                         <div class="border-b border-[#F4EFEA] pb-4">
@@ -716,9 +716,9 @@
         const dateStr = today.getFullYear().toString() + (today.getMonth() + 1).toString().padStart(2, '0') + today.getDate().toString().padStart(2, '0');
         const randomSuffix = String.fromCharCode(65 + Math.floor(Math.random() * 26)) + Math.floor(Math.random() * 10);
         
-        // 核心修改：动态水印与搜索探针融合，完美消除双层冗余
+        // 核心修改：极致剥离营销感，仅保留最高冷的防伪编号
         if(document.getElementById('archive-no')) {
-            document.getElementById('archive-no').innerHTML = `🔍 搜索：拾色季 · 唤醒原生美学 <span style="margin:0 6px;opacity:0.5;">|</span> 溯源：SSJ-${dateStr}-${randomSuffix} <span style="margin:0 6px;opacity:0.5;">|</span> 阅后即焚`;
+            document.getElementById('archive-no').innerText = `ARCHIVE NO. SSJ-${dateStr}-${randomSuffix}`;
         }
 
         const f = document.getElementById('res-hex-extraction'); f.innerHTML = '';
