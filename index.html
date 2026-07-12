@@ -185,10 +185,9 @@
                     </label>
                 </div>
                 
-                <div class="mt-4 flex justify-center gap-5">
-                    <div class="flex items-center"><span class="w-1.5 h-1.5 rounded-full bg-[#DABFB4] mr-2 shadow-sm"></span><span class="text-[11px] text-[#8C7A70]">素颜原相机</span></div>
-                    <div class="flex items-center"><span class="w-1.5 h-1.5 rounded-full bg-[#DABFB4] mr-2 shadow-sm"></span><span class="text-[11px] text-[#8C7A70]">面朝自然光</span></div>
-                    <div class="flex items-center"><span class="w-1.5 h-1.5 rounded-full bg-[#DABFB4] mr-2 shadow-sm"></span><span class="text-[11px] text-[#8C7A70]">露出原发色</span></div>
+                <div class="mt-4 flex flex-col items-center gap-2">
+                    <div class="flex items-center"><span class="w-1.5 h-1.5 rounded-full bg-[#DABFB4] mr-2 shadow-sm"></span><span class="text-[11px] text-[#A74E4E] font-bold">必须摘下口罩/眼镜/去滤镜</span></div>
+                    <div class="flex items-center"><span class="w-1.5 h-1.5 rounded-full bg-[#DABFB4] mr-2 shadow-sm"></span><span class="text-[11px] text-[#8C7A70]">面朝自然光 · 素颜拍摄</span></div>
                 </div>
 
                 <div id="restoreContainer" class="hidden mt-6 text-center">
@@ -451,7 +450,8 @@
 
     function showCustomAlert(message) {
         triggerVibration([50, 50, 50]);
-        document.getElementById('alertMessage').innerText = message;
+        // 重点：使用 innerHTML 以支持后端传来的 <br> 换行排版
+        document.getElementById('alertMessage').innerHTML = message;
         const modal = document.getElementById('customAlert');
         modal.classList.remove('hidden');
         setTimeout(() => {
@@ -487,7 +487,7 @@
         
         const submitBtn = document.querySelector('button[onclick="verifyCode()"]');
         const ogText = submitBtn.innerText;
-        submitBtn.innerText = "云端核验中...";
+        submitBtn.innerText = "云端鉴权中...";
         submitBtn.classList.add('opacity-70', 'cursor-wait');
 
         try {
@@ -507,20 +507,20 @@
                 
                 let premiumMsg = "";
                 if (data.remaining === '无限') {
-                    premiumMsg = "主理人协议已确认，高定美学矩阵无界开启";
+                    premiumMsg = "ROOT 权限放行：全量高定引擎无限制调用";
                 } else if (data.remaining !== undefined) {
-                    premiumMsg = `专属密钥已唤醒，高定诊断算力剩余 ${data.remaining} 次`;
+                    premiumMsg = `云端鉴权通过：专属高定算力剩余 ${data.remaining} 席`;
                 } else {
-                    premiumMsg = "十六维高定引擎通道已就绪";
+                    premiumMsg = "十六维视觉引擎物理通道已贯通";
                 }
                 showToast(premiumMsg);
                 
             } else {
-                showCustomAlert(data.msg || '密钥无效或已被核销，请联系主理人提取新档案。');
+                showCustomAlert(data.msg || '该密钥已物理熔断或失效，请向主理人提取新算力档案。');
             }
         } catch (error) {
             console.error('云端核销失败:', error);
-            showCustomAlert('网络波动，无法连接高定密钥库，请重试~');
+            showCustomAlert('边缘节点波动，无法连接高定密钥库，请重试');
         } finally {
             submitBtn.innerText = ogText;
             submitBtn.classList.remove('opacity-70', 'cursor-wait');
@@ -657,8 +657,9 @@
                 if (successData && successData.error) {
                     showCustomAlert(successData.error);
                     showStep('step-upload'); 
-                } else if (successData && (successData.season_name === "⚠️ 未检测到人脸" || successData.season_name.includes("未检测到"))) {
-                    showCustomAlert(successData.description || "抱歉，未能清晰识别到您的面部特征，请尝试更换一张正面无遮挡的素颜照片哦~");
+                // 核心防线：探测到引擎拒绝指令，物理弹窗拦截
+                } else if (successData && (successData.season_name.includes("未检测到") || successData.season_name.includes("阻断"))) {
+                    showCustomAlert(successData.description || "抱歉，未能清晰识别到完整面部，请上传合规原图。");
                     showStep('step-upload');
                 } else if (successData) {
                     
