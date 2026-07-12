@@ -438,22 +438,6 @@
     window.currentCode = ""; 
     let progressInterval = null; 
 
-    function getRemainingUses(code) {
-        const key = `color_season_code_${code}`;
-        const stored = localStorage.getItem(key);
-        if (stored !== null) return parseInt(stored, 10);
-        localStorage.setItem(key, 6); 
-        return 6;
-    }
-
-    function useCodeOnce(code) {
-        const key = `color_season_code_${code}`;
-        const remaining = getRemainingUses(code);
-        if (remaining <= 0) return 0;
-        localStorage.setItem(key, remaining - 1);
-        return remaining - 1;
-    }
-
     function showToast(message) {
         const container = document.getElementById('toastContainer');
         const toast = document.createElement('div');
@@ -492,30 +476,49 @@
         document.getElementById(stepId).classList.remove('hidden');
     }
 
-    function verifyCode() {
+    // 核心重构：彻底接入 Serverless 云端鉴权接口
+    async function verifyCode() {
         triggerVibration(50);
         const inputElement = document.getElementById('activationCode');
-        const code = inputElement.value.trim().toUpperCase(); 
+        const code = inputElement.value.trim(); 
         
-        if (!code) { showCustomAlert("请输入您的专属高定密钥"); return; }
+        if (!code) { 
+            showCustomAlert("请输入您的专属高定密钥"); 
+            return; 
+        }
         
-        const masterKeys = ['VIP888', 'MY666', 'SHISEJI2026']; 
-        const isValidCustomerKey = code.startsWith('SSJ') && code.length === 7; 
+        // 锁定前端交互
+        const submitBtn = document.querySelector('button[onclick="verifyCode()"]');
+        const ogText = submitBtn.innerText;
+        submitBtn.innerText = "云端核验中...";
+        submitBtn.classList.add('opacity-70', 'cursor-wait');
 
-        if (masterKeys.includes(code) || isValidCustomerKey) {
-            if (getRemainingUses(code) <= 0) { 
-                showCustomAlert("该密钥权益已耗尽，请重新获取"); 
-                return; 
+        try {
+            // 对接 verify.js
+            const response = await fetch('/.netlify/functions/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key: code })
+            });
+
+            const data = await response.json();
+
+            // 验证并解除物理锁定
+            if (response.ok && data.valid) {
+                window.currentCode = code;
+                localStorage.setItem('shiseji_vip_key', code);
+                checkLastReport();
+                showStep('step-upload');
+                showToast("高定密钥核验通过，通道已开启");
+            } else {
+                showCustomAlert(data.msg || '密钥无效或已被核销，请联系主理人提取新档案。');
             }
-            window.currentCode = code;
-            inputElement.value = code; 
-
-            localStorage.setItem('shiseji_vip_key', code);
-            checkLastReport();
-            showStep('step-upload');
-        } else {
-            showCustomAlert('密钥无效或已过期，请联系主理人获取最新授权~');
-            return;
+        } catch (error) {
+            console.error('云端核销失败:', error);
+            showCustomAlert('网络波动，无法连接高定密钥库，请重试~');
+        } finally {
+            submitBtn.innerText = ogText;
+            submitBtn.classList.remove('opacity-70', 'cursor-wait');
         }
     }
 
@@ -560,8 +563,6 @@
 
     async function startAnalysis() {
         if (!window.currentCode) { showStep('step-activation'); return; }
-        const remaining = useCodeOnce(window.currentCode);
-        if (remaining < 0) { showCustomAlert("次数已用完"); showStep('step-activation'); return; }
 
         triggerVibration(50);
         showStep('step-loading');
@@ -622,7 +623,6 @@
 
             for (let attempt = 0; attempt <= maxRetries; attempt++) {
                 try {
-                    // 🚨 核心修改点：路由已精准校准为 /api/engine
                     const response = await fetch('/.netlify/functions/engine', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -663,7 +663,7 @@
                     renderAIResult(successData);
                     showStep('step-result');
                     triggerVibration([100, 50, 200]);
-                    setTimeout(() => showToast(`本次诊断成功，密钥剩余 ${remaining} 次`), 800);
+                    setTimeout(() => showToast(`本次高定诊断成功，档案已生成`), 800);
                 } else {
                     throw new Error("无数据返回");
                 }
@@ -716,7 +716,6 @@
         const dateStr = today.getFullYear().toString() + (today.getMonth() + 1).toString().padStart(2, '0') + today.getDate().toString().padStart(2, '0');
         const randomSuffix = String.fromCharCode(65 + Math.floor(Math.random() * 26)) + Math.floor(Math.random() * 10);
         
-        // 核心修改：极致剥离营销感，仅保留最高冷的防伪编号
         if(document.getElementById('archive-no')) {
             document.getElementById('archive-no').innerText = `ARCHIVE NO. SSJ-${dateStr}-${randomSuffix}`;
         }
