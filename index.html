@@ -364,6 +364,25 @@
         }
     }
 
+    // 静默提取设备指纹
+    async function getDeviceFingerprint() {
+        try {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            ctx.textBaseline = "top"; ctx.font = "14px 'Arial'"; ctx.textBaseline = "alphabetic";
+            ctx.fillStyle = "#f60"; ctx.fillRect(125,1,62,20);
+            ctx.fillStyle = "#069"; ctx.fillText("拾色季 SHISEJI", 2, 15);
+            ctx.fillStyle = "rgba(102, 204, 0, 0.7)"; ctx.fillText("拾色季 SHISEJI", 4, 17);
+            const b64 = canvas.toDataURL();
+            let hash = 0;
+            for (let i = 0; i < b64.length; i++) {
+                hash = ((hash << 5) - hash) + b64.charCodeAt(i);
+                hash = hash & hash;
+            }
+            return hash.toString(16) + "-" + screen.colorDepth + "-" + screen.width;
+        } catch(e) { return "fallback-fp-" + Date.now(); }
+    }
+
     function highlightColors(text) {
         if (!text) return text;
         const colorMap = {
@@ -450,7 +469,6 @@
 
     function showCustomAlert(message) {
         triggerVibration([50, 50, 50]);
-        // 重点：使用 innerHTML 以支持后端传来的 <br> 换行排版
         document.getElementById('alertMessage').innerHTML = message;
         const modal = document.getElementById('customAlert');
         modal.classList.remove('hidden');
@@ -491,10 +509,11 @@
         submitBtn.classList.add('opacity-70', 'cursor-wait');
 
         try {
+            const fp = await getDeviceFingerprint(); 
             const response = await fetch('/.netlify/functions/verify', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ key: code })
+                body: JSON.stringify({ key: code, fingerprint: fp })
             });
 
             const data = await response.json();
@@ -502,6 +521,8 @@
             if (response.ok && data.valid) {
                 window.currentCode = code;
                 localStorage.setItem('shiseji_vip_key', code);
+                sessionStorage.setItem('shiseji_auth_token', data.token); // 保存令牌
+                
                 checkLastReport();
                 showStep('step-upload');
                 
@@ -567,7 +588,12 @@
     }
 
     async function startAnalysis() {
-        if (!window.currentCode) { showStep('step-activation'); return; }
+        const token = sessionStorage.getItem('shiseji_auth_token');
+        if (!window.currentCode || !token) { 
+            showCustomAlert("通行证已过期，请重新验签");
+            showStep('step-activation'); 
+            return; 
+        }
 
         triggerVibration(50);
         showStep('step-loading');
@@ -630,22 +656,27 @@
                 try {
                     const response = await fetch('/.netlify/functions/engine', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}` 
+                        },
                         body: JSON.stringify({ 
                             imageBase64: userImageBase64,
                             fallbackLevel: attempt
                         })
                     });
 
+                    if (response.status === 401 || response.status === 403) {
+                        throw new Error("AUTH_FAILED");
+                    }
                     if (!response.ok && response.status === 429) {
                         if (attempt < maxRetries) continue; 
                     }
 
                     successData = await response.json();
                     break;
-
                 } catch (err) {
-                    if (attempt === maxRetries) throw err;
+                    if (err.message === "AUTH_FAILED" || attempt === maxRetries) throw err;
                 }
             }
 
@@ -657,15 +688,12 @@
                 if (successData && successData.error) {
                     showCustomAlert(successData.error);
                     showStep('step-upload'); 
-                // 核心防线：探测到引擎拒绝指令，物理弹窗拦截
                 } else if (successData && (successData.season_name.includes("未检测到") || successData.season_name.includes("阻断"))) {
                     showCustomAlert(successData.description || "抱歉，未能清晰识别到完整面部，请上传合规原图。");
                     showStep('step-upload');
                 } else if (successData) {
-                    
                     localStorage.setItem('shiseji_last_report', JSON.stringify(successData));
                     if(userImageBase64) localStorage.setItem('shiseji_last_image', userImageBase64);
-
                     renderAIResult(successData);
                     showStep('step-result');
                     triggerVibration([100, 50, 200]);
@@ -678,8 +706,12 @@
         } catch (error) {
             clearInterval(progressInterval);
             console.error("引擎连接失败:", error);
-            showCustomAlert('专属网络通道波动或色彩引擎正在开小差，请重新上传测算哦~');
-            showStep('step-upload');
+            if (error.message === "AUTH_FAILED") {
+                forceKickToHome("令牌验证失败，请重新唤醒密钥");
+            } else {
+                showCustomAlert('专属网络通道波动或色彩引擎正在开小差，请重新上传测算哦~');
+                showStep('step-upload');
+            }
         }
     }
 
@@ -928,14 +960,17 @@
         }
 
         try {
+            const fp = await getDeviceFingerprint(); 
             const response = await fetch('/.netlify/functions/verify', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ key: code })
+                body: JSON.stringify({ key: code, fingerprint: fp })
             });
             const data = await response.json();
 
             if (response.ok && data.valid) {
+                sessionStorage.setItem('shiseji_auth_token', data.token); // 更新临时令牌
+                
                 userImageBase64 = "";
                 const preview = document.getElementById('imagePreview');
                 preview.src = ""; 
@@ -968,6 +1003,7 @@
     function forceKickToHome(msg) {
         window.currentCode = ""; 
         userImageBase64 = "";
+        sessionStorage.removeItem('shiseji_auth_token');
         showStep('step-activation');
         document.getElementById('mainContainer').scrollTop = 0;
         showCustomAlert(msg);
