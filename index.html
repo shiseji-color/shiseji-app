@@ -883,19 +883,20 @@
             if (!isMobile) {
                 const link = document.createElement('a');
                 link.download = '拾色季_高定美学分析报告.jpg';
-                link.href = dataURL; link.click();
-                showToast("报告已自动下载，请查看浏览器下载记录");
+                link.href = dataURL; 
+                link.click();
+                showToast("海报下载已唤起，请在弹窗中确认保存");
             } else {
                 const overlay = document.getElementById('saveOverlay');
                 const overlayImg = document.getElementById('saveOverlayImg');
                 overlayImg.src = dataURL; overlay.classList.remove('hidden');
                 setTimeout(() => { overlay.classList.remove('opacity-0'); overlayImg.classList.remove('scale-95'); overlayImg.classList.add('scale-100'); }, 10);
                 triggerVibration([100, 50, 100]);
-                showToast("报告生成成功，请长按保存");
+                showToast("高定海报已生成，请长按保存");
             }
         } catch (e) {
             console.error(e);
-            showCustomAlert('渲染失败，建议直接使用系统长截屏功能。');
+            showCustomAlert('渲染引擎波动，建议直接使用系统长截屏功能。');
         } finally {
             btn.innerText = ogText; btn.classList.remove('opacity-70', 'cursor-wait');
         }
@@ -909,16 +910,66 @@
         setTimeout(() => overlay.classList.add('hidden'), 300);
     }
 
-    function resetTest() {
+    async function resetTest() {
         triggerVibration(50);
+        const code = window.currentCode || localStorage.getItem('shiseji_vip_key');
+        
+        if (!code) {
+            forceKickToHome("登录态已失效，请重新唤醒密钥");
+            return;
+        }
+
+        const btn = document.querySelector('button[onclick="resetTest()"]');
+        const ogText = btn ? btn.innerText : "帮闺蜜也测一测";
+        if(btn) {
+            btn.innerText = "算力重载中...";
+            btn.classList.add('opacity-70', 'cursor-wait');
+        }
+
+        try {
+            const response = await fetch('/.netlify/functions/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ key: code })
+            });
+            const data = await response.json();
+
+            if (response.ok && data.valid) {
+                userImageBase64 = "";
+                const preview = document.getElementById('imagePreview');
+                preview.src = ""; 
+                preview.classList.add('hidden');
+                document.getElementById('uploadText').innerText = "从相册选取或拍摄";
+                document.getElementById('dropzone-file').value = '';
+                
+                checkLastReport();
+                showStep('step-upload');
+                document.getElementById('mainContainer').scrollTop = 0;
+                
+                let msg = data.remaining === '无限' ? 
+                    "权限已重载，无界通行" : 
+                    `算力重载成功，剩余 ${data.remaining} 次`;
+                showToast(msg);
+            } else {
+                forceKickToHome(data.msg || "该密钥算力已耗尽，请获取新授权");
+            }
+        } catch (error) {
+            console.error(error);
+            showCustomAlert('网络波动，重载失败，请重试');
+        } finally {
+            if(btn) {
+                btn.innerText = ogText;
+                btn.classList.remove('opacity-70', 'cursor-wait');
+            }
+        }
+    }
+
+    function forceKickToHome(msg) {
+        window.currentCode = ""; 
         userImageBase64 = "";
-        const preview = document.getElementById('imagePreview');
-        preview.src = ""; preview.classList.add('hidden');
-        document.getElementById('uploadText').innerText = "从相册选取或拍摄";
-        document.getElementById('dropzone-file').value = '';
-        checkLastReport();
-        showStep('step-upload');
+        showStep('step-activation');
         document.getElementById('mainContainer').scrollTop = 0;
+        showCustomAlert(msg);
     }
 </script>
 </body>
