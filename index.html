@@ -6,16 +6,16 @@
     <title>拾色季 | 专属高定色彩美学诊断</title>
     
     <script>
-        document.addEventListener('contextmenu', function(e) { 
+        document.addEventListener('contextmenu', e => { 
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return; 
             e.preventDefault(); 
         });
-        document.addEventListener('selectstart', function(e) { 
+        document.addEventListener('selectstart', e => { 
             if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return; 
             e.preventDefault(); 
         });
-        document.addEventListener('dragstart', function(e) { e.preventDefault(); });
-        document.addEventListener('keydown', function(e) {
+        document.addEventListener('dragstart', e => e.preventDefault());
+        document.addEventListener('keydown', e => {
             if(e.keyCode === 123 || (e.ctrlKey && e.shiftKey && (e.keyCode === 73 || e.keyCode === 74)) || (e.ctrlKey && e.keyCode === 85) || (e.metaKey && e.altKey && e.keyCode === 73)) {
                 e.preventDefault();
             }
@@ -340,7 +340,7 @@
             <p>欢迎使用「拾色季」专属高定色彩诊断系统。为保障您的权益，请在测试前了解：</p>
             <div>
                 <h4 class="font-medium text-[#4A403A] mb-1.5 tracking-widest">1. 数据隐私与安全</h4>
-                <p>本系统仅在您主动上传照片时临时获取图像，用于核心引擎矩阵计算。<b>我们承诺：不存储、不备份、不共享您的照片及面部数据。</b>图像均在获取色值后"阅后即焚"。</p>
+                <p>本系统仅在您主动上传照片时临时获取图像，用于核心引擎矩阵计算。<b>我们承诺：不存储、不备份、不共享您的照片及面部数据。</b>图像均在获取色值后“阅后即焚”。</p>
             </div>
             <div>
                 <h4 class="font-medium text-[#4A403A] mb-1.5 tracking-widest">2. 最小必要原则</h4>
@@ -367,40 +367,37 @@
 
     function highlightColors(text) {
         if (!text) return text;
-        var colorMap = {
+        const colorMap = {
             "玫瑰粉": "#FFF0F5", "珊瑚红": "#FFE4E1", "奶油黄": "#FFFFE0", "薄荷绿": "#F0FFF0", "雾霾蓝": "#F0F8FF", 
             "奶茶色": "#FDF5E6", "炭灰色": "#F5F5F5", "藏青色": "#F0F4F8", "酒红色": "#FFF0F0", "香槟色": "#FFF8E7", 
             "燕麦色": "#FDF9F1", "莫兰迪": "#F4F4F4", "卡其色": "#F5E6D3", "豆沙色": "#E8C8C8", "裸粉色": "#F7E1D7",
             "樱花粉": "#FDE6E8", "抹茶绿": "#E8F0E4", "克莱因蓝": "#E6EEF8"
         };
-        var processedText = text;
-        for (var colorName in colorMap) {
-            if (colorMap.hasOwnProperty(colorName)) {
-                var bgColor = colorMap[colorName];
-                var regex = new RegExp(colorName, "g");
-                var capsuleHTML = '<span class="color-capsule" style="background-color: ' + bgColor + '; color: #5A504B;">' + colorName + '</span>';
-                processedText = processedText.replace(regex, capsuleHTML);
-            }
+        let processedText = text;
+        for (const [colorName, bgColor] of Object.entries(colorMap)) {
+            const regex = new RegExp(colorName, "g");
+            const capsuleHTML = `<span class="color-capsule" style="background-color: ${bgColor}; color: #5A504B;">${colorName}</span>`;
+            processedText = processedText.replace(regex, capsuleHTML);
         }
         return processedText;
     }
 
     function showPrivacyModal() {
         triggerVibration(30);
-        var modal = document.getElementById('privacyModal');
+        const modal = document.getElementById('privacyModal');
         modal.classList.remove('hidden');
-        setTimeout(function() { modal.classList.remove('opacity-0'); modal.querySelector('div').classList.remove('scale-95'); }, 10);
+        setTimeout(() => { modal.classList.remove('opacity-0'); modal.querySelector('div').classList.remove('scale-95'); }, 10);
     }
     function closePrivacyModal() {
         triggerVibration(30);
-        var modal = document.getElementById('privacyModal');
+        const modal = document.getElementById('privacyModal');
         modal.classList.add('opacity-0'); modal.querySelector('div').classList.add('scale-95');
-        setTimeout(function() { modal.classList.add('hidden'); }, 300);
+        setTimeout(() => modal.classList.add('hidden'), 300);
     }
 
     function checkLastReport() {
-        var hasReport = localStorage.getItem('shiseji_last_report');
-        var hasImage = localStorage.getItem('shiseji_last_image');
+        const hasReport = localStorage.getItem('shiseji_last_report');
+        const hasImage = localStorage.getItem('shiseji_last_image');
         if(hasReport && hasImage) {
             document.getElementById('restoreContainer').classList.remove('hidden');
         } else {
@@ -411,7 +408,7 @@
     function restoreLastReport() {
         triggerVibration(50);
         try {
-            var d = JSON.parse(localStorage.getItem('shiseji_last_report'));
+            const d = JSON.parse(localStorage.getItem('shiseji_last_report'));
             userImageBase64 = localStorage.getItem('shiseji_last_image');
             renderAIResult(d);
             showStep('step-result');
@@ -421,43 +418,43 @@
         }
     }
 
-    document.addEventListener('DOMContentLoaded', function() {
-        var dropzoneInput = document.getElementById('dropzone-file');
-        var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    document.addEventListener('DOMContentLoaded', () => {
+        const dropzoneInput = document.getElementById('dropzone-file');
+        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
         if (isIOS) {
             dropzoneInput.setAttribute('accept', 'image/jpeg, image/png, image/jpg, image/heic');
         } else {
             dropzoneInput.setAttribute('accept', 'image/*');
         }
 
-        var savedKey = localStorage.getItem('shiseji_vip_key');
+        const savedKey = localStorage.getItem('shiseji_vip_key');
         if (savedKey) {
             document.getElementById('activationCode').value = savedKey;
         }
     });
 
-    var userImageBase64 = "";
+    let userImageBase64 = "";
     window.currentCode = ""; 
-    var progressInterval = null; 
+    let progressInterval = null; 
 
     function showToast(message) {
-        var container = document.getElementById('toastContainer');
-        var toast = document.createElement('div');
+        const container = document.getElementById('toastContainer');
+        const toast = document.createElement('div');
         toast.className = 'bg-[#3D342F]/90 backdrop-blur-md text-[#F4EFEA] text-[13px] tracking-widest px-6 py-3 rounded-full shadow-xl mb-3 toast-enter flex items-center gap-2';
-        toast.innerHTML = '<svg class="w-4 h-4 text-[#DABFB4]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>' + message;
+        toast.innerHTML = `<svg class="w-4 h-4 text-[#DABFB4]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>${message}`;
         container.appendChild(toast);
-        setTimeout(function() {
+        setTimeout(() => {
             toast.classList.replace('toast-enter', 'toast-exit');
-            setTimeout(function() { toast.remove(); }, 400);
+            setTimeout(() => toast.remove(), 400);
         }, 2500);
     }
 
     function showCustomAlert(message) {
         triggerVibration([50, 50, 50]);
         document.getElementById('alertMessage').innerText = message;
-        var modal = document.getElementById('customAlert');
+        const modal = document.getElementById('customAlert');
         modal.classList.remove('hidden');
-        setTimeout(function() {
+        setTimeout(() => {
             modal.classList.remove('opacity-0');
             modal.querySelector('div').classList.remove('scale-95');
         }, 10);
@@ -465,43 +462,42 @@
 
     function closeCustomAlert() {
         triggerVibration(30);
-        var modal = document.getElementById('customAlert');
+        const modal = document.getElementById('customAlert');
         modal.classList.add('opacity-0');
         modal.querySelector('div').classList.add('scale-95');
-        setTimeout(function() { modal.classList.add('hidden'); }, 300);
+        setTimeout(() => modal.classList.add('hidden'), 300);
     }
 
     function showStep(stepId) {
-        var steps = ['step-activation','step-upload','step-loading','step-result'];
-        for (var i = 0; i < steps.length; i++) {
-            document.getElementById(steps[i]).classList.add('hidden');
-        }
+        ['step-activation','step-upload','step-loading','step-result'].forEach(id => {
+            document.getElementById(id).classList.add('hidden');
+        });
         document.getElementById(stepId).classList.remove('hidden');
     }
 
     async function verifyCode() {
         triggerVibration(50);
-        var inputElement = document.getElementById('activationCode');
-        var code = inputElement.value.trim(); 
+        const inputElement = document.getElementById('activationCode');
+        const code = inputElement.value.trim(); 
         
         if (!code) { 
             showCustomAlert("请输入您的专属高定密钥"); 
             return; 
         }
         
-        var submitBtn = document.querySelector('button[onclick="verifyCode()"]');
-        var ogText = submitBtn.innerText;
+        const submitBtn = document.querySelector('button[onclick="verifyCode()"]');
+        const ogText = submitBtn.innerText;
         submitBtn.innerText = "云端核验中...";
         submitBtn.classList.add('opacity-70', 'cursor-wait');
 
         try {
-            var response = await fetch('/.netlify/functions/verify', {
+            const response = await fetch('/.netlify/functions/verify', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ key: code })
             });
 
-            var data = await response.json();
+            const data = await response.json();
 
             if (response.ok && data.valid) {
                 window.currentCode = code;
@@ -509,11 +505,11 @@
                 checkLastReport();
                 showStep('step-upload');
                 
-                var premiumMsg = "";
+                let premiumMsg = "";
                 if (data.remaining === '无限') {
                     premiumMsg = "主理人协议已确认，高定美学矩阵无界开启";
                 } else if (data.remaining !== undefined) {
-                    premiumMsg = "专属密钥已唤醒，高定诊断算力剩余 " + data.remaining + " 次";
+                    premiumMsg = `专属密钥已唤醒，高定诊断算力剩余 ${data.remaining} 次`;
                 } else {
                     premiumMsg = "十六维高定引擎通道已就绪";
                 }
@@ -532,32 +528,32 @@
     }
 
     function handleImageUpload(event) {
-        var file = event.target.files[0];
+        const file = event.target.files[0];
         if(file) {
             triggerVibration(50);
             document.getElementById('uploadText').innerText = "图像引擎处理中...";
-            var reader = new FileReader();
+            const reader = new FileReader();
             reader.onload = function(e) {
-                var img = new Image();
+                const img = new Image();
                 img.onload = function() {
-                    var canvas = document.createElement('canvas');
-                    var width = img.width;
-                    var height = img.height;
-                    var MAX_SIZE = 800; 
+                    const canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+                    const MAX_SIZE = 800; 
 
                     if (width > height) {
-                        if (width > MAX_SIZE) { height = height * MAX_SIZE / width; width = MAX_SIZE; }
+                        if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; }
                     } else {
-                        if (height > MAX_SIZE) { width = width * MAX_SIZE / height; height = MAX_SIZE; }
+                        if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; }
                     }
 
                     canvas.width = width; canvas.height = height;
-                    var ctx = canvas.getContext('2d');
+                    const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, width, height);
 
                     userImageBase64 = canvas.toDataURL('image/jpeg', 0.7);
                     
-                    var preview = document.getElementById('imagePreview');
+                    const preview = document.getElementById('imagePreview');
                     preview.src = userImageBase64;
                     preview.classList.remove('hidden');
                     document.getElementById('uploadText').innerText = "已加载，轻触可重选";
@@ -576,11 +572,11 @@
         triggerVibration(50);
         showStep('step-loading');
         
-        var loadingText = document.getElementById('loadingText');
-        var loadingPercent = document.getElementById('loading-percent');
-        var loadingBarFill = document.getElementById('loading-bar-fill');
+        const loadingText = document.getElementById('loadingText');
+        const loadingPercent = document.getElementById('loading-percent');
+        const loadingBarFill = document.getElementById('loading-bar-fill');
         
-        var states = [
+        const states = [
             "正在唤醒 16 维高定引擎...",
             "16 维面部特征深度解析中...",
             "16 维原色值深度运算中...",
@@ -588,19 +584,19 @@
             "生成高定图文档案..."
         ];
         
-        var textIndex = 0; 
-        var progress = 0;
-        var textTick = 0; 
+        let textIndex = 0; 
+        let progress = 0;
+        let textTick = 0; 
         
         if(progressInterval) clearInterval(progressInterval);
         
-        progressInterval = setInterval(function() {
+        progressInterval = setInterval(() => {
             if (progress < 60) {
-                progress = progress + Math.floor(Math.random() * 5) + 3; 
+                progress += Math.floor(Math.random() * 5) + 3; 
             } else if (progress < 90) {
-                progress = progress + Math.floor(Math.random() * 3) + 1; 
+                progress += Math.floor(Math.random() * 3) + 1; 
             } else {
-                progress = progress + 1; 
+                progress += 1; 
             }
             if (progress > 99) progress = 99;
             
@@ -612,13 +608,13 @@
                 if (textIndex < states.length - 1) {
                     textIndex++;
                     loadingText.style.opacity = 0;
-                    setTimeout(function() { 
+                    setTimeout(() => { 
                         loadingText.innerText = states[textIndex]; 
                         loadingText.style.opacity = 1; 
                     }, 200);
                 } else if (progress >= 99) {
                     loadingText.style.opacity = 0;
-                    setTimeout(function() { 
+                    setTimeout(() => { 
                         loadingText.innerText = "正在进行最终高定渲染，请稍候..."; 
                         loadingText.style.opacity = 1; 
                     }, 200);
@@ -627,12 +623,12 @@
         }, 500);
 
         try {
-            var successData = null;
-            var maxRetries = 2;
+            let successData = null;
+            const maxRetries = 2;
 
-            for (var attempt = 0; attempt <= maxRetries; attempt++) {
+            for (let attempt = 0; attempt <= maxRetries; attempt++) {
                 try {
-                    var response = await fetch('/.netlify/functions/engine', {
+                    const response = await fetch('/.netlify/functions/engine', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ 
@@ -657,11 +653,11 @@
             loadingPercent.innerText = '100%';
             loadingBarFill.style.width = '100%';
             
-            setTimeout(function() {
+            setTimeout(() => {
                 if (successData && successData.error) {
                     showCustomAlert(successData.error);
                     showStep('step-upload'); 
-                } else if (successData && (successData.season_name === "⚠️ 未检测到人脸" || successData.season_name.indexOf("未检测到") > -1)) {
+                } else if (successData && (successData.season_name === "⚠️ 未检测到人脸" || successData.season_name.includes("未检测到"))) {
                     showCustomAlert(successData.description || "抱歉，未能清晰识别到您的面部特征，请尝试更换一张正面无遮挡的素颜照片哦~");
                     showStep('step-upload');
                 } else if (successData) {
@@ -672,7 +668,7 @@
                     renderAIResult(successData);
                     showStep('step-result');
                     triggerVibration([100, 50, 200]);
-                    setTimeout(function() { showToast("本次高定诊断成功，档案已生成"); }, 800);
+                    setTimeout(() => showToast(`本次高定诊断成功，档案已生成`), 800);
                 } else {
                     throw new Error("无数据返回");
                 }
@@ -688,125 +684,112 @@
 
     function renderAIResult(d) {
         if(userImageBase64) {
-            var a = document.getElementById('userAvatarResult');
+            const a = document.getElementById('userAvatarResult');
             a.src = userImageBase64;
             a.classList.remove('hidden');
         }
         
-        var keys1 = ['season-name','season-en','desc'];
-        var map1 = {'season-name':'season_name','season-en':'season_en','desc':'description'};
-        for (var i = 0; i < keys1.length; i++) {
-            var key = keys1[i];
-            var el = document.getElementById('res-' + key);
-            if (el) el.innerText = d[map1[key]] || "生成中...";
-        }
+        ['season-name','season-en','desc'].forEach(key => {
+            const map = {'season-name':'season_name','season-en':'season_en','desc':'description'};
+            if(document.getElementById(`res-${key}`)) document.getElementById(`res-${key}`).innerText = d[map[key]] || "生成中...";
+        });
 
-        var keys2 = ['makeup','outfit','accessory','celebrity'];
-        var map2 = {'makeup':'makeup_advice','outfit':'outfit_advice','accessory':'accessory_advice','celebrity':'celebrity_reference'};
-        for (var j = 0; j < keys2.length; j++) {
-            var key2 = keys2[j];
-            var text = d[map2[key2]] || "...";
-            var el2 = document.getElementById('res-' + key2);
-            if (el2) el2.innerHTML = highlightColors(text);
-        }
+        ['makeup','outfit','accessory','celebrity'].forEach(key => {
+            const map = {'makeup':'makeup_advice','outfit':'outfit_advice','accessory':'accessory_advice','celebrity':'celebrity_reference'};
+            let text = d[map[key]] || "...";
+            if(document.getElementById(`res-${key}`)) document.getElementById(`res-${key}`).innerHTML = highlightColors(text);
+        });
 
-        var resAvoidEl = document.getElementById('res-avoid');
+        const resAvoidEl = document.getElementById('res-avoid');
         if (resAvoidEl) {
-            var avoidContent = '';
+            let avoidContent = '';
             if (d.avoid_colors && Array.isArray(d.avoid_colors)) {
                 avoidContent = "🚫 ";
-                for (var k = 0; k < d.avoid_colors.length; k++) {
-                    var color = d.avoid_colors[k];
-                    var colorName = typeof color === 'string' ? color : color.name;
-                    avoidContent += '<span class="color-capsule-avoid">' + colorName + '</span>';
-                }
+                d.avoid_colors.forEach((color) => {
+                    let colorName = typeof color === 'string' ? color : color.name;
+                    avoidContent += `<span class="color-capsule-avoid">${colorName}</span>`;
+                });
             } else if (d.avoid_colors && typeof d.avoid_colors === 'string') {
-                avoidContent = '🚫 <span class="color-capsule-avoid">' + d.avoid_colors + '</span>';
+                avoidContent = `🚫 <span class="color-capsule-avoid">${d.avoid_colors}</span>`;
             } else {
                 avoidContent = "...";
             }
             resAvoidEl.innerHTML = avoidContent;
         }
 
-        var today = new Date();
-        var dateStr = today.getFullYear().toString() + (today.getMonth() + 1).toString().padStart(2, '0') + today.getDate().toString().padStart(2, '0');
-        var randomSuffix = String.fromCharCode(65 + Math.floor(Math.random() * 26)) + Math.floor(Math.random() * 10);
+        const today = new Date();
+        const dateStr = today.getFullYear().toString() + (today.getMonth() + 1).toString().padStart(2, '0') + today.getDate().toString().padStart(2, '0');
+        const randomSuffix = String.fromCharCode(65 + Math.floor(Math.random() * 26)) + Math.floor(Math.random() * 10);
         
         if(document.getElementById('archive-no')) {
-            document.getElementById('archive-no').innerText = 'ARCHIVE NO. SSJ-' + dateStr + '-' + randomSuffix;
+            document.getElementById('archive-no').innerText = `ARCHIVE NO. SSJ-${dateStr}-${randomSuffix}`;
         }
 
-        var f = document.getElementById('res-hex-extraction'); f.innerHTML = '';
+        const f = document.getElementById('res-hex-extraction'); f.innerHTML = '';
         if (d.feature_colors && Array.isArray(d.feature_colors)) {
-            var labels = ["肌肤底色", "面颊色调", "原生发色", "瞳孔特征"];
-            for (var fi = 0; fi < d.feature_colors.length; fi++) {
-                var hexValue = d.feature_colors[fi];
-                var colorHex = typeof hexValue === 'string' ? hexValue : hexValue.hex;
-                var colorLabel = typeof hexValue === 'string' ? (labels[fi] || "特征色") : hexValue.label;
-                f.innerHTML += 
-                '<div class="bg-white rounded-[12px] p-3 shadow-[0_4px_15px_rgba(0,0,0,0.03)] border border-[#F4EFEA] flex items-center gap-3">' +
-                    '<div class="w-9 h-9 rounded-full shadow-inner border border-black/5 flex-shrink-0" style="background-color:' + colorHex + ';"></div>' +
-                    '<div class="flex flex-col">' +
-                        '<span class="text-[12px] text-[#4A403A] font-medium tracking-widest">' + colorLabel + '</span>' +
-                        '<span class="text-[10px] text-[#A0A0A0] font-mono mt-0.5 uppercase tracking-wider">' + colorHex + '</span>' +
-                    '</div>' +
-                '</div>';
-            }
+            const labels = ["肌肤底色", "面颊色调", "原生发色", "瞳孔特征"];
+            d.feature_colors.forEach((hexValue, index) => {
+                let colorHex = typeof hexValue === 'string' ? hexValue : hexValue.hex;
+                let colorLabel = typeof hexValue === 'string' ? labels[index] || "特征色" : hexValue.label;
+                f.innerHTML += `
+                <div class="bg-white rounded-[12px] p-3 shadow-[0_4px_15px_rgba(0,0,0,0.03)] border border-[#F4EFEA] flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full shadow-inner border border-black/5 flex-shrink-0" style="background-color:${colorHex};"></div>
+                    <div class="flex flex-col">
+                        <span class="text-[12px] text-[#4A403A] font-medium tracking-widest">${colorLabel}</span>
+                        <span class="text-[10px] text-[#A0A0A0] font-mono mt-0.5 uppercase tracking-wider">${colorHex}</span>
+                    </div>
+                </div>`;
+            });
         }
 
-        var p = document.getElementById('res-progress-bars'); p.innerHTML = '';
-        var r = [];
+        const p = document.getElementById('res-progress-bars'); p.innerHTML = '';
+        const r = [];
         if (d.radar_data && Array.isArray(d.radar_data)) {
-            var plabels = ['色调(冷暖)', '明度(深浅)', '彩度(饱和)', '清浊(清透)', '对比(反差)'];
-            for (var pi = 0; pi < d.radar_data.length; pi++) {
-                var val = d.radar_data[pi];
-                var value = typeof val === 'number' ? val : val.value;
-                var name = typeof val === 'number' ? (plabels[pi] || "维度") : val.name;
-                var desc = typeof val === 'number' ? "" : val.desc;
+            const labels = ['色调(冷暖)', '明度(深浅)', '彩度(饱和)', '清浊(清透)', '对比(反差)'];
+            d.radar_data.forEach((val, index) => {
+                let value = typeof val === 'number' ? val : val.value;
+                let name = typeof val === 'number' ? labels[index] || "维度" : val.name;
+                let desc = typeof val === 'number' ? "" : val.desc;
                 r.push(value);
-                p.innerHTML += 
-                '<div class="mb-4">' +
-                    '<div class="flex justify-between items-end mb-1.5">' +
-                        '<span class="text-[12px] text-[#6B5D55] font-medium tracking-widest">' + name + '</span>' +
-                        '<span class="text-[12px] font-serif-custom font-bold text-[#3D342F]">' + value + '</span>' +
-                    '</div>' +
-                    '<div class="w-full bg-[#E8E1DE] rounded-full h-[4px] mb-1.5 overflow-hidden">' +
-                        '<div class="bg-gradient-to-r from-[#5A4E47] to-[#2B2420] h-full rounded-full progress-bar-fill" style="width:0%" data-target-width="' + value + '%"></div>' +
-                    '</div>' +
-                    '<span class="text-[10px] text-[#BFA89F] tracking-widest">' + (desc || '') + '</span>' +
-                '</div>';
-            }
+                p.innerHTML += `
+                <div class="mb-4">
+                    <div class="flex justify-between items-end mb-1.5">
+                        <span class="text-[12px] text-[#6B5D55] font-medium tracking-widest">${name}</span>
+                        <span class="text-[12px] font-serif-custom font-bold text-[#3D342F]">${value}</span>
+                    </div>
+                    <div class="w-full bg-[#E8E1DE] rounded-full h-[4px] mb-1.5 overflow-hidden">
+                        <div class="bg-gradient-to-r from-[#5A4E47] to-[#2B2420] h-full rounded-full progress-bar-fill" style="width:0%" data-target-width="${value}%"></div>
+                    </div>
+                    <span class="text-[10px] text-[#BFA89F] tracking-widest">${desc || ''}</span>
+                </div>`;
+            });
         }
         
-        setTimeout(function() {
-            var bars = document.querySelectorAll('.progress-bar-fill');
-            for (var bi = 0; bi < bars.length; bi++) {
-                bars[bi].style.width = bars[bi].getAttribute('data-target-width');
-            }
+        setTimeout(() => {
+            document.querySelectorAll('.progress-bar-fill').forEach(e => e.style.width = e.getAttribute('data-target-width'));
         }, 600); 
 
-        var c = document.getElementById('res-best-colors'); c.innerHTML = '';
+        const c = document.getElementById('res-best-colors'); c.innerHTML = '';
         if (d.best_colors && Array.isArray(d.best_colors)) {
-            for (var ci = 0; ci < d.best_colors.length; ci++) {
-                var cval = d.best_colors[ci];
-                var cHex = typeof cval === 'string' ? cval : cval.hex;
-                var cName = typeof cval === 'string' ? "推荐色" : cval.name;
-                c.innerHTML += 
-                '<div class="bg-white rounded-[12px] p-3 shadow-[0_4px_15px_rgba(0,0,0,0.03)] border border-[#F4EFEA] flex items-center gap-3">' +
-                    '<div class="w-9 h-9 rounded-full shadow-inner border border-black/5 flex-shrink-0" style="background-color:' + cHex + ';"></div>' +
-                    '<div class="flex flex-col">' +
-                        '<span class="text-[12px] text-[#4A403A] font-medium tracking-widest">' + cName + '</span>' +
-                        '<span class="text-[10px] text-[#A0A0A0] font-mono mt-0.5 uppercase tracking-wider">' + cHex + '</span>' +
-                    '</div>' +
-                '</div>';
-            }
+            d.best_colors.forEach((val, index) => {
+                let colorHex = typeof val === 'string' ? val : val.hex;
+                let colorName = typeof val === 'string' ? "推荐色" : val.name;
+                c.innerHTML += `
+                <div class="bg-white rounded-[12px] p-3 shadow-[0_4px_15px_rgba(0,0,0,0.03)] border border-[#F4EFEA] flex items-center gap-3">
+                    <div class="w-9 h-9 rounded-full shadow-inner border border-black/5 flex-shrink-0" style="background-color:${colorHex};"></div>
+                    <div class="flex flex-col">
+                        <span class="text-[12px] text-[#4A403A] font-medium tracking-widest">${colorName}</span>
+                        <span class="text-[10px] text-[#A0A0A0] font-mono mt-0.5 uppercase tracking-wider">${colorHex}</span>
+                    </div>
+                </div>`;
+            });
         }
 
         initRadarChart(r);
     }
 
     function initRadarChart(data) {
-        var ctx = document.getElementById('radarChart').getContext('2d');
+        const ctx = document.getElementById('radarChart').getContext('2d');
         if(window.myRadarChart) window.myRadarChart.destroy();
         
         Chart.defaults.font.family = "'Noto Serif SC', serif";
@@ -844,35 +827,99 @@
 
     async function saveAsImage() {
         triggerVibration(50);
-        var btn = document.getElementById('saveBtn');
-        var ogText = btn.innerText;
+        const btn = document.getElementById('saveBtn');
+        const ogText = btn.innerText;
         btn.innerText = "引擎渲染中...";
         btn.classList.add('opacity-70', 'cursor-wait');
 
         try {
-            var mainContainer = document.getElementById('mainContainer');
-            var captureArea = document.getElementById('captureArea');
-            var appContainer = document.querySelector('.app-container');
+            const mainContainer = document.getElementById('mainContainer');
+            const captureArea = document.getElementById('captureArea');
+            const appContainer = document.querySelector('.app-container');
 
-            var originalScrollTop = mainContainer.scrollTop;
-            var originalAppHeight = appContainer.style.height;
-            var originalMainOverflow = mainContainer.style.overflow;
-            var originalMainHeight = mainContainer.style.height;
+            const originalScrollTop = mainContainer.scrollTop;
+            const originalAppHeight = appContainer.style.height;
+            const originalMainOverflow = mainContainer.style.overflow;
+            const originalMainHeight = mainContainer.style.height;
 
             mainContainer.scrollTop = 0;
             appContainer.style.height = 'auto';
             mainContainer.style.overflow = 'visible';
             mainContainer.style.height = 'auto';
 
-            await new Promise(function(resolve) { setTimeout(resolve, 300); });
+            await new Promise(resolve => setTimeout(resolve, 300));
 
-            var canvas = await html2canvas(captureArea, {
+            const canvas = await html2canvas(captureArea, {
                 scale: window.devicePixelRatio > 1 ? window.devicePixelRatio : 2, 
-                useCORS: true, backgroundColor: '#F7F5F2', logging: false, 
-                onclone: function(doc) {
-                    var cloneArea = doc.getElementById('captureArea');
+                useCORS: true, 
+                backgroundColor: '#F7F5F2', 
+                logging: false, 
+                onclone: (doc) => {
+                    const cloneArea = doc.getElementById('captureArea');
                     cloneArea.style.padding = '24px 20px';
-                    var animatedEls = cloneArea.querySelectorAll('.fade-in, .stagger-1, .stagger-2, .stagger-3, .stagger-4');
-                    for (var ai = 0; ai < animatedEls.length; ai++) {
-                        animatedEls[ai].style.opacity = '1';
-                        animatedEls[ai].style.transform = 'none
+                    
+                    const animatedEls = cloneArea.querySelectorAll('.fade-in, .stagger-1, .stagger-2, .stagger-3, .stagger-4');
+                    animatedEls.forEach(el => { el.style.opacity = '1'; el.style.transform = 'none'; el.style.animation = 'none'; });
+                    
+                    const glassPanels = cloneArea.querySelectorAll('.glass-panel, .content-card');
+                    glassPanels.forEach(el => {
+                        el.style.backdropFilter = 'none';
+                        el.style.webkitBackdropFilter = 'none';
+                        el.style.boxShadow = 'none';
+                        el.style.border = '1px solid #E8E1DE';
+                        el.style.background = '#FFFFFF';
+                    });
+                }
+            });
+
+            appContainer.style.height = originalAppHeight;
+            mainContainer.style.overflow = originalMainOverflow;
+            mainContainer.style.height = originalMainHeight;
+            mainContainer.scrollTop = originalScrollTop;
+
+            const dataURL = canvas.toDataURL('image/jpeg', 0.95);
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+            if (!isMobile) {
+                const link = document.createElement('a');
+                link.download = '拾色季_高定美学分析报告.jpg';
+                link.href = dataURL; link.click();
+                showToast("报告已自动下载，请查看浏览器下载记录");
+            } else {
+                const overlay = document.getElementById('saveOverlay');
+                const overlayImg = document.getElementById('saveOverlayImg');
+                overlayImg.src = dataURL; overlay.classList.remove('hidden');
+                setTimeout(() => { overlay.classList.remove('opacity-0'); overlayImg.classList.remove('scale-95'); overlayImg.classList.add('scale-100'); }, 10);
+                triggerVibration([100, 50, 100]);
+                showToast("报告生成成功，请长按保存");
+            }
+        } catch (e) {
+            console.error(e);
+            showCustomAlert('渲染失败，建议直接使用系统长截屏功能。');
+        } finally {
+            btn.innerText = ogText; btn.classList.remove('opacity-70', 'cursor-wait');
+        }
+    }
+
+    function closeSaveOverlay() {
+        triggerVibration(30);
+        const overlay = document.getElementById('saveOverlay');
+        const overlayImg = document.getElementById('saveOverlayImg');
+        overlay.classList.add('opacity-0'); overlayImg.classList.remove('scale-100'); overlayImg.classList.add('scale-95');
+        setTimeout(() => overlay.classList.add('hidden'), 300);
+    }
+
+    function resetTest() {
+        triggerVibration(50);
+        userImageBase64 = "";
+        const preview = document.getElementById('imagePreview');
+        preview.src = ""; preview.classList.add('hidden');
+        document.getElementById('uploadText').innerText = "从相册选取或拍摄";
+        document.getElementById('dropzone-file').value = '';
+        checkLastReport();
+        showStep('step-upload');
+        document.getElementById('mainContainer').scrollTop = 0;
+    }
+</script>
+</body>
+</html>
