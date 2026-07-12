@@ -1,32 +1,5 @@
 import OpenAI from 'openai';
 
-// 拾色季 SHISEJI · 边缘计算核心风控模块
-const MASTER_SALT = "SHISEJI-MOYING-2026"; 
-const MASTER_KEYS = ["VIP888", "MY666", "SHISEJI2026"]; 
-
-// 🛡️ 哈希校验引擎
-function verifySecretKey(userKey) {
-    if (!userKey) return false;
-
-    // 1. 最高优先级：主理人后门
-    if (MASTER_KEYS.includes(userKey.toUpperCase())) return true; 
-
-    // 2. 动态卡密校验
-    if (!userKey.startsWith('SSJ-')) return false;
-    const parts = userKey.split('-');
-    if (parts.length !== 3) return false;
-    
-    const randomPart = parts[1];
-    const providedChecksum = parts[2];
-    
-    let sum = 0;
-    for(let i = 0; i < randomPart.length; i++) sum += randomPart.charCodeAt(i);
-    for(let i = 0; i < MASTER_SALT.length; i++) sum += MASTER_SALT.charCodeAt(i);
-    
-    const expectedChecksum = (sum % 100).toString().padStart(2, '0');
-    return expectedChecksum === providedChecksum;
-}
-
 export const handler = async (event, context) => {
     // 强制跨域放行
     const headers = {
@@ -45,26 +18,14 @@ export const handler = async (event, context) => {
 
     try {
         const body = JSON.parse(event.body || '{}');
-        const userKey = body.userCode || body.activationCode;
-
-        // ⚔️ 绝对拦截线：哈希校验失败，直接阻断，保护阿里云算力
-        if (!verifySecretKey(userKey)) {
-            return { 
-                statusCode: 403, 
-                headers,
-                body: JSON.stringify({ 
-                    error: "权限拒绝：高定密钥无效或已逾期，请联系主理人提取新档案。" 
-                }) 
-            };
-        }
-
         const { imageBase64 } = body;
+
         if (!imageBase64) {
             return { statusCode: 400, headers, body: JSON.stringify({ error: 'CTO 的灵魂拷问：老板，你忘传图片了？' }) };
         }
 
         // ==========================================
-        // 🟢 校验通过，开始呼叫大模型算力
+        // 🟢 开始呼叫大模型算力 (已移除旧版哈希锁)
         // ==========================================
         const { API_KEY, BASE_URL } = process.env;
 
