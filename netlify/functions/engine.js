@@ -1,42 +1,59 @@
 import OpenAI from 'openai';
+import crypto from 'crypto';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'shiseji_core_matrix_2026';
+
+function verifyToken(token) {
+    if (!token) return null;
+    const parts = token.split('.');
+    if (parts.length !== 3) return null;
+    
+    const validSign = crypto.createHmac('sha256', JWT_SECRET).update(parts[0] + "." + parts[1]).digest('base64url');
+    if (validSign !== parts[2]) return null; 
+    
+    const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
+    if (payload.exp < Math.floor(Date.now() / 1000)) return null; 
+    
+    return payload;
+}
 
 export const handler = async (event, context) => {
-    const headers = {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "Content-Type",
-        "Content-Type": "application/json"
+    const headers = { 
+        "Access-Control-Allow-Origin": "*", 
+        "Access-Control-Allow-Headers": "Content-Type, Authorization", 
+        "Content-Type": "application/json" 
     };
+    if (event.httpMethod === "OPTIONS") return { statusCode: 200, headers, body: "OK" };
+    if (event.httpMethod !== 'POST') return { statusCode: 405, headers, body: JSON.stringify({ error: 'CTO: 非法请求拦截' }) };
 
-    if (event.httpMethod === "OPTIONS") {
-        return { statusCode: 200, headers, body: "OK" };
+    // 零信任验签
+    const authHeader = event.headers.authorization || event.headers.Authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return { statusCode: 401, headers, body: JSON.stringify({ error: '⛔ 权限拦截：未携带高定通行证' }) };
     }
-
-    if (event.httpMethod !== 'POST') {
-        return { statusCode: 405, headers, body: JSON.stringify({ error: 'CTO 警告：非 POST 请求被无情拦截！' }) };
+    
+    const token = authHeader.split(' ')[1];
+    const decoded = verifyToken(token);
+    if (!decoded) {
+        return { statusCode: 403, headers, body: JSON.stringify({ error: '⛔ 权限拦截：通行证伪造或已过期' }) };
     }
 
     try {
         const body = JSON.parse(event.body || '{}');
         const { imageBase64 } = body;
-
-        if (!imageBase64) {
-            return { statusCode: 400, headers, body: JSON.stringify({ error: 'CTO 的灵魂拷问：老板，你忘传图片了？' }) };
-        }
+        if (!imageBase64) return { statusCode: 400, headers, body: JSON.stringify({ error: '未接收到图像特征' }) };
 
         const { API_KEY, BASE_URL } = process.env;
-
-        if (!API_KEY || !BASE_URL) {
-            return { statusCode: 500, headers, body: JSON.stringify({ error: '💔 大脑缺电：环境变量没配！' }) };
-        }
+        if (!API_KEY || !BASE_URL) return { statusCode: 500, headers, body: JSON.stringify({ error: '环境变量未配置' }) };
 
         const openai = new OpenAI({ apiKey: API_KEY, baseURL: BASE_URL });
 
         const systemPrompt = `
         【CRITICAL & MANDATORY FIRST STEP: FACE QUALITY CHECK】
         Before analyzing any colors, you MUST verify that the image contains a clear, distinct, unobscured human face. 
-        If the image contains NO HUMAN FACE (e.g., landscapes, objects, cartoons, animals), OR if the face is obscured by medical masks, heavy filters, extreme beauty-enhancing effects, heavy accessories, or is mostly obscured by shadows, YOU MUST IMMEDIATELY ABORT the color analysis!
+        If the image contains NO HUMAN FACE (e.g., landscapes, objects, cartoons, animals), OR if the face is obscured by medical masks, heavy filters, extreme beauty-enhancing effects, heavy accessories, or shadows, YOU MUST IMMEDIATELY ABORT!
         
-        If the face is blocked, missing, or heavily filtered, your output MUST BE EXACTLY this JSON and nothing else:
+        If the face is blocked, missing, or heavily filtered, output EXACTLY this JSON:
         {
           "season_name": "⚠️ 引擎已阻断",
           "season_en": "Access Denied",
@@ -44,15 +61,13 @@ export const handler = async (event, context) => {
         }
 
         If and ONLY if a clear, natural human face is detected, proceed with the luxury high-end AI color analysis for "拾色季".
-        You are a luxury high-end AI color美学美学家. Your output must be high-end, inspiring, sophisticated, and detailed.
-
-        ### CRITICAL: Output ONLY the JSON object, no markdown, no code blocks, no other text.
+        Output ONLY the JSON object, no markdown.
 
         Expected JSON structure for valid faces:
         {
           "season_name": "The 12-season type (e.g., 暖春型, 深秋型, 冷夏型)",
           "season_en": "English name of the season",
-          "description": "A poetic, detailed, and inspirational Chinese paragraph describing the client's skin tone and overall color palette.",
+          "description": "Poetic Chinese description",
           "feature_colors": [
             {"label": "肌肤底色", "hex": "#HEX"},
             {"label": "面颊色调", "hex": "#HEX"},
@@ -60,23 +75,21 @@ export const handler = async (event, context) => {
             {"label": "瞳孔特征", "hex": "#HEX"}
           ],
           "radar_data": [
-            {"name": "色调(冷暖)", "value": "1-100 score, higher for warm"},
-            {"name": "明度(深浅)", "value": "1-100 score, higher for bright"},
-            {"name": "彩度(饱和)", "value": "1-100 score, higher for saturated"},
-            {"name": "清浊(清透)", "value": "1-100 score, higher for clear"},
-            {"name": "对比(反差)", "value": "1-100 score, higher for contrast"}
+            {"name": "色调(冷暖)", "value": 80},
+            {"name": "明度(深浅)", "value": 70},
+            {"name": "彩度(饱和)", "value": 60},
+            {"name": "清浊(清透)", "value": 90},
+            {"name": "对比(反差)", "value": 50}
           ],
           "best_colors": [
-            {"name": "Sophisticated Chinese name for the color", "hex": "#HEX"},
-            {"name": "Color 2", "hex": "#HEX"},
-            {"name": "Color 3", "hex": "#HEX"},
-            {"name": "Color 4", "hex": "#HEX"}
+            {"name": "Color 1", "hex": "#HEX"},
+            {"name": "Color 2", "hex": "#HEX"}
           ],
-          "makeup_advice": "A paragraph with specific luxury product code recommendations (e.g., YSL #B10, DIOR #999, NARS Orgasm).",
-          "outfit_advice": "A paragraph covering fashion, silhouette, and high-end fabrics.",
-          "accessory_advice": "A paragraph covering metal, leather, and jewelry texture.",
-          "celebrity_reference": "Provide a full, descriptive Chinese sentence mentioning a famous person known for styling in this season's colors. CRITICAL RULE: You MUST randomly select a DIFFERENT celebrity each time to ensure '千人千面'.",
-          "avoid_colors": "Provide Chinese names for 2-3 colors this season should avoid. Never output hex codes for avoid colors, use plain text descriptive names."
+          "makeup_advice": "Specific luxury product advice.",
+          "outfit_advice": "Fashion and fabric advice.",
+          "accessory_advice": "Metal and jewelry advice.",
+          "celebrity_reference": "A Chinese sentence mentioning a famous person.",
+          "avoid_colors": "Colors to avoid in plain Chinese."
         }`;
 
         const response = await openai.chat.completions.create({
@@ -96,34 +109,12 @@ export const handler = async (event, context) => {
 
         const rawContent = response.choices[0].message.content;
         const cleanedJSON = rawContent.replace(/```json|```/g, '').trim();
+        const finalJSON = JSON.parse(cleanedJSON);
 
-        let finalJSON;
-        try {
-            finalJSON = JSON.parse(cleanedJSON);
-        } catch (e) {
-            console.error('JSON 解析失败，AI 返回原文为:', rawContent);
-            return {
-                statusCode: 500,
-                headers,
-                body: JSON.stringify({ error: '💔 大脑瓦解：AI 数据格式崩溃，请重试！', debug_content: rawContent })
-            };
-        }
-
-        return {
-            statusCode: 200,
-            headers,
-            body: JSON.stringify(finalJSON)
-        };
+        return { statusCode: 200, headers, body: JSON.stringify(finalJSON) };
 
     } catch (error) {
-        console.error('阿里云 API 呼叫失败:', error);
-        return {
-            statusCode: 500,
-            headers: {
-                "Access-Control-Allow-Origin": "*",
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ error: '💔 大脑罢工：连接云端服务器时发生意外！' })
-        };
+        console.error('引擎执行异常:', error);
+        return { statusCode: 500, headers, body: JSON.stringify({ error: '💔 核心引擎算力溢出，请重试' }) };
     }
 };
