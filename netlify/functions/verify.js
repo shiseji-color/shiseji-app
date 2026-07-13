@@ -1,6 +1,6 @@
 const crypto = require('crypto');
 
-// 核心加密盐值，用于防篡改
+// 核心加密盐值
 const JWT_SECRET = process.env.JWT_SECRET || 'shiseji_core_matrix_2026';
 
 function signToken(payload) {
@@ -24,19 +24,16 @@ export const handler = async (event, context) => {
         let remaining = 0;
         let isMaster = false;
 
-        // 统帅白名单特权
         if (key === 'VIP888') {
             isValid = true;
             remaining = 9999; 
             isMaster = true; 
         } else {
-            // [此处对接你的数据库校验逻辑]
             isValid = true; 
             remaining = 1; 
         }
 
         if (isValid) {
-            // 签发 Token，有效期 30 分钟 (1800秒)
             const token = signToken({ 
                 key: key, 
                 fp: fingerprint,
