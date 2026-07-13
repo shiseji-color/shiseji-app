@@ -7,13 +7,10 @@ function verifyToken(token) {
     if (!token) return null;
     const parts = token.split('.');
     if (parts.length !== 3) return null;
-    
     const validSign = crypto.createHmac('sha256', JWT_SECRET).update(parts[0] + "." + parts[1]).digest('base64url');
     if (validSign !== parts[2]) return null; 
-    
     const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
     if (payload.exp < Math.floor(Date.now() / 1000)) return null; 
-    
     return payload;
 }
 
@@ -51,16 +48,16 @@ export const handler = async (event, context) => {
         【CRITICAL: FACE QUALITY CHECK - DYNAMIC TOLERANCE】
         Before analyzing colors, you MUST count the faces and evaluate image compliance based on these strict rules:
 
-        1. MULTIPLE FACES (多人合照): If you detect 2 or more faces, YOU MUST REJECT. The analysis is for ONE person only.
-        2. NO FACE: If there is no human face, REJECT.
+        1. MULTIPLE FACES (多人合照): If you detect 2 or more faces, YOU MUST REJECT. The analysis is for ONE single person only.
+        2. NO FACE or NON-HUMAN: If there is no human face, or if it's a screen photo (翻拍), REJECT.
         3. HARD REJECTION (拦截项): REJECT if the core face area (cheeks, nose, jaw) is heavily obscured by MEDICAL MASKS (口罩), DARK SUNGLASSES (遮光墨镜), or FULL-FACE HATS. REJECT if the image has HEAVY FILTERS or EXTREME BEAUTY EFFECTS (重度磨皮/美颜).
-        4. SOFT ALLOWANCE (豁免项): You MUST ALLOW transparent prescription glasses (透明眼镜) and normal decorative hats (like berets/baseball caps) AS LONG AS the cheeks and core skin tones are visible.
+        4. SOFT ALLOWANCE (豁免项): You MUST ALLOW transparent prescription glasses (透明眼镜), normal decorative hats (like berets/baseball caps), and light makeup AS LONG AS the cheeks and core skin tones are visible.
 
         If ANY of the Hard Rejection rules are violated (including multiple faces), output EXACTLY this JSON and ABORT:
         {
-          "season_name": "⚠️ 引擎已阻断",
+          "season_name": "⚠️ 无法完成精准诊断",
           "season_en": "Access Denied",
-          "description": "检测到多人合照、核心面部遮挡或重度滤镜，无法精准提取原生底色。<br><br>请上传自然光下的【单人正面素颜照】。<br>🚫禁止：多人合照、口罩/墨镜、全遮脸帽、重度美颜。<br>✅允许：透明眼镜、不遮挡脸颊的装饰帽、轻微淡妆。"
+          "description": "抱歉，无法完成精准诊断。<br><br>高定色彩诊断，仅支持自然光正面全脸素颜原图。<br>不适用：多人合照、口罩遮挡、墨镜、重度美颜滤镜、翻拍、非人像照片。<br><br>请上传合规原图，生成专属 16 维色彩档案。"
         }
 
         If the image is a valid, single person, proceed to extract colors based ONLY on raw skin data, ignoring the hat or transparent glasses.
