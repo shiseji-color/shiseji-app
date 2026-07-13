@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import crypto from 'crypto';
+import { Buffer } from 'buffer';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'shiseji_core_matrix_2026';
 
@@ -7,10 +8,13 @@ function verifyToken(token) {
     if (!token) return null;
     const parts = token.split('.');
     if (parts.length !== 3) return null;
+    
     const validSign = crypto.createHmac('sha256', JWT_SECRET).update(parts[0] + "." + parts[1]).digest('base64url');
     if (validSign !== parts[2]) return null; 
+    
     const payload = JSON.parse(Buffer.from(parts[1], 'base64url').toString());
     if (payload.exp < Math.floor(Date.now() / 1000)) return null; 
+    
     return payload;
 }
 
