@@ -1,5 +1,4 @@
-import crypto from 'crypto';
-import { Buffer } from 'buffer';
+const crypto = require('crypto');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'shiseji_core_matrix_2026';
 
@@ -10,7 +9,7 @@ function signToken(payload) {
     return `${header}.${p}.${sign}`;
 }
 
-export const handler = async (event, context) => {
+exports.handler = async (event, context) => {
     const headers = { "Access-Control-Allow-Origin": "*", "Content-Type": "application/json" };
     if (event.httpMethod === "OPTIONS") return { statusCode: 200, headers, body: "OK" };
 
