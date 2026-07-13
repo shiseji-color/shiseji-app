@@ -185,9 +185,16 @@
                     </label>
                 </div>
                 
-                <div class="mt-4 flex flex-col items-center gap-2">
-                    <div class="flex items-center"><span class="w-1.5 h-1.5 rounded-full bg-[#DABFB4] mr-2 shadow-sm"></span><span class="text-[11px] text-[#A74E4E] font-bold">必须摘下口罩/眼镜/去滤镜</span></div>
-                    <div class="flex items-center"><span class="w-1.5 h-1.5 rounded-full bg-[#DABFB4] mr-2 shadow-sm"></span><span class="text-[11px] text-[#8C7A70]">面朝自然光 · 素颜拍摄</span></div>
+                <!-- 全新静奢风豁免提示 -->
+                <div class="mt-4 flex flex-col items-center gap-2.5">
+                    <div class="flex items-center">
+                        <span class="w-1.5 h-1.5 rounded-full bg-[#A74E4E] mr-2 shadow-sm"></span>
+                        <span class="text-[11px] text-[#A74E4E] font-medium tracking-wide">禁止：多人合照 / 口罩墨镜 / 重度滤镜</span>
+                    </div>
+                    <div class="flex items-center">
+                        <span class="w-1.5 h-1.5 rounded-full bg-[#8C7A70] mr-2 shadow-sm opacity-60"></span>
+                        <span class="text-[11px] text-[#8C7A70] tracking-wide">允许：透明眼镜 / 正常装饰帽 / 轻微淡妆</span>
+                    </div>
                 </div>
 
                 <div id="restoreContainer" class="hidden mt-6 text-center">
@@ -521,7 +528,7 @@
             if (response.ok && data.valid) {
                 window.currentCode = code;
                 localStorage.setItem('shiseji_vip_key', code);
-                sessionStorage.setItem('shiseji_auth_token', data.token); // 保存令牌
+                sessionStorage.setItem('shiseji_auth_token', data.token);
                 
                 checkLastReport();
                 showStep('step-upload');
@@ -969,7 +976,7 @@
             const data = await response.json();
 
             if (response.ok && data.valid) {
-                sessionStorage.setItem('shiseji_auth_token', data.token); // 更新临时令牌
+                sessionStorage.setItem('shiseji_auth_token', data.token);
                 
                 userImageBase64 = "";
                 const preview = document.getElementById('imagePreview');
