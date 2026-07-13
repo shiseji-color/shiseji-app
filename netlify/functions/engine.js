@@ -26,7 +26,6 @@ export const handler = async (event, context) => {
     if (event.httpMethod === "OPTIONS") return { statusCode: 200, headers, body: "OK" };
     if (event.httpMethod !== 'POST') return { statusCode: 405, headers, body: JSON.stringify({ error: 'CTO: 非法请求拦截' }) };
 
-    // 零信任验签
     const authHeader = event.headers.authorization || event.headers.Authorization;
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return { statusCode: 401, headers, body: JSON.stringify({ error: '⛔ 权限拦截：未携带高定通行证' }) };
@@ -49,23 +48,26 @@ export const handler = async (event, context) => {
         const openai = new OpenAI({ apiKey: API_KEY, baseURL: BASE_URL });
 
         const systemPrompt = `
-        【CRITICAL & MANDATORY FIRST STEP: FACE QUALITY CHECK】
-        Before analyzing any colors, you MUST verify that the image contains a clear, distinct, unobscured human face. 
-        If the image contains NO HUMAN FACE (e.g., landscapes, objects, cartoons, animals), OR if the face is obscured by medical masks, heavy filters, extreme beauty-enhancing effects, heavy accessories, or shadows, YOU MUST IMMEDIATELY ABORT!
-        
-        If the face is blocked, missing, or heavily filtered, output EXACTLY this JSON:
+        【CRITICAL: FACE QUALITY CHECK - DYNAMIC TOLERANCE】
+        Before analyzing colors, you MUST count the faces and evaluate image compliance based on these strict rules:
+
+        1. MULTIPLE FACES (多人合照): If you detect 2 or more faces, YOU MUST REJECT. The analysis is for ONE person only.
+        2. NO FACE: If there is no human face, REJECT.
+        3. HARD REJECTION (拦截项): REJECT if the core face area (cheeks, nose, jaw) is heavily obscured by MEDICAL MASKS (口罩), DARK SUNGLASSES (遮光墨镜), or FULL-FACE HATS. REJECT if the image has HEAVY FILTERS or EXTREME BEAUTY EFFECTS (重度磨皮/美颜).
+        4. SOFT ALLOWANCE (豁免项): You MUST ALLOW transparent prescription glasses (透明眼镜) and normal decorative hats (like berets/baseball caps) AS LONG AS the cheeks and core skin tones are visible.
+
+        If ANY of the Hard Rejection rules are violated (including multiple faces), output EXACTLY this JSON and ABORT:
         {
           "season_name": "⚠️ 引擎已阻断",
           "season_en": "Access Denied",
-          "description": "抱歉，未能读取完整原生面部底色。<br><br>高定精准诊断，仅支持自然光正面全脸素颜原图。<br>不适用：口罩遮挡、重度滤镜美颜、翻拍、非人像照片。<br><br>请重新上传合规原图，获取您的专属 16 维色彩档案。"
+          "description": "检测到多人合照、核心面部遮挡或重度滤镜，无法精准提取原生底色。<br><br>请上传自然光下的【单人正面素颜照】。<br>🚫禁止：多人合照、口罩/墨镜、全遮脸帽、重度美颜。<br>✅允许：透明眼镜、不遮挡脸颊的装饰帽、轻微淡妆。"
         }
 
-        If and ONLY if a clear, natural human face is detected, proceed with the luxury high-end AI color analysis for "拾色季".
-        Output ONLY the JSON object, no markdown.
-
+        If the image is a valid, single person, proceed to extract colors based ONLY on raw skin data, ignoring the hat or transparent glasses.
+        
         Expected JSON structure for valid faces:
         {
-          "season_name": "The 12-season type (e.g., 暖春型, 深秋型, 冷夏型)",
+          "season_name": "The 12-season type",
           "season_en": "English name of the season",
           "description": "Poetic Chinese description",
           "feature_colors": [
