@@ -1,6 +1,5 @@
-import OpenAI from 'openai';
-import crypto from 'crypto';
-import { Buffer } from 'buffer';
+const { OpenAI } = require('openai');
+const crypto = require('crypto');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'shiseji_core_matrix_2026';
 
@@ -18,7 +17,7 @@ function verifyToken(token) {
     return payload;
 }
 
-export const handler = async (event, context) => {
+exports.handler = async (event, context) => {
     const headers = { 
         "Access-Control-Allow-Origin": "*", 
         "Access-Control-Allow-Headers": "Content-Type, Authorization", 
@@ -111,13 +110,4 @@ export const handler = async (event, context) => {
         });
 
         const rawContent = response.choices[0].message.content;
-        const cleanedJSON = rawContent.replace(/```json|```/g, '').trim();
-        const finalJSON = JSON.parse(cleanedJSON);
-
-        return { statusCode: 200, headers, body: JSON.stringify(finalJSON) };
-
-    } catch (error) {
-        console.error('引擎执行异常:', error);
-        return { statusCode: 500, headers, body: JSON.stringify({ error: '💔 核心引擎算力溢出，请重试' }) };
-    }
-};
+        const cleanedJSON = rawContent.replace(/
