@@ -1,4 +1,5 @@
-const crypto = require('crypto');
+import crypto from 'crypto';
+import { Buffer } from 'buffer';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'shiseji_core_matrix_2026';
 
@@ -34,11 +35,18 @@ export const handler = async (event, context) => {
 
         if (isValid) {
             const token = signToken({ 
-                key: key, fp: fingerprint, exp: Math.floor(Date.now() / 1000) + 1800 
+                key: key, 
+                fp: fingerprint,
+                exp: Math.floor(Date.now() / 1000) + 1800 
             });
+
             return {
                 statusCode: 200, headers,
-                body: JSON.stringify({ valid: true, remaining: isMaster ? '无限' : remaining, token: token })
+                body: JSON.stringify({ 
+                    valid: true, 
+                    remaining: isMaster ? '无限' : remaining,
+                    token: token
+                })
             };
         } else {
             return { statusCode: 403, headers, body: JSON.stringify({ valid: false, msg: '密钥无效或算力耗尽' }) };
