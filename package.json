@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "build": "node scripts/build-static.js",
-    "check": "node --check lib/activation-store.js && node --check api/verify-code.js && node --check api/analyze.js",
+    "check": "node --check lib/activation-store.js && node --check lib/cloudflare-adapter.js && node --check api/verify-code.js && node --check api/analyze.js && node --check functions/api/verify-code.js && node --check functions/api/analyze.js",
     "test": "node --test",
     "check:supabase": "node --env-file=.env.local scripts/check-supabase-connection.js",
     "check:bailian": "node --env-file=.env.local scripts/check-bailian-connection.js",
