@@ -1,0 +1,13 @@
+﻿node_modules/
+.env
+.env.*
+!.env.example
+dist/
+.vercel/
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+private/
+activation-hashes-*.csv
+*密钥库*.txt

@@ -518,11 +518,10 @@
         submitBtn.classList.add('opacity-70', 'cursor-wait');
 
         try {
-            const fp = await getDeviceFingerprint(); 
-            const response = await fetch('/.netlify/functions/verify', {
+            const response = await fetch('/api/verify-code', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ key: code, fingerprint: fp })
+                body: JSON.stringify({ activationCode: code })
             });
 
             const data = await response.json();
@@ -530,23 +529,20 @@
             if (response.ok && data.valid) {
                 window.currentCode = code;
                 localStorage.setItem('shiseji_vip_key', code);
-                sessionStorage.setItem('shiseji_auth_token', data.token);
                 
                 checkLastReport();
                 showStep('step-upload');
                 
                 let premiumMsg = "";
-                if (data.remaining === '无限') {
-                    premiumMsg = "ROOT 权限放行：全量高定引擎无限制调用";
-                } else if (data.remaining !== undefined) {
-                    premiumMsg = `云端鉴权通过：专属高定算力剩余 ${data.remaining} 席`;
+                if (data.remainingUses !== undefined) {
+                    premiumMsg = `云端鉴权通过：专属高定算力剩余 ${data.remainingUses} 席`;
                 } else {
                     premiumMsg = "十六维视觉引擎物理通道已贯通";
                 }
                 showToast(premiumMsg);
                 
             } else {
-                showCustomAlert(data.msg || '该密钥已物理熔断或失效，请向主理人提取新算力档案。');
+                showCustomAlert(data.error || '该密钥已物理熔断或失效，请向主理人提取新算力档案。');
             }
         } catch (error) {
             console.error('云端核销失败:', error);
@@ -597,8 +593,7 @@
     }
 
     async function startAnalysis() {
-        const token = sessionStorage.getItem('shiseji_auth_token');
-        if (!window.currentCode || !token) { 
+        if (!window.currentCode) {
             showCustomAlert("通行证已过期，请重新验签");
             showStep('step-activation'); 
             return; 
@@ -659,30 +654,32 @@
 
         try {
             let successData = null;
-            const maxRetries = 2;
+            const maxRetries = 0;
 
             for (let attempt = 0; attempt <= maxRetries; attempt++) {
                 try {
-                    const response = await fetch('/.netlify/functions/engine', {
+                    const response = await fetch('/api/analyze', {
                         method: 'POST',
-                        headers: { 
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}` 
-                        },
+                        headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ 
                             imageBase64: userImageBase64,
-                            fallbackLevel: attempt
+                            activationCode: window.currentCode
                         })
                     });
 
-                    if (response.status === 401 || response.status === 403) {
+                    if (response.status === 400 || response.status === 403) {
                         throw new Error("AUTH_FAILED");
                     }
                     if (!response.ok && response.status === 429) {
                         if (attempt < maxRetries) continue; 
                     }
 
-                    successData = await response.json();
+                    const payload = await response.json();
+                    if (!response.ok) {
+                        throw new Error(payload.error || "ANALYSIS_FAILED");
+                    }
+                    successData = payload.data;
+                    window.remainingUses = payload.remainingUses;
                     break;
                 } catch (err) {
                     if (err.message === "AUTH_FAILED" || attempt === maxRetries) throw err;
@@ -706,7 +703,10 @@
                     renderAIResult(successData);
                     showStep('step-result');
                     triggerVibration([100, 50, 200]);
-                    setTimeout(() => showToast(`本次高定诊断成功，档案已生成`), 800);
+                    setTimeout(
+                        () => showToast(`本次高定诊断成功，剩余 ${window.remainingUses} 次`),
+                        800
+                    );
                 } else {
                     throw new Error("无数据返回");
                 }
@@ -969,17 +969,14 @@
         }
 
         try {
-            const fp = await getDeviceFingerprint(); 
-            const response = await fetch('/.netlify/functions/verify', {
+            const response = await fetch('/api/verify-code', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ key: code, fingerprint: fp })
+                body: JSON.stringify({ activationCode: code })
             });
             const data = await response.json();
 
             if (response.ok && data.valid) {
-                sessionStorage.setItem('shiseji_auth_token', data.token);
-                
                 userImageBase64 = "";
                 const preview = document.getElementById('imagePreview');
                 preview.src = ""; 
@@ -991,12 +988,10 @@
                 showStep('step-upload');
                 document.getElementById('mainContainer').scrollTop = 0;
                 
-                let msg = data.remaining === '无限' ? 
-                    "权限已重载，无界通行" : 
-                    `算力重载成功，剩余 ${data.remaining} 次`;
+                let msg = `算力重载成功，剩余 ${data.remainingUses} 次`;
                 showToast(msg);
             } else {
-                forceKickToHome(data.msg || "该密钥算力已耗尽，请获取新授权");
+                forceKickToHome(data.error || "该密钥算力已耗尽，请获取新授权");
             }
         } catch (error) {
             console.error(error);
@@ -1012,7 +1007,6 @@
     function forceKickToHome(msg) {
         window.currentCode = ""; 
         userImageBase64 = "";
-        sessionStorage.removeItem('shiseji_auth_token');
         showStep('step-activation');
         document.getElementById('mainContainer').scrollTop = 0;
         showCustomAlert(msg);
