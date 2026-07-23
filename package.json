@@ -2,6 +2,14 @@
   "name": "shiseji-app",
   "version": "1.0.0",
   "type": "module",
+  "scripts": {
+    "build": "node scripts/build-static.js",
+    "check": "node --check lib/activation-store.js && node --check api/verify-code.js && node --check api/analyze.js",
+    "test": "node --test",
+    "check:supabase": "node --env-file=.env.local scripts/check-supabase-connection.js",
+    "check:bailian": "node --env-file=.env.local scripts/check-bailian-connection.js",
+    "create:test-code": "node --env-file=.env.local scripts/create-test-code.js"
+  },
   "dependencies": {
     "openai": "^4.28.0"
   }
