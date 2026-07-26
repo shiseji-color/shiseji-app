@@ -1,11 +1,11 @@
 import OpenAI from 'openai';
 import {
   consumeActivationUse,
-  hashActivationCode,
-  isActivationCodeFormatValid,
-  normalizeActivationCode,
   refundActivationUse,
 } from '../lib/activation-store.js';
+import { validateAnalysisResult } from '../lib/analysis-schema.js';
+import { verifyAnalysisToken } from '../lib/analysis-token.js';
+import { enforceRateLimit } from '../lib/rate-limit.js';
 
 // 初始化大模型客户端（对接阿里云百炼）
 const openai = new OpenAI({
@@ -21,14 +21,30 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: '仅支持POST请求' });
   }
 
+  try {
+    enforceRateLimit(req, 'analyze', { limit: 5, windowMs: 60_000 });
+  } catch (error) {
+    res.setHeader('Retry-After', String(error.retryAfter));
+    return res.status(429).json({ error: error.message });
+  }
+
   let consumedCodeHash = null;
+  let consumedRequestId = null;
 
   try {
-    const { imageBase64, activationCode } = req.body ?? {};
-    const code = normalizeActivationCode(activationCode);
+    const { imageBase64, analysisToken, requestId } = req.body ?? {};
+    let codeHash;
+    try {
+      codeHash = verifyAnalysisToken(analysisToken);
+    } catch {
+      return res.status(403).json({ error: '授权已过期，请重新验证激活码' });
+    }
 
-    if (!isActivationCodeFormatValid(code)) {
-      return res.status(400).json({ error: '激活码格式不正确' });
+    if (
+      typeof requestId !== 'string' ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(requestId)
+    ) {
+      return res.status(400).json({ error: '请求标识无效，请重新发起分析' });
     }
 
     if (
@@ -42,12 +58,24 @@ export default async function handler(req, res) {
       return res.status(413).json({ error: '照片过大，请压缩后重试' });
     }
 
-    consumedCodeHash = hashActivationCode(code);
-    const remainingUses = await consumeActivationUse(consumedCodeHash);
+    consumedCodeHash = codeHash;
+    consumedRequestId = requestId;
+    const consumption = await consumeActivationUse(codeHash, requestId);
 
-    if (remainingUses === null) {
+    if (consumption === null) {
       consumedCodeHash = null;
+      consumedRequestId = null;
       return res.status(403).json({ error: '激活码无效或可用次数已用完' });
+    }
+
+    let remainingUses = consumption.remainingUses;
+    if (consumption.alreadyProcessed) {
+      consumedCodeHash = null;
+      consumedRequestId = null;
+      return res.status(409).json({
+        error: '该分析请求已处理，请勿重复提交',
+        remainingUses,
+      });
     }
 
     // 色彩诊断核心指令：保留成熟版的人脸质量检查和十六型分析。
@@ -116,23 +144,30 @@ export default async function handler(req, res) {
       ],
       max_tokens: 2000,
       temperature: 0.1
-    });
+    }, { timeout: 45_000 });
 
     // 处理AI返回结果
     let text = response.choices?.[0]?.message?.content?.trim();
     if (!text) throw new Error('AI返回内容为空');
 
     text = text.replace(/^```json\s*/i, '').replace(/\s*```$/, '');
-    const data = JSON.parse(text);
+    const data = validateAnalysisResult(JSON.parse(text));
+
+    if (data.season_en === 'PHOTO_NOT_ELIGIBLE') {
+      const refundedUses = await refundActivationUse(codeHash, requestId);
+      if (refundedUses !== null) remainingUses = refundedUses;
+      consumedCodeHash = null;
+      consumedRequestId = null;
+    }
 
     return res.status(200).json({ data, remainingUses });
 
   } catch (e) {
     console.error('Color analysis failed:', e);
 
-    if (consumedCodeHash) {
+    if (consumedCodeHash && consumedRequestId) {
       try {
-        await refundActivationUse(consumedCodeHash);
+        await refundActivationUse(consumedCodeHash, consumedRequestId);
       } catch (refundError) {
         console.error('Activation use refund failed:', refundError);
       }

@@ -4,6 +4,8 @@ import {
   isActivationCodeFormatValid,
   normalizeActivationCode,
 } from '../lib/activation-store.js';
+import { createAnalysisToken } from '../lib/analysis-token.js';
+import { enforceRateLimit } from '../lib/rate-limit.js';
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -11,6 +13,13 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return res.status(405).json({ error: '仅支持POST请求' });
+  }
+
+  try {
+    enforceRateLimit(req, 'verify-code', { limit: 10, windowMs: 60_000 });
+  } catch (error) {
+    res.setHeader('Retry-After', String(error.retryAfter));
+    return res.status(429).json({ error: error.message });
   }
 
   const code = normalizeActivationCode(req.body?.activationCode);
@@ -26,7 +35,10 @@ export default async function handler(req, res) {
   try {
     const status = await getActivationStatus(hashActivationCode(code));
 
-    return res.status(200).json(status);
+    return res.status(200).json({
+      ...status,
+      analysisToken: status.valid ? createAnalysisToken(hashActivationCode(code)) : null,
+    });
   } catch (error) {
     console.error('Activation verification failed:', error);
     return res.status(503).json({
