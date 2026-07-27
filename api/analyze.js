@@ -91,6 +91,8 @@ export default async function handler(req, res) {
   "season_name": "无法完成诊断",
   "season_en": "PHOTO_NOT_ELIGIBLE",
   "description": "请上传自然光下、单人正面、无遮挡且无重度滤镜的清晰照片。",
+  "style_keywords": [],
+  "color_impression": "",
   "feature_colors": [],
   "radar_data": [],
   "best_colors": [],
@@ -101,11 +103,13 @@ export default async function handler(req, res) {
   "avoid_colors": []
 }
 
-照片合格时，基于真实肤色、面颊、原生发色和瞳孔特征，完成十六型个人色彩诊断。只返回标准JSON，结构必须为：
+照片合格时，基于真实肤色、面颊、原生发色和瞳孔特征，完成十六型个人色彩诊断。推荐色必须提供8个，避坑色必须提供3个。只返回标准JSON，结构必须为：
 {
   "season_name": "中文季型名称",
   "season_en": "英文季型名称",
   "description": "诊断特征说明",
+  "style_keywords": ["三个简洁的个人色彩关键词"],
+  "color_impression": "一句具有画面感、但不夸大效果的专属色彩印象",
   "feature_colors": [
     {"label": "肌肤底色", "hex": "#RRGGBB"},
     {"label": "面颊色调", "hex": "#RRGGBB"},
@@ -113,11 +117,11 @@ export default async function handler(req, res) {
     {"label": "瞳孔特征", "hex": "#RRGGBB"}
   ],
   "radar_data": [
-    {"name": "冷暖", "value": 0},
-    {"name": "明度", "value": 0},
-    {"name": "纯度", "value": 0},
-    {"name": "柔和度", "value": 0},
-    {"name": "对比度", "value": 0}
+    {"name": "冷暖", "value": 0, "desc": "用一句白话说明适合的冷暖倾向"},
+    {"name": "明度", "value": 0, "desc": "用一句白话说明适合的深浅范围"},
+    {"name": "纯度", "value": 0, "desc": "用一句白话说明适合的鲜艳程度"},
+    {"name": "柔和度", "value": 0, "desc": "用一句白话说明适合的柔和程度"},
+    {"name": "对比度", "value": 0, "desc": "用一句白话说明适合的搭配反差"}
   ],
   "best_colors": [{"name": "颜色名称", "hex": "#RRGGBB"}],
   "makeup_advice": "彩妆建议",

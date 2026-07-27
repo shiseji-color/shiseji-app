@@ -7,6 +7,8 @@ function validResult() {
     season_name: '柔夏型',
     season_en: 'Soft Summer',
     description: '整体色彩柔和。',
+    style_keywords: ['柔和', '清透', '低对比'],
+    color_impression: '像薄雾花园般安静柔和。',
     feature_colors: [{ label: '肌肤底色', hex: '#AABBCC' }],
     radar_data: [{ name: '冷暖', value: 60 }],
     best_colors: [{ name: '雾霾蓝', hex: '#778899' }],
@@ -22,6 +24,17 @@ test('normalizes and accepts a bounded analysis response', () => {
   const result = validateAnalysisResult(validResult());
   assert.equal(result.feature_colors[0].hex, '#AABBCC');
   assert.equal(result.radar_data[0].value, 60);
+  assert.deepEqual(result.style_keywords, ['柔和', '清透', '低对比']);
+  assert.equal(result.color_impression, '像薄雾花园般安静柔和。');
+});
+
+test('keeps identity fields backward compatible', () => {
+  const legacy = validResult();
+  delete legacy.style_keywords;
+  delete legacy.color_impression;
+  const result = validateAnalysisResult(legacy);
+  assert.deepEqual(result.style_keywords, []);
+  assert.equal(result.color_impression, '');
 });
 
 test('rejects unsafe color values and out-of-range radar values', () => {

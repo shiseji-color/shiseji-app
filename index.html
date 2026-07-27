@@ -123,10 +123,10 @@
             <div class="content-card p-8">
                 <div class="text-center mb-8">
                     <div class="inline-block bg-[#F4EFEA] px-3 py-1.5 rounded-full mb-5 shadow-sm">
-                        <span class="text-[10px] text-[#8C7A70] tracking-widest font-medium">✨ 官方高定色彩诊断系统</span>
+                        <span class="text-[10px] text-[#8C7A70] tracking-widest font-medium">四季主型 · 十六型细分</span>
                     </div>
-                    <h2 class="text-[22px] font-serif-custom font-medium text-[#3D342F] tracking-wider mb-3">唤醒原生美学</h2>
-                    <p class="text-[13px] text-[#8C7A70] leading-relaxed">输入您的专属高定密钥<br><b class="text-[#6B5D55]">独家 16 维面部色彩引擎将为您精准定调</b></p>
+                    <h2 class="text-[22px] font-serif-custom font-medium text-[#3D342F] tracking-wider mb-3">找到属于你的个人色彩密码</h2>
+                    <p class="text-[13px] text-[#8C7A70] leading-relaxed">AI 分析面部色彩特征<br><b class="text-[#6B5D55]">生成你的专属四季色彩档案</b></p>
                 </div>
                 
                 <div class="relative">
@@ -139,7 +139,7 @@
                 </div>
                 
                 <button onclick="verifyCode()" class="w-full text-white bg-[#3D342F] hover:bg-[#2B2420] shadow-[0_8px_20px_rgba(89,78,72,0.25)] font-medium rounded-[1rem] text-[15px] px-5 py-4 text-center mt-8 transition-all duration-300 tracking-[0.25em]">
-                    开启专属测试
+                    开始生成我的色彩档案
                 </button>
                 
                 <div class="mt-5 flex justify-center items-center opacity-60 hover:opacity-100 transition-opacity cursor-pointer" onclick="showPrivacyModal()">
@@ -217,7 +217,7 @@
             <div id="captureArea" class="space-y-4 pb-4 pt-2 bg-[var(--primary-bg)] px-1 relative">
                 
                 <div class="text-center pt-3 pb-2">
-                    <h2 class="text-[12px] font-medium text-[#8C7A70] tracking-[0.45em] uppercase">拾色季 · 专属高定分析报告</h2>
+                    <h2 class="text-[12px] font-medium text-[#8C7A70] tracking-[0.45em] uppercase">拾色季 · 个人色彩身份报告</h2>
                     <div class="w-12 h-[1px] bg-[#DABFB4] mx-auto mt-3"></div>
                 </div>
 
@@ -230,12 +230,15 @@
                                 <div class="scan-line"></div>
                             </div>
                             <div>
+                                <p class="text-[9px] text-[#8C7A70] tracking-[0.3em] uppercase mb-2">Personal Color Identity</p>
                                 <h2 id="res-season-name" class="text-[30px] font-serif-custom font-bold text-[#3D342F] tracking-widest leading-none">生成中</h2>
                                 <h3 id="res-season-en" class="text-[13px] text-[#BFA89F] font-serif-custom italic tracking-wider mt-2">...</h3>
                             </div>
                         </div>
                     </div>
-                    <p id="res-desc" class="text-[13px] text-[#6B5D55] leading-[2.2] text-justify tracking-wide">生成中...</p>
+                    <div id="res-style-keywords" class="flex flex-wrap gap-2 mb-4"></div>
+                    <p id="res-color-impression" class="text-[14px] text-[#4A403A] font-serif-custom leading-[1.9] tracking-wide mb-3"></p>
+                    <p id="res-desc" class="text-[12px] text-[#8C7A70] leading-[2] text-justify tracking-wide">生成中...</p>
                 </div>
 
                 <div class="content-card p-6 fade-in stagger-2">
@@ -723,6 +726,21 @@
             const map = {'season-name':'season_name','season-en':'season_en','desc':'description'};
             if(document.getElementById(`res-${key}`)) document.getElementById(`res-${key}`).innerText = d[map[key]] || "生成中...";
         });
+
+        const keywordContainer = document.getElementById('res-style-keywords');
+        if (keywordContainer) {
+            const keywords = Array.isArray(d.style_keywords)
+                ? d.style_keywords.slice(0, 5)
+                : [];
+            keywordContainer.innerHTML = keywords.map((keyword) =>
+                `<span class="bg-[#F4EFEA] text-[#6B5D55] text-[10px] tracking-[0.2em] px-3 py-1.5 rounded-full">${escapeHTML(keyword)}</span>`
+            ).join('');
+        }
+
+        const impressionElement = document.getElementById('res-color-impression');
+        if (impressionElement) {
+            impressionElement.innerText = d.color_impression || d.description || '';
+        }
 
         ['makeup','outfit','accessory','celebrity'].forEach(key => {
             const map = {'makeup':'makeup_advice','outfit':'outfit_advice','accessory':'accessory_advice','celebrity':'celebrity_reference'};
