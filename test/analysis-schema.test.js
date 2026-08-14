@@ -1,22 +1,44 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { validateAnalysisResult } from '../lib/analysis-schema.js';
+import { COLOR_DIMENSION_OPTIONS } from '../lib/color-framework.js';
 
 function validResult() {
   return {
-    season_name: '柔夏型',
-    season_en: 'Soft Summer',
+    identity_code: 'SSJ-06',
+    season_name: '雾蓝柔冷',
+    season_en: 'Misty Blue',
     description: '整体色彩柔和。',
     style_keywords: ['柔和', '清透', '低对比'],
     color_impression: '像薄雾花园般安静柔和。',
-    feature_colors: [{ label: '肌肤底色', hex: '#AABBCC' }],
-    radar_data: [{ name: '冷暖', value: 60 }],
-    best_colors: [{ name: '雾霾蓝', hex: '#778899' }],
+    feature_colors: [
+      { label: '肌肤底色', hex: '#AABBCC' },
+      { label: '面颊色调', hex: '#DDBBCC' },
+      { label: '原生发色', hex: '#332E31' },
+      { label: '瞳孔特征', hex: '#403A3B' },
+    ],
+    radar_data: [
+      { name: '冷暖', value: 60 },
+      { name: '明度', value: 70 },
+      { name: '纯度', value: 40 },
+      { name: '柔和度', value: 80 },
+      { name: '对比度', value: 35 },
+    ],
+    dimension_data: COLOR_DIMENSION_OPTIONS.map(({ key, name }, index) => ({
+      key,
+      name,
+      value: 40 + index,
+      observation: `${name}观察结果`,
+    })),
+    best_colors: Array.from({ length: 8 }, (_, index) => ({
+      name: `推荐色${index + 1}`,
+      hex: '#778899',
+    })),
     makeup_advice: '使用柔和色彩。',
     outfit_advice: '低对比穿搭。',
     accessory_advice: '哑光银饰。',
-    celebrity_reference: '仅供风格参考。',
-    avoid_colors: ['荧光橙'],
+    style_reference: '薄雾清晨、哑光银饰与轻柔针织的安静气质。',
+    avoid_colors: ['荧光橙', '亮橘红', '冷黑色'],
   };
 }
 
@@ -28,13 +50,14 @@ test('normalizes and accepts a bounded analysis response', () => {
   assert.equal(result.color_impression, '像薄雾花园般安静柔和。');
 });
 
-test('keeps identity fields backward compatible', () => {
-  const legacy = validResult();
-  delete legacy.style_keywords;
-  delete legacy.color_impression;
-  const result = validateAnalysisResult(legacy);
-  assert.deepEqual(result.style_keywords, []);
-  assert.equal(result.color_impression, '');
+test('requires the complete narrative layer', () => {
+  const missingKeywords = validResult();
+  delete missingKeywords.style_keywords;
+  assert.throws(() => validateAnalysisResult(missingKeywords), /style_keywords/);
+
+  const missingImpression = validResult();
+  delete missingImpression.color_impression;
+  assert.throws(() => validateAnalysisResult(missingImpression), /color_impression/);
 });
 
 test('rejects unsafe color values and out-of-range radar values', () => {
@@ -52,10 +75,33 @@ test('rejects missing required fields and oversized arrays', () => {
   delete missing.season_name;
   assert.throws(() => validateAnalysisResult(missing), /season_name/);
 
-  const oversized = validResult();
-  oversized.best_colors = Array.from({ length: 17 }, () => ({
+  const incomplete = validResult();
+  incomplete.best_colors = Array.from({ length: 7 }, () => ({
     name: '颜色',
     hex: '#112233',
   }));
-  assert.throws(() => validateAnalysisResult(oversized), /bounded array/);
+  assert.throws(() => validateAnalysisResult(incomplete), /exactly 8/);
+});
+
+test('rejects unsupported identities and reordered dimensions', () => {
+  const unsupportedIdentity = validResult();
+  unsupportedIdentity.identity_code = 'SSJ-99';
+  assert.throws(() => validateAnalysisResult(unsupportedIdentity), /not supported/);
+
+  const reorderedDimensions = validResult();
+  [reorderedDimensions.dimension_data[0], reorderedDimensions.dimension_data[1]] = [
+    reorderedDimensions.dimension_data[1],
+    reorderedDimensions.dimension_data[0],
+  ];
+  assert.throws(() => validateAnalysisResult(reorderedDimensions), /key must be/);
+});
+
+test('accepts a photo rejection without synthetic report fields', () => {
+  const result = validateAnalysisResult({
+    season_name: '无法完成诊断',
+    season_en: 'PHOTO_NOT_ELIGIBLE',
+    description: '请上传自然光下的清晰正面照片。',
+  });
+  assert.equal(result.identity_code, 'PHOTO_NOT_ELIGIBLE');
+  assert.deepEqual(result.dimension_data, []);
 });

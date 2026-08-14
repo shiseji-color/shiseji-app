@@ -15,6 +15,23 @@ confirmation. The server reserves one activation use in Supabase, sends the
 photo to the configured Bailian vision model, validates the model response, and
 returns a bounded JSON report.
 
+After a successful diagnosis, the browser requests two independent,
+identity-preserving image edits: a beauty/hair editorial and a full wardrobe
+editorial. These requests reuse the short-lived analysis authorization, do not
+consume extra activation uses, and can be retried independently. Complete-report
+export remains unavailable until both personalized images have finished.
+
+The image editor requires these additional server-only variables:
+
+```sh
+IMAGE_BASE_URL=https://YOUR_WORKSPACE_ID.cn-beijing.maas.aliyuncs.com/api/v1
+IMAGE_MODEL_NAME=qwen-image-edit-max
+```
+
+`IMAGE_BASE_URL` must match the region of `API_KEY`. Generated temporary URLs
+are downloaded by the server immediately and returned as transient data URLs so
+the report export does not depend on the provider's 24-hour result URL.
+
 ## Development checks
 
 ```sh

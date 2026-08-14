@@ -23,6 +23,11 @@
   status = 200
 
 [[redirects]]
+  from = "/api/generate-style-image"
+  to = "/.netlify/functions/generate-style-image"
+  status = 200
+
+[[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
