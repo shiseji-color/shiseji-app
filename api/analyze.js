@@ -62,9 +62,14 @@ export default async function handler(req, res) {
       return res.status(413).json({ error: '照片过大，请压缩后重试' });
     }
 
-    consumedCodeHash = codeHash;
-    consumedRequestId = requestId;
-    const consumption = await consumeActivationUse(codeHash, requestId);
+    const backgroundMode = req.backgroundMode === true;
+    let remainingUses = null;
+    const consumption = backgroundMode ? { remainingUses: null, alreadyProcessed: false }
+      : await consumeActivationUse(codeHash, requestId);
+    if (!backgroundMode) {
+      consumedCodeHash = codeHash;
+      consumedRequestId = requestId;
+    }
 
     if (consumption === null) {
       consumedCodeHash = null;
@@ -72,7 +77,7 @@ export default async function handler(req, res) {
       return res.status(403).json({ error: '激活码无效或可用次数已用完' });
     }
 
-    let remainingUses = consumption.remainingUses;
+    remainingUses = consumption.remainingUses;
     if (consumption.alreadyProcessed) {
       consumedCodeHash = null;
       consumedRequestId = null;
@@ -189,26 +194,26 @@ ${frameworkPromptReference()}
       ? validatedData
       : applyIdentityKnowledge(validatedData);
 
-    if (data.season_en === 'PHOTO_NOT_ELIGIBLE') {
+    if (!backgroundMode && data.season_en === 'PHOTO_NOT_ELIGIBLE') {
       const refundedUses = await refundActivationUse(codeHash, requestId);
       if (refundedUses !== null) remainingUses = refundedUses;
       consumedCodeHash = null;
       consumedRequestId = null;
     }
 
-    const visualToken = data.season_en === 'PHOTO_NOT_ELIGIBLE'
+    const visualToken = data.season_en === 'PHOTO_NOT_ELIGIBLE' || backgroundMode
       ? null
       : createVisualToken(codeHash, requestId, data);
     return res.status(200).json({ data, remainingUses, visualToken, requestId });
 
   } catch (e) {
-    console.error('Color analysis failed:', e);
+    console.error('Color analysis failed:', e?.message || 'unknown');
 
-    if (consumedCodeHash && consumedRequestId) {
+    if (!req.backgroundMode && consumedCodeHash && consumedRequestId) {
       try {
         await refundActivationUse(consumedCodeHash, consumedRequestId);
       } catch (refundError) {
-        console.error('Activation use refund failed:', refundError);
+        console.error('Activation use refund failed:', refundError?.message || 'unknown');
       }
     }
 

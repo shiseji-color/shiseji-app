@@ -23,6 +23,14 @@
   status = 200
 
 [[redirects]]
+  from = "/api/analysis-status"
+  to = "/.netlify/functions/analysis-status"
+  status = 200
+
+[functions."analyze-background"]
+  background = true
+
+[[redirects]]
   from = "/api/generate-style-image"
   to = "/.netlify/functions/generate-style-image"
   status = 200
