@@ -1,7 +1,8 @@
 import analyze from '../../api/analyze.js';
 import { completeAnalysisJob, claimAnalysisJob, failAnalysisJob } from '../../lib/activation-store.js';
-import { createVisualToken, verifyAnalysisWorkerToken } from '../../lib/analysis-token.js';
-import { runAnalysisJob } from '../../lib/analysis-job.js';
+import { createAnalysisToken, createVisualToken, verifyAnalysisWorkerToken } from '../../lib/analysis-token.js';
+import { processBackgroundAnalysis } from '../../lib/analysis-job-worker.js';
+import { deleteTemporaryPhoto, downloadTemporaryPhoto } from '../../lib/temporary-photo-store.js';
 
 function runLegacyHandler(body) {
   return new Promise((resolve, reject) => {
@@ -20,19 +21,25 @@ function runLegacyHandler(body) {
 }
 
 export const handler = async (event) => {
-  let body;
   try {
-    body = JSON.parse(event.body || '{}');
+    const body = JSON.parse(event.body || '{}');
     const claims = verifyAnalysisWorkerToken(body.workerToken);
-    if (claims.requestId !== body.requestId) throw new Error('Worker binding mismatch');
-    await runAnalysisJob({
+    await processBackgroundAnalysis({
       claim: () => claimAnalysisJob(claims),
-      analyze: () => runLegacyHandler(body),
+      analyze: async () => runLegacyHandler({
+        imageBase64: await downloadTemporaryPhoto(claims.photoPath),
+        analysisToken: createAnalysisToken(claims.codeHash),
+        requestId: claims.requestId,
+      }),
       complete: (data) => completeAnalysisJob(
         claims, data,
         data.season_en === 'PHOTO_NOT_ELIGIBLE' ? null : createVisualToken(claims.codeHash, claims.requestId, data),
       ),
       fail: (reason) => failAnalysisJob(claims, reason),
+      cleanup: async () => {
+        try { await deleteTemporaryPhoto(claims.photoPath); }
+        catch (error) { console.error('Temporary photo cleanup failed:', error?.message || 'unknown'); }
+      },
     });
   } catch (error) {
     console.error('Background analysis failed:', error?.message || 'unknown');

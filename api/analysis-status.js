@@ -1,6 +1,7 @@
 import { getAnalysisJob } from '../lib/activation-store.js';
 import { verifyAnalysisJobToken } from '../lib/analysis-token.js';
 import { enforceRateLimit } from '../lib/rate-limit.js';
+import { deleteTemporaryPhoto } from '../lib/temporary-photo-store.js';
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -23,7 +24,12 @@ export default async function handler(req, res) {
       data: job.result, visualToken: job.visualToken,
       remainingUses: job.remainingUses, requestId: claims.requestId,
     });
-    if (job.status === 'failed') payload.error = '分析未完成，本次不会扣除次数';
+    if (job.status === 'failed') {
+      payload.error = '分析未完成，本次不会扣除次数';
+      if (job.photoPath) {
+        try { await deleteTemporaryPhoto(job.photoPath); } catch {}
+      }
+    }
     return res.status(200).json(payload);
   } catch {
     return res.status(403).json({ error: '任务授权无效或已过期' });

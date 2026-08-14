@@ -36,6 +36,18 @@ test('model failure becomes terminal and does not run again for the same request
   assert.equal(calls, 1);
 });
 
+test('background failure and timeout paths never run completion charging', async () => {
+  const state = store();
+  let completions = 0;
+  await runAnalysisJob({
+    ...state,
+    analyze: async () => { throw new Error('15 minute timeout'); },
+    complete: async () => { completions += 1; return { completed: true }; },
+  });
+  assert.equal(state.status(), 'failed');
+  assert.equal(completions, 0);
+});
+
 test('unknown completion outcome stays locked to prevent a second paid call', async () => {
   const state = store();
   let calls = 0;
