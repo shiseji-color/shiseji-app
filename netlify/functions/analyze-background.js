@@ -1,5 +1,6 @@
 import analyze from '../../api/analyze.js';
 import { completeAnalysisJob, claimAnalysisJob, failAnalysisJob } from '../../lib/activation-store.js';
+import { analysisFailureError, classifyAnalysisFailure } from '../../lib/analysis-error.js';
 import { createAnalysisToken, createVisualToken, verifyAnalysisWorkerToken } from '../../lib/analysis-token.js';
 import { processBackgroundAnalysis } from '../../lib/analysis-job-worker.js';
 import { deleteTemporaryPhoto, downloadTemporaryPhoto } from '../../lib/temporary-photo-store.js';
@@ -11,7 +12,7 @@ function runLegacyHandler(body) {
       setHeader() {},
       status(code) { statusCode = code; return response; },
       json(payload) {
-        if (statusCode >= 400) reject(new Error(payload?.error || 'Analysis failed'));
+        if (statusCode >= 400) reject(analysisFailureError(payload?.diagnosticCode));
         else resolve(payload.data);
         return response;
       },
@@ -42,6 +43,6 @@ export const handler = async (event) => {
       },
     });
   } catch (error) {
-    console.error('Background analysis failed:', error?.message || 'unknown');
+    console.error('Background analysis failed:', classifyAnalysisFailure(error));
   }
 };

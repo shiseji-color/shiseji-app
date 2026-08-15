@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { classifyAnalysisFailure } from '../lib/analysis-error.js';
 import {
   consumeActivationUse,
   refundActivationUse,
@@ -207,7 +208,8 @@ ${frameworkPromptReference()}
     return res.status(200).json({ data, remainingUses, visualToken, requestId });
 
   } catch (e) {
-    console.error('Color analysis failed:', e?.message || 'unknown');
+    const failureCode = classifyAnalysisFailure(e);
+    console.error('Color analysis failed:', failureCode);
 
     if (!req.backgroundMode && consumedCodeHash && consumedRequestId) {
       try {
@@ -217,6 +219,9 @@ ${frameworkPromptReference()}
       }
     }
 
-    return res.status(502).json({ error: '色彩诊断失败，系统已尝试退回本次次数，请重试' });
+    return res.status(502).json({
+      error: '色彩诊断失败，系统已尝试退回本次次数，请重试',
+      ...(req.backgroundMode ? { diagnosticCode: failureCode } : {}),
+    });
   }
 }

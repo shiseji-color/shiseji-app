@@ -4,11 +4,13 @@ import { runAnalysisJob } from '../lib/analysis-job.js';
 
 function store() {
   let status = 'queued';
+  let failureCode = null;
   return {
     claim: async () => { if (status === 'queued') { status = 'processing'; return 'claimed'; } return status; },
     complete: async () => { status = 'completed'; return { completed: true }; },
-    fail: async () => { status = 'failed'; },
+    fail: async (code) => { status = 'failed'; failureCode = code; },
     status: () => status,
+    failureCode: () => failureCode,
   };
 }
 
@@ -29,9 +31,10 @@ test('concurrent duplicate jobs call the paid model once', async () => {
 test('model failure becomes terminal and does not run again for the same request', async () => {
   const state = store();
   let calls = 0;
-  const failed = await runAnalysisJob({ ...state, analyze: async () => { calls += 1; throw new Error('timeout'); } });
+  const failed = await runAnalysisJob({ ...state, analyze: async () => { calls += 1; throw Object.assign(new Error('timeout'), { code: 'ETIMEDOUT' }); } });
   const retry = await runAnalysisJob({ ...state, analyze: async () => { calls += 1; return {}; } });
   assert.equal(failed.status, 'failed');
+  assert.equal(state.failureCode(), 'model_timeout');
   assert.equal(retry.status, 'failed');
   assert.equal(calls, 1);
 });
