@@ -82,9 +82,19 @@ test('model boundary converts nested timeouts and connections to opaque fixed er
   });
 });
 
-test('unknown TypeError remains unknown at the model boundary', async () => {
+test('model boundary preserves fixed SDK HTTP classifications', async () => {
+  await assert.rejects(runModelCall(async () => {
+    throw Object.assign(new Error('private provider body'), { status: 429 });
+  }), (error) => error.failureCode === 'model_rate_limited');
+});
+
+test('unknown TypeError receives the fixed model-boundary fallback', async () => {
   const unknown = new TypeError('fetch failed');
-  await assert.rejects(runModelCall(async () => { throw unknown; }), (error) => error === unknown);
+  await assert.rejects(runModelCall(async () => { throw unknown; }), (error) => {
+    assert.equal(error.failureCode, 'model_request_failed');
+    assert.equal(error.message, 'Analysis failed');
+    return true;
+  });
   assert.equal(classifyAnalysisFailure(unknown), 'analysis_failed');
 });
 

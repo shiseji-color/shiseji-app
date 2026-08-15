@@ -4,6 +4,7 @@ import test from 'node:test';
 import startAnalysis, { buildBackgroundPayload } from '../api/start-analysis.js';
 import analysisStatus from '../api/analysis-status.js';
 import { createAnalysisToken } from '../lib/analysis-token.js';
+import { failAnalysisJob } from '../lib/activation-store.js';
 import { deleteTemporaryPhoto, uploadTemporaryPhoto } from '../lib/temporary-photo-store.js';
 import { processBackgroundAnalysis } from '../lib/analysis-job-worker.js';
 
@@ -151,4 +152,28 @@ test('a different task ID cannot read task state or a temporary photo', async ()
   assert.equal(output.statusCode, 403);
   assert.equal(fetched, false);
   assert.equal('photoPath' in output.body, false);
+});
+
+test('failure persistence rejects a non-updating RPC result', async () => {
+  global.fetch = async () => Response.json(false);
+  await assert.rejects(failAnalysisJob({
+    codeHash: 'e'.repeat(64),
+    requestId: 'c9a6464f-65ef-4d3e-a9f7-d7e1b443d586',
+    taskId: '19d77534-63ee-4db0-af9a-554c7d49ef33',
+    ownerId: '25250509-5bb4-4664-a601-a850360bed60',
+  }, 'model_timeout'));
+});
+
+test('failure persistence refuses a generic or missing diagnostic before RPC', async () => {
+  let fetched = false;
+  global.fetch = async () => { fetched = true; return Response.json(true); };
+  const claims = {
+    codeHash: 'f'.repeat(64),
+    requestId: 'c9a6464f-65ef-4d3e-a9f7-d7e1b443d586',
+    taskId: '19d77534-63ee-4db0-af9a-554c7d49ef33',
+    ownerId: '25250509-5bb4-4664-a601-a850360bed60',
+  };
+  await assert.rejects(failAnalysisJob(claims, 'analysis_failed'));
+  await assert.rejects(failAnalysisJob(claims));
+  assert.equal(fetched, false);
 });

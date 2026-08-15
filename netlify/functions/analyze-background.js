@@ -1,38 +1,31 @@
 import analyze from '../../api/analyze.js';
 import { completeAnalysisJob, claimAnalysisJob, failAnalysisJob } from '../../lib/activation-store.js';
-import { analysisFailureError, classifyAnalysisFailure, runAnalysisStage } from '../../lib/analysis-error.js';
+import { classifyAnalysisFailure, preserveAnalysisFailure, runAnalysisStage } from '../../lib/analysis-error.js';
+import { parseBackgroundEvent, runAnalysisHandler } from '../../lib/analysis-handler-adapter.js';
 import { createAnalysisToken, createVisualToken, verifyAnalysisWorkerToken } from '../../lib/analysis-token.js';
 import { processBackgroundAnalysis } from '../../lib/analysis-job-worker.js';
 import { deleteTemporaryPhoto, downloadTemporaryPhoto } from '../../lib/temporary-photo-store.js';
 
-function runLegacyHandler(body) {
-  return new Promise((resolve, reject) => {
-    let statusCode = 200;
-    const response = {
-      setHeader() {},
-      status(code) { statusCode = code; return response; },
-      json(payload) {
-        if (statusCode >= 400) reject(analysisFailureError(payload?.diagnosticCode));
-        else resolve(payload.data);
-        return response;
-      },
-    };
-    Promise.resolve(analyze({ method: 'POST', headers: {}, body, backgroundMode: true }, response)).catch(reject);
-  });
-}
-
 export const handler = async (event) => {
+  let claims;
   try {
-    const body = JSON.parse(event.body || '{}');
-    const claims = verifyAnalysisWorkerToken(body.workerToken);
+    claims = parseBackgroundEvent(event, verifyAnalysisWorkerToken);
+  } catch {
+    console.error('Background analysis failed:', 'background_payload_invalid');
+    return;
+  }
+  try {
     const outcome = await processBackgroundAnalysis({
       claim: () => claimAnalysisJob(claims),
-      analyze: async () => runLegacyHandler({
+      analyze: async () => runAnalysisHandler(analyze, {
         imageBase64: await runAnalysisStage(
           'photo_download_failed',
           () => downloadTemporaryPhoto(claims.photoPath),
         ),
-        analysisToken: createAnalysisToken(claims.codeHash),
+        analysisToken: runAnalysisStage(
+          'background_handler_failed',
+          () => createAnalysisToken(claims.codeHash),
+        ),
         requestId: claims.requestId,
       }),
       complete: (data) => completeAnalysisJob(
@@ -49,6 +42,11 @@ export const handler = async (event) => {
       console.error('Background analysis diagnostic:', outcome.diagnosticCode);
     }
   } catch (error) {
-    console.error('Background analysis failed:', classifyAnalysisFailure(error));
+    const safeError = preserveAnalysisFailure(error, 'background_handler_failed');
+    if (claims) {
+      try { await failAnalysisJob(claims, safeError.failureCode); }
+      catch { console.error('Background analysis failed:', 'analysis_failure_write_failed'); return; }
+    }
+    console.error('Background analysis failed:', classifyAnalysisFailure(safeError));
   }
 };
