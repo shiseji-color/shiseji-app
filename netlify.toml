@@ -27,9 +27,6 @@
   to = "/.netlify/functions/analysis-status"
   status = 200
 
-[functions."analyze-background"]
-  background = true
-
 [[redirects]]
   from = "/api/generate-style-image"
   to = "/.netlify/functions/generate-style-image"
@@ -39,3 +36,6 @@
   from = "/*"
   to = "/index.html"
   status = 200
+
+[functions."analyze-background"]
+  background = true

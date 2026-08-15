@@ -1,0 +1,5 @@
+/api/verify-code /.netlify/functions/verify-code 200
+/api/analyze /.netlify/functions/analyze 200
+/api/analysis-status /.netlify/functions/analysis-status 200
+/api/generate-style-image /.netlify/functions/generate-style-image 200
+/* /index.html 200
