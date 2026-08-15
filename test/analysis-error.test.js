@@ -4,6 +4,7 @@ import {
   analysisFailureError,
   classifyAnalysisFailure,
   classifyModelNetworkFailure,
+  runAnalysisStage,
   runModelCall,
 } from '../lib/analysis-error.js';
 
@@ -85,4 +86,22 @@ test('unknown TypeError remains unknown at the model boundary', async () => {
   const unknown = new TypeError('fetch failed');
   await assert.rejects(runModelCall(async () => { throw unknown; }), (error) => error === unknown);
   assert.equal(classifyAnalysisFailure(unknown), 'analysis_failed');
+});
+
+test('download, request construction, and response extraction boundaries are opaque', async () => {
+  const stages = [
+    'photo_download_failed',
+    'model_request_build_failed',
+    'model_response_extract_failed',
+  ];
+  for (const code of stages) {
+    assert.throws(
+      () => runAnalysisStage(code, () => { throw new Error('secret URL and photo data'); }),
+      (error) => error.failureCode === code && error.message === 'Analysis failed',
+    );
+    await assert.rejects(
+      runAnalysisStage(code, async () => { throw new Error('secret response'); }),
+      (error) => error.failureCode === code && !JSON.stringify(error).includes('secret'),
+    );
+  }
 });

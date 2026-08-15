@@ -1,6 +1,6 @@
 import analyze from '../../api/analyze.js';
 import { completeAnalysisJob, claimAnalysisJob, failAnalysisJob } from '../../lib/activation-store.js';
-import { analysisFailureError, classifyAnalysisFailure } from '../../lib/analysis-error.js';
+import { analysisFailureError, classifyAnalysisFailure, runAnalysisStage } from '../../lib/analysis-error.js';
 import { createAnalysisToken, createVisualToken, verifyAnalysisWorkerToken } from '../../lib/analysis-token.js';
 import { processBackgroundAnalysis } from '../../lib/analysis-job-worker.js';
 import { deleteTemporaryPhoto, downloadTemporaryPhoto } from '../../lib/temporary-photo-store.js';
@@ -25,10 +25,13 @@ export const handler = async (event) => {
   try {
     const body = JSON.parse(event.body || '{}');
     const claims = verifyAnalysisWorkerToken(body.workerToken);
-    await processBackgroundAnalysis({
+    const outcome = await processBackgroundAnalysis({
       claim: () => claimAnalysisJob(claims),
       analyze: async () => runLegacyHandler({
-        imageBase64: await downloadTemporaryPhoto(claims.photoPath),
+        imageBase64: await runAnalysisStage(
+          'photo_download_failed',
+          () => downloadTemporaryPhoto(claims.photoPath),
+        ),
         analysisToken: createAnalysisToken(claims.codeHash),
         requestId: claims.requestId,
       }),
@@ -42,6 +45,9 @@ export const handler = async (event) => {
         catch { console.error('Temporary photo cleanup failed:', 'photo_cleanup_failed'); }
       },
     });
+    if (outcome.diagnosticCode) {
+      console.error('Background analysis diagnostic:', outcome.diagnosticCode);
+    }
   } catch (error) {
     console.error('Background analysis failed:', classifyAnalysisFailure(error));
   }

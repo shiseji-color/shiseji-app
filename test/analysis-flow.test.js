@@ -109,6 +109,20 @@ test('background worker cleans the private photo after both completion and expli
   }
 });
 
+test('background worker keeps cleanup when failure-state persistence is unavailable', async () => {
+  let cleanups = 0;
+  const outcome = await processBackgroundAnalysis({
+    claim: async () => 'claimed',
+    analyze: async () => { throw new Error('private model failure'); },
+    complete: async () => { throw new Error('must not complete'); },
+    fail: async () => { throw new Error('private database failure'); },
+    cleanup: async () => { cleanups += 1; },
+  });
+  assert.equal(outcome.status, 'processing');
+  assert.equal(outcome.diagnosticCode, 'analysis_failure_write_failed');
+  assert.equal(cleanups, 1);
+});
+
 test('completion locks and validates processing before touching activation usage', async () => {
   const sql = await readFile(new URL('../database/migrate-analysis-jobs.sql', import.meta.url), 'utf8');
   const functionBody = sql.slice(sql.indexOf('create or replace function public.complete_analysis_job'), sql.indexOf('create or replace function public.fail_analysis_job'));
