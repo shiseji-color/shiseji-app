@@ -1,14 +1,13 @@
 import OpenAI from 'openai';
 import { classifyAnalysisFailure } from '../lib/analysis-error.js';
+import { parseAnalysisResult } from '../lib/analysis-result.js';
 import {
   consumeActivationUse,
   refundActivationUse,
 } from '../lib/activation-store.js';
-import { validateAnalysisResult } from '../lib/analysis-schema.js';
 import { createVisualToken, verifyAnalysisToken } from '../lib/analysis-token.js';
 import { enforceRateLimit } from '../lib/rate-limit.js';
 import {
-  applyIdentityKnowledge,
   frameworkPromptReference,
 } from '../lib/color-framework.js';
 
@@ -186,14 +185,7 @@ ${frameworkPromptReference()}
     }, { timeout: 45_000 });
 
     // 处理AI返回结果
-    let text = response.choices?.[0]?.message?.content?.trim();
-    if (!text) throw new Error('AI返回内容为空');
-
-    text = text.replace(/^```json\s*/i, '').replace(/\s*```$/, '');
-    const validatedData = validateAnalysisResult(JSON.parse(text));
-    const data = validatedData.season_en === 'PHOTO_NOT_ELIGIBLE'
-      ? validatedData
-      : applyIdentityKnowledge(validatedData);
+    const data = parseAnalysisResult(response.choices?.[0]?.message?.content);
 
     if (!backgroundMode && data.season_en === 'PHOTO_NOT_ELIGIBLE') {
       const refundedUses = await refundActivationUse(codeHash, requestId);
@@ -214,8 +206,8 @@ ${frameworkPromptReference()}
     if (!req.backgroundMode && consumedCodeHash && consumedRequestId) {
       try {
         await refundActivationUse(consumedCodeHash, consumedRequestId);
-      } catch (refundError) {
-        console.error('Activation use refund failed:', refundError?.message || 'unknown');
+      } catch {
+        console.error('Activation use refund failed:', 'activation_refund_failed');
       }
     }
 

@@ -9,6 +9,11 @@ test('classifies provider and validation failures into a fixed safe vocabulary',
   assert.equal(classifyAnalysisFailure({ status: 400, code: 'content_filter' }), 'model_content_rejected');
   assert.equal(classifyAnalysisFailure({ status: 503 }), 'model_unavailable');
   assert.equal(classifyAnalysisFailure({ code: 'ECONNRESET' }), 'model_unavailable');
+  assert.equal(classifyAnalysisFailure({ name: 'APIConnectionError' }), 'model_unavailable');
+  assert.equal(classifyAnalysisFailure({ name: 'APIError', status: 401 }), 'model_auth_failed');
+  assert.equal(classifyAnalysisFailure({ name: 'APIUserAbortError' }), 'model_request_aborted');
+  assert.equal(classifyAnalysisFailure({ name: 'LengthFinishReasonError' }), 'model_response_truncated');
+  assert.equal(classifyAnalysisFailure({ name: 'ContentFilterFinishReasonError' }), 'model_content_rejected');
   assert.equal(classifyAnalysisFailure(Object.assign(new Error('request timed out'), { code: 'ETIMEDOUT' })), 'model_timeout');
   assert.equal(classifyAnalysisFailure(new SyntaxError('private provider response')), 'model_invalid_json');
   assert.equal(classifyAnalysisFailure(new Error('AI response field best_colors must contain exactly 8 items')), 'model_schema_invalid');
