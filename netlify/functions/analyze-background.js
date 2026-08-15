@@ -39,7 +39,7 @@ export const handler = async (event) => {
       fail: (reason) => failAnalysisJob(claims, reason),
       cleanup: async () => {
         try { await deleteTemporaryPhoto(claims.photoPath); }
-        catch (error) { console.error('Temporary photo cleanup failed:', error?.message || 'unknown'); }
+        catch { console.error('Temporary photo cleanup failed:', 'photo_cleanup_failed'); }
       },
     });
   } catch (error) {
