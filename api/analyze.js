@@ -17,6 +17,10 @@ const openai = new OpenAI({
   baseURL: process.env.BASE_URL, // 阿里云兼容地址
 });
 
+function backgroundDiagnostic(req, code) {
+  return req.backgroundMode === true ? { diagnosticCode: code } : {};
+}
+
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
 
@@ -41,25 +45,37 @@ export default async function handler(req, res) {
     try {
       codeHash = verifyAnalysisToken(analysisToken);
     } catch {
-      return res.status(403).json({ error: '授权已过期，请重新验证激活码' });
+      return res.status(403).json({
+        error: '授权已过期，请重新验证激活码',
+        ...backgroundDiagnostic(req, 'background_payload_invalid'),
+      });
     }
 
     if (
       typeof requestId !== 'string' ||
       !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(requestId)
     ) {
-      return res.status(400).json({ error: '请求标识无效，请重新发起分析' });
+      return res.status(400).json({
+        error: '请求标识无效，请重新发起分析',
+        ...backgroundDiagnostic(req, 'background_payload_invalid'),
+      });
     }
 
     if (
       typeof imageBase64 !== 'string' ||
       !/^data:image\/(?:jpeg|png|webp);base64,/i.test(imageBase64)
     ) {
-      return res.status(400).json({ error: '请上传有效照片' });
+      return res.status(400).json({
+        error: '请上传有效照片',
+        ...backgroundDiagnostic(req, 'photo_download_failed'),
+      });
     }
 
     if (imageBase64.length > 4_000_000) {
-      return res.status(413).json({ error: '照片过大，请压缩后重试' });
+      return res.status(413).json({
+        error: '照片过大，请压缩后重试',
+        ...backgroundDiagnostic(req, 'photo_download_failed'),
+      });
     }
 
     const backgroundMode = req.backgroundMode === true;
@@ -74,7 +90,10 @@ export default async function handler(req, res) {
     if (consumption === null) {
       consumedCodeHash = null;
       consumedRequestId = null;
-      return res.status(403).json({ error: '激活码无效或可用次数已用完' });
+      return res.status(403).json({
+        error: '激活码无效或可用次数已用完',
+        ...backgroundDiagnostic(req, 'background_handler_failed'),
+      });
     }
 
     remainingUses = consumption.remainingUses;
@@ -84,6 +103,7 @@ export default async function handler(req, res) {
       return res.status(409).json({
         error: '该分析请求已处理，请勿重复提交',
         remainingUses,
+        ...backgroundDiagnostic(req, 'background_handler_failed'),
       });
     }
 
