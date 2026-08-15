@@ -6,7 +6,7 @@ import {
   refundActivationUse,
 } from '../lib/activation-store.js';
 import { createVisualToken, verifyAnalysisToken } from '../lib/analysis-token.js';
-import { enforceRateLimit } from '../lib/rate-limit.js';
+import { enforceInteractiveAnalysisRateLimit } from '../lib/rate-limit.js';
 import {
   frameworkPromptReference,
 } from '../lib/color-framework.js';
@@ -26,7 +26,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    enforceRateLimit(req, 'analyze', { limit: 5, windowMs: 60_000 });
+    enforceInteractiveAnalysisRateLimit(req);
   } catch (error) {
     res.setHeader('Retry-After', String(error.retryAfter));
     return res.status(429).json({ error: error.message });
