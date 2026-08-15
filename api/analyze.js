@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import { classifyAnalysisFailure, runModelCall } from '../lib/analysis-error.js';
+import { classifyAnalysisFailure, runAnalysisStage, runModelCall } from '../lib/analysis-error.js';
 import { parseAnalysisResult } from '../lib/analysis-result.js';
 import {
   consumeActivationUse,
@@ -88,7 +88,7 @@ export default async function handler(req, res) {
     }
 
     // 色彩诊断核心指令：保留成熟版的人脸质量检查和十六型分析。
-    const systemPrompt = `你是一名拥有15年经验的专业个人色彩诊断师。
+    const systemPrompt = runAnalysisStage('model_request_build_failed', () => `你是一名拥有15年经验的专业个人色彩诊断师。
 
 先检查照片质量：
 1. 照片必须只有一张清晰可见的人脸；多人、无人脸、非真人或翻拍屏幕必须拒绝。
@@ -165,7 +165,7 @@ ${frameworkPromptReference()}
   "avoid_colors": ["避坑色名称"]
 }
 
-不得返回Markdown代码块、注释或JSON以外的任何文字。`;
+不得返回Markdown代码块、注释或JSON以外的任何文字。`);
 
     // 调用阿里云百炼多模态模型
     const response = await runModelCall(() => openai.chat.completions.create({
@@ -185,7 +185,11 @@ ${frameworkPromptReference()}
     }, { timeout: 45_000 }));
 
     // 处理AI返回结果
-    const data = parseAnalysisResult(response.choices?.[0]?.message?.content);
+    const responseContent = runAnalysisStage(
+      'model_response_extract_failed',
+      () => response.choices?.[0]?.message?.content,
+    );
+    const data = parseAnalysisResult(responseContent);
 
     if (!backgroundMode && data.season_en === 'PHOTO_NOT_ELIGIBLE') {
       const refundedUses = await refundActivationUse(codeHash, requestId);

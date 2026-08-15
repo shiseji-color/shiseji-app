@@ -60,6 +60,19 @@ test('unknown completion outcome stays locked to prevent a second paid call', as
   });
   const retry = await runAnalysisJob({ ...state, analyze: async () => { calls += 1; return {}; } });
   assert.equal(first.status, 'processing');
+  assert.equal(first.diagnosticCode, 'analysis_completion_save_failed');
   assert.equal(retry.status, 'processing');
   assert.equal(calls, 1);
+});
+
+test('failure-state write errors become a fixed opaque diagnostic', async () => {
+  const state = store();
+  const outcome = await runAnalysisJob({
+    ...state,
+    analyze: async () => { throw new Error('private model response'); },
+    fail: async () => { throw new Error('private database URL'); },
+  });
+  assert.equal(outcome.status, 'processing');
+  assert.equal(outcome.diagnosticCode, 'analysis_failure_write_failed');
+  assert.doesNotMatch(JSON.stringify(outcome), /private model response|private database URL/i);
 });
