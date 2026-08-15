@@ -1455,6 +1455,11 @@
                     ctx.drawImage(img, 0, 0, width, height);
 
                     userImageBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                    const pendingJob = JSON.parse(sessionStorage.getItem('shisejiAnalysisJob') || 'null');
+                    window.currentAnalysisRequestId = pendingJob?.requestId
+                        || sessionStorage.getItem('shisejiAnalysisRequestId')
+                        || crypto.randomUUID();
+                    sessionStorage.setItem('shisejiAnalysisRequestId', window.currentAnalysisRequestId);
                     
                     const preview = document.getElementById('imagePreview');
                     preview.src = userImageBase64;
@@ -1669,49 +1674,56 @@
 
         try {
             let successData = null;
-            const maxRetries = 0;
-            const requestId = crypto.randomUUID();
-
-            for (let attempt = 0; attempt <= maxRetries; attempt++) {
-                try {
-                    const controller = new AbortController();
-                    activeAnalysisController = controller;
-                    const timeoutId = setTimeout(() => controller.abort(), 90000);
-                    const response = await fetch('/api/analyze', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        signal: controller.signal,
-                        body: JSON.stringify({ 
-                            imageBase64: userImageBase64,
-                            analysisToken: window.analysisToken,
-                            requestId
-                        })
-                    });
-                    clearTimeout(timeoutId);
-                    activeAnalysisController = null;
-
-                    if (currentRunId !== analysisRunId) return;
-
-                    if (response.status === 400 || response.status === 403) {
-                        throw new Error("AUTH_FAILED");
-                    }
-                    if (!response.ok && response.status === 429) {
-                        if (attempt < maxRetries) continue; 
-                    }
-
-                    const payload = await response.json();
-                    if (!response.ok) {
-                        throw new Error(payload.error || "ANALYSIS_FAILED");
-                    }
-                    successData = payload.data;
-                    window.remainingUses = payload.remainingUses;
-                    window.visualToken = payload.visualToken;
-                    window.visualRequestId = payload.requestId;
-                    break;
-                } catch (err) {
-                    if (err.message === "AUTH_FAILED" || attempt === maxRetries) throw err;
-                }
+            const requestId = window.currentAnalysisRequestId || crypto.randomUUID();
+            window.currentAnalysisRequestId = requestId;
+            sessionStorage.setItem('shisejiAnalysisRequestId', requestId);
+            let task = JSON.parse(sessionStorage.getItem('shisejiAnalysisJob') || 'null');
+            if (!task || task.requestId !== requestId) {
+                const controller = new AbortController();
+                activeAnalysisController = controller;
+                const timeoutId = setTimeout(() => controller.abort(), 12000);
+                const response = await fetch('/api/analyze', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: controller.signal,
+                    body: JSON.stringify({ imageBase64: userImageBase64, analysisToken: window.analysisToken, requestId })
+                });
+                clearTimeout(timeoutId);
+                activeAnalysisController = null;
+                if (response.status === 400 || response.status === 403) throw new Error('AUTH_FAILED');
+                const payload = await response.json();
+                if (!response.ok) throw new Error(payload.error || 'SUBMIT_UNKNOWN');
+                task = { taskId: payload.taskId, jobToken: payload.jobToken, requestId };
+                sessionStorage.setItem('shisejiAnalysisJob', JSON.stringify(task));
             }
+            const pollDeadline = Date.now() + 17 * 60 * 1000;
+            while (Date.now() < pollDeadline) {
+                if (currentRunId !== analysisRunId) return;
+                const response = await fetch('/api/analysis-status', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ taskId: task.taskId, jobToken: task.jobToken })
+                });
+                if (response.status === 403) throw new Error('AUTH_FAILED');
+                if (response.ok) {
+                    const payload = await response.json();
+                    if (payload.status === 'completed') {
+                        successData = payload.data;
+                        window.remainingUses = payload.remainingUses;
+                        window.visualToken = payload.visualToken;
+                        window.visualRequestId = payload.requestId;
+                        sessionStorage.removeItem('shisejiAnalysisJob');
+                        sessionStorage.removeItem('shisejiAnalysisRequestId');
+                        break;
+                    }
+                    if (payload.status === 'failed') {
+                        sessionStorage.removeItem('shisejiAnalysisJob');
+                        sessionStorage.removeItem('shisejiAnalysisRequestId');
+                        window.currentAnalysisRequestId = crypto.randomUUID();
+                        throw new Error('ANALYSIS_FAILED');
+                    }
+                    loadingText.innerText = payload.status === 'processing' ? '正在细致分析，请稍候' : '任务已排队，请稍候';
+                }
+                await new Promise(resolve => setTimeout(resolve, 2500 + Math.random() * 1000));
+            }
+            if (!successData) throw new Error('STATUS_UNKNOWN');
 
             if (currentRunId !== analysisRunId) return;
             clearAnalysisRuntime();
@@ -1749,7 +1761,7 @@
             console.error("引擎连接失败:", error);
             if (error.message === "AUTH_FAILED") {
                 forceKickToHome("令牌验证失败，请重新唤醒密钥");
-            } else if (error.name === 'AbortError') {
+            } else if (error.name === 'AbortError' || error.message === 'SUBMIT_UNKNOWN' || error.message === 'STATUS_UNKNOWN') {
                 showCustomAlert('分析等待时间较长，请返回后重新尝试。此次失败不会生成报告。');
                 showStep('step-upload');
             } else {

@@ -36,6 +36,7 @@ test('returns a clear server error when no handler can be resolved', async () =>
 for (const entry of [
   '../netlify/functions/verify-code.js',
   '../netlify/functions/analyze.js',
+  '../netlify/functions/analysis-status.js',
   '../netlify/functions/generate-style-image.js',
 ]) {
   test(`Netlify entry ${entry} returns 405 for GET`, async () => {
