@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { analysisFailureError, classifyAnalysisFailure } from '../lib/analysis-error.js';
+import {
+  analysisFailureError,
+  classifyAnalysisFailure,
+  classifyModelNetworkFailure,
+  runModelCall,
+} from '../lib/analysis-error.js';
 
 test('classifies provider and validation failures into a fixed safe vocabulary', () => {
   assert.equal(classifyAnalysisFailure({ status: 401 }), 'model_auth_failed');
@@ -25,4 +30,59 @@ test('unknown messages and untrusted diagnostic codes never reach persistent sta
   assert.equal(classifyAnalysisFailure(secret), 'analysis_failed');
   assert.equal(analysisFailureError('secret-provider-body').failureCode, 'analysis_failed');
   assert.equal(analysisFailureError('model_invalid_json').failureCode, 'model_invalid_json');
+});
+
+test('classifies native fetch failures through nested causes without reading messages', () => {
+  const dnsCause = Object.assign(new Error('getaddrinfo ENOTFOUND private.example'), {
+    code: 'ENOTFOUND',
+    hostname: 'private.example',
+  });
+  const fetchFailure = new TypeError('fetch failed', {
+    cause: new Error('socket setup failed', { cause: dnsCause }),
+  });
+  assert.equal(classifyModelNetworkFailure(fetchFailure), 'model_unavailable');
+  assert.equal(classifyAnalysisFailure(fetchFailure), 'model_unavailable');
+
+  const tlsFailure = new TypeError('fetch failed', {
+    cause: Object.assign(new Error('certificate details'), {
+      code: 'ERR_TLS_CERT_ALTNAME_INVALID',
+      host: 'private.example',
+    }),
+  });
+  assert.equal(classifyModelNetworkFailure(tlsFailure), 'model_unavailable');
+
+  const aggregateFailure = new TypeError('fetch failed', {
+    cause: new AggregateError([
+      Object.assign(new Error('IPv6 target'), { code: 'ENETUNREACH' }),
+      Object.assign(new Error('IPv4 target'), { code: 'ECONNREFUSED' }),
+    ], 'connection attempts failed'),
+  });
+  assert.equal(classifyModelNetworkFailure(aggregateFailure), 'model_unavailable');
+});
+
+test('model boundary converts nested timeouts and connections to opaque fixed errors', async () => {
+  const timeout = new TypeError('fetch failed', {
+    cause: Object.assign(new Error('private URL timed out'), { code: 'UND_ERR_CONNECT_TIMEOUT' }),
+  });
+  await assert.rejects(runModelCall(async () => { throw timeout; }), (error) => {
+    assert.equal(error.failureCode, 'model_timeout');
+    assert.equal(error.message, 'Analysis failed');
+    assert.doesNotMatch(JSON.stringify(error), /private|URL|fetch/i);
+    return true;
+  });
+
+  const connection = new TypeError('fetch failed', {
+    cause: Object.assign(new Error('private socket'), { code: 'ECONNRESET' }),
+  });
+  await assert.rejects(runModelCall(async () => { throw connection; }), (error) => {
+    assert.equal(error.failureCode, 'model_unavailable');
+    assert.equal(error.message, 'Analysis failed');
+    return true;
+  });
+});
+
+test('unknown TypeError remains unknown at the model boundary', async () => {
+  const unknown = new TypeError('fetch failed');
+  await assert.rejects(runModelCall(async () => { throw unknown; }), (error) => error === unknown);
+  assert.equal(classifyAnalysisFailure(unknown), 'analysis_failed');
 });

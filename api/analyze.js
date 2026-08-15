@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import { classifyAnalysisFailure } from '../lib/analysis-error.js';
+import { classifyAnalysisFailure, runModelCall } from '../lib/analysis-error.js';
 import { parseAnalysisResult } from '../lib/analysis-result.js';
 import {
   consumeActivationUse,
@@ -168,7 +168,7 @@ ${frameworkPromptReference()}
 不得返回Markdown代码块、注释或JSON以外的任何文字。`;
 
     // 调用阿里云百炼多模态模型
-    const response = await openai.chat.completions.create({
+    const response = await runModelCall(() => openai.chat.completions.create({
       model: process.env.MODEL_NAME || 'qwen-vl-max',
       messages: [
         { role: 'system', content: systemPrompt },
@@ -182,7 +182,7 @@ ${frameworkPromptReference()}
       ],
       max_tokens: 3200,
       temperature: 0.1
-    }, { timeout: 45_000 });
+    }, { timeout: 45_000 }));
 
     // 处理AI返回结果
     const data = parseAnalysisResult(response.choices?.[0]?.message?.content);
