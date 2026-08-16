@@ -1,9 +1,10 @@
 import analyze from '../../api/analyze.js';
 import { completeAnalysisJob, claimAnalysisJob, failAnalysisJob } from '../../lib/activation-store.js';
-import { classifyAnalysisFailure, preserveAnalysisFailure, runAnalysisStage } from '../../lib/analysis-error.js';
+import { classifyAnalysisFailure, preserveAnalysisFailure } from '../../lib/analysis-error.js';
 import { parseBackgroundEvent, runAnalysisHandler } from '../../lib/analysis-handler-adapter.js';
 import { createAnalysisToken, createVisualToken, verifyAnalysisWorkerToken } from '../../lib/analysis-token.js';
 import { processBackgroundAnalysis } from '../../lib/analysis-job-worker.js';
+import { prepareBackgroundAnalysisInput } from '../../lib/background-analysis-input.js';
 import { deleteTemporaryPhoto, downloadTemporaryPhoto } from '../../lib/temporary-photo-store.js';
 
 export const handler = async (event) => {
@@ -17,17 +18,11 @@ export const handler = async (event) => {
   try {
     const outcome = await processBackgroundAnalysis({
       claim: () => claimAnalysisJob(claims),
-      analyze: async () => runAnalysisHandler(analyze, {
-        imageBase64: await runAnalysisStage(
-          'photo_download_failed',
-          () => downloadTemporaryPhoto(claims.photoPath),
-        ),
-        analysisToken: runAnalysisStage(
-          'background_handler_failed',
-          () => createAnalysisToken(claims.codeHash),
-        ),
-        requestId: claims.requestId,
-      }),
+      analyze: async () => runAnalysisHandler(analyze,
+        await prepareBackgroundAnalysisInput(claims, {
+          downloadPhoto: downloadTemporaryPhoto,
+          createToken: createAnalysisToken,
+        })),
       complete: (data) => completeAnalysisJob(
         claims, data,
         data.season_en === 'PHOTO_NOT_ELIGIBLE' ? null : createVisualToken(claims.codeHash, claims.requestId, data),

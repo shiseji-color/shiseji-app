@@ -11,11 +11,12 @@ import {
   frameworkPromptReference,
 } from '../lib/color-framework.js';
 
-// 初始化大模型客户端（对接阿里云百炼）
-const openai = new OpenAI({
-  apiKey: process.env.API_KEY, // 后续在Vercel填你的API Key
-  baseURL: process.env.BASE_URL, // 阿里云兼容地址
-});
+export function createModelClient(factory = (options) => new OpenAI(options)) {
+  return runAnalysisStage('model_request_build_failed', () => factory({
+    apiKey: process.env.API_KEY,
+    baseURL: process.env.BASE_URL,
+  }));
+}
 
 function backgroundDiagnostic(req, code) {
   return req.backgroundMode === true ? { diagnosticCode: code } : {};
@@ -38,6 +39,7 @@ export default async function handler(req, res) {
 
   let consumedCodeHash = null;
   let consumedRequestId = null;
+  let fallbackFailureCode = 'background_payload_invalid';
 
   try {
     const { imageBase64, analysisToken, requestId } = req.body ?? {};
@@ -107,6 +109,7 @@ export default async function handler(req, res) {
       });
     }
 
+    fallbackFailureCode = 'model_request_build_failed';
     // 色彩诊断核心指令：保留成熟版的人脸质量检查和十六型分析。
     const systemPrompt = runAnalysisStage('model_request_build_failed', () => `你是一名拥有15年经验的专业个人色彩诊断师。
 
@@ -188,7 +191,8 @@ ${frameworkPromptReference()}
 不得返回Markdown代码块、注释或JSON以外的任何文字。`);
 
     // 调用阿里云百炼多模态模型
-    const response = await runModelCall(() => openai.chat.completions.create({
+    const openai = createModelClient();
+    const modelRequest = runAnalysisStage('model_request_build_failed', () => ({
       model: process.env.MODEL_NAME || 'qwen-vl-max',
       messages: [
         { role: 'system', content: systemPrompt },
@@ -202,7 +206,12 @@ ${frameworkPromptReference()}
       ],
       max_tokens: 3200,
       temperature: 0.1
-    }, { timeout: 45_000 }));
+    }));
+    fallbackFailureCode = 'model_request_failed';
+    const response = await runModelCall(() => openai.chat.completions.create(
+      modelRequest,
+      { timeout: 45_000 },
+    ));
 
     // 处理AI返回结果
     const responseContent = runAnalysisStage(
@@ -224,7 +233,10 @@ ${frameworkPromptReference()}
     return res.status(200).json({ data, remainingUses, visualToken, requestId });
 
   } catch (e) {
-    const failureCode = classifyAnalysisFailure(e);
+    const classified = classifyAnalysisFailure(e);
+    const failureCode = classified === 'analysis_failed'
+      ? fallbackFailureCode
+      : classified;
     console.error('Color analysis failed:', failureCode);
 
     if (!req.backgroundMode && consumedCodeHash && consumedRequestId) {
