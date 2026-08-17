@@ -294,4 +294,42 @@ export function createAnalysisHandler(operation = handleAnalysisRequest) {
   };
 }
 
+export async function analyzeBackgroundInput(body) {
+  let statusCode = 200;
+  let payload;
+  const response = {
+    setHeader() {},
+    status(code) {
+      statusCode = code;
+      return response;
+    },
+    json(value) {
+      payload = value;
+      return response;
+    },
+  };
+
+  await createAnalysisHandler()({
+    method: 'POST',
+    headers: {},
+    body,
+    backgroundMode: true,
+  }, response);
+
+  if (statusCode >= 400) {
+    const code = payload?.diagnosticCode;
+    throw analysisFailureError(
+      code && code !== 'analysis_failed'
+        ? code
+        : code === 'analysis_failed'
+          ? 'analysis_handler_reported_failure'
+          : 'analysis_diagnostic_missing',
+    );
+  }
+  if (!payload || !Object.hasOwn(payload, 'data')) {
+    throw analysisFailureError('analysis_handler_response_invalid');
+  }
+  return payload.data;
+}
+
 export default createAnalysisHandler();

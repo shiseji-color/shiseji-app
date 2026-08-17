@@ -6,7 +6,9 @@ import {
 } from '../lib/analysis-handler-adapter.js';
 import { analysisFailureError } from '../lib/analysis-error.js';
 import { processBackgroundAnalysis } from '../lib/analysis-job-worker.js';
-import { createAnalysisHandler } from '../api/analyze.js';
+import { analyzeBackgroundInput, createAnalysisHandler } from '../api/analyze.js';
+import { createBackgroundAnalysisHandler } from '../netlify/functions/analyze-background.js';
+import { createAnalysisToken } from '../lib/analysis-token.js';
 
 test('supports plain and base64 Netlify background event bodies', () => {
   const verify = (token) => ({ token });
@@ -121,5 +123,57 @@ test('outer analysis handler sentinel preserves the last internal phase', async 
       assert.doesNotMatch(JSON.stringify(error), /private|internal/i);
       return true;
     });
+  }
+});
+
+test('production-shaped background entry preserves model failure and cleans up once', async () => {
+  const original = {
+    fetch: global.fetch,
+    apiKey: process.env.API_KEY,
+    baseUrl: process.env.BASE_URL,
+    secret: process.env.AUTH_TOKEN_SECRET,
+  };
+  process.env.API_KEY = 'test-api-key';
+  process.env.BASE_URL = 'https://provider.invalid/v1';
+  process.env.AUTH_TOKEN_SECRET = 'test-secret-with-at-least-thirty-two-characters';
+  let persistedCode = null;
+  let cleanups = 0;
+  let completions = 0;
+  const claims = {
+    codeHash: 'a'.repeat(64),
+    requestId: 'c9a6464f-65ef-4d3e-a9f7-d7e1b443d586',
+    photoPath: 'opaque-photo-path',
+  };
+  const backgroundHandler = createBackgroundAnalysisHandler({
+    verifyWorkerToken: () => claims,
+    claim: async () => 'claimed',
+    downloadPhoto: async () => 'data:image/jpeg;base64,AA==',
+    createToken: createAnalysisToken,
+    analyze: analyzeBackgroundInput,
+    complete: async () => { completions += 1; },
+    fail: async (_claims, code) => { persistedCode = code; },
+    deletePhoto: async () => { cleanups += 1; },
+  });
+
+  try {
+    global.fetch = async () => {
+      throw new TypeError('private network failure', {
+        cause: Object.assign(new Error('private socket'), { code: 'ECONNRESET' }),
+      });
+    };
+    await backgroundHandler({ body: JSON.stringify({ workerToken: 'opaque-token' }) });
+    assert.equal(persistedCode, 'model_unavailable');
+    assert.equal(completions, 0);
+    assert.equal(cleanups, 1);
+  } finally {
+    global.fetch = original.fetch;
+    for (const [name, value] of [
+      ['API_KEY', original.apiKey],
+      ['BASE_URL', original.baseUrl],
+      ['AUTH_TOKEN_SECRET', original.secret],
+    ]) {
+      if (value === undefined) delete process.env[name];
+      else process.env[name] = value;
+    }
   }
 });
