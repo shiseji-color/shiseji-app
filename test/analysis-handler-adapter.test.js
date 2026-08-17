@@ -67,6 +67,9 @@ test('classifies thrown values without exposing them or losing fixed diagnostics
   await assert.rejects(runAnalysisHandler(() => {
     throw analysisFailureError('model_invalid_json');
   }, {}), (error) => error.failureCode === 'model_invalid_json');
+  await assert.rejects(runAnalysisHandler(() => {
+    throw analysisFailureError('analysis_failure_classification_failed');
+  }, {}), (error) => error.failureCode === 'analysis_failure_classification_failed');
 });
 
 test('production-shaped adapter fallbacks persist distinct stages and still clean up', async () => {
