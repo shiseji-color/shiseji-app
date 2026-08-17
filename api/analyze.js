@@ -144,30 +144,19 @@ async function handleAnalysisRequest(req, res, setFailureCode) {
   "avoid_colors": []
 }
 
-照片合格时，只基于照片中可见的肤色、面颊、原生发色和瞳孔特征完成16维观察。每个value必须严格遵循下方0与100的方向定义；看不清的特征取50并在observation中说明不确定性。不得臆测种族、健康、性格、职业或社会身份，不得使用“官方认证”“医学检测”或保证准确率的表述。最终色彩身份、推荐色、避坑色和固定建议将由服务端规则知识库重新判定；你返回的这些字段只是满足传输结构的临时值。特征色必须提供4个，核心雷达必须提供5项，16维观察必须按给定key顺序完整提供。
+照片合格时，只基于照片中可见的肤色、面颊、原生发色和瞳孔特征完成16维观察。每个value必须严格遵循下方0与100的方向定义；看不清的特征取50并在observation中说明不确定性。不得臆测种族、健康、性格、职业或社会身份，不得使用“官方认证”“医学检测”或保证准确率的表述。最终色彩身份、推荐色、避坑色和固定建议由服务端规则知识库判定，不得返回这些字段。特征色必须提供4个，16维观察必须按给定key顺序完整提供。
 
 ${frameworkPromptReference()}
 
 只返回标准JSON，结构必须为：
 {
-  "identity_code": "SSJ-01至SSJ-16之一",
-  "season_name": "identity_code对应的拾色季中文色彩身份",
-  "season_en": "identity_code对应的英文名称",
   "description": "诊断特征说明",
-  "style_keywords": ["三个简洁的个人色彩关键词"],
   "color_impression": "一句具有画面感、但不夸大效果的专属色彩印象",
   "feature_colors": [
     {"label": "肌肤底色", "hex": "#RRGGBB"},
     {"label": "面颊色调", "hex": "#RRGGBB"},
     {"label": "原生发色", "hex": "#RRGGBB"},
     {"label": "瞳孔特征", "hex": "#RRGGBB"}
-  ],
-  "radar_data": [
-    {"name": "冷暖", "value": 0, "desc": "用一句白话说明适合的冷暖倾向"},
-    {"name": "明度", "value": 0, "desc": "用一句白话说明适合的深浅范围"},
-    {"name": "纯度", "value": 0, "desc": "用一句白话说明适合的鲜艳程度"},
-    {"name": "柔和度", "value": 0, "desc": "用一句白话说明适合的柔和程度"},
-    {"name": "对比度", "value": 0, "desc": "用一句白话说明适合的搭配反差"}
   ],
   "dimension_data": [
     {"key": "skin_temperature", "name": "肤色冷暖倾向", "value": 0, "observation": "一句克制、可理解的观察"},
@@ -186,13 +175,7 @@ ${frameworkPromptReference()}
     {"key": "brightness_capacity", "name": "明亮色承载力", "value": 0, "observation": "一句观察"},
     {"key": "chroma_capacity", "name": "鲜艳色承载力", "value": 0, "observation": "一句观察"},
     {"key": "muted_capacity", "name": "柔雾色适配度", "value": 0, "observation": "一句观察"}
-  ],
-  "best_colors": [{"name": "颜色名称", "hex": "#RRGGBB"}],
-  "makeup_advice": "彩妆建议",
-  "outfit_advice": "穿搭建议",
-  "accessory_advice": "饰品建议",
-  "style_reference": "不用公众人物姓名，以材质、光线、场景和气质描述可参考的风格意象",
-  "avoid_colors": ["避坑色名称"]
+  ]
 }
 
 不得返回Markdown代码块、注释或JSON以外的任何文字。`);

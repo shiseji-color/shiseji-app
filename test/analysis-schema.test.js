@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { validateAnalysisResult } from '../lib/analysis-schema.js';
-import { COLOR_DIMENSION_OPTIONS } from '../lib/color-framework.js';
+import {
+  applyIdentityKnowledge,
+  COLOR_DIMENSION_OPTIONS,
+} from '../lib/color-framework.js';
 
 function validResult() {
   return {
@@ -45,55 +48,72 @@ function validResult() {
 test('normalizes and accepts a bounded analysis response', () => {
   const result = validateAnalysisResult(validResult());
   assert.equal(result.feature_colors[0].hex, '#AABBCC');
-  assert.equal(result.radar_data[0].value, 60);
-  assert.deepEqual(result.style_keywords, ['柔和', '清透', '低对比']);
+  assert.deepEqual(result.radar_data, []);
+  assert.deepEqual(result.style_keywords, []);
   assert.equal(result.color_impression, '像薄雾花园般安静柔和。');
 });
 
-test('requires the complete narrative layer', () => {
-  const missingKeywords = validResult();
-  delete missingKeywords.style_keywords;
-  assert.throws(() => validateAnalysisResult(missingKeywords), /style_keywords/);
-
+test('requires the model-owned narrative layer', () => {
   const missingImpression = validResult();
   delete missingImpression.color_impression;
   assert.throws(() => validateAnalysisResult(missingImpression), /color_impression/);
 });
 
-test('rejects unsafe color values and out-of-range radar values', () => {
+test('rejects unsafe model-owned color values', () => {
   const invalidColor = validResult();
-  invalidColor.best_colors[0].hex = 'red; background:url(x)';
-  assert.throws(() => validateAnalysisResult(invalidColor), /best_colors/);
-
-  const invalidRadar = validResult();
-  invalidRadar.radar_data[0].value = 101;
-  assert.throws(() => validateAnalysisResult(invalidRadar), /value is invalid/);
+  invalidColor.feature_colors[0].hex = 'red; background:url(x)';
+  assert.throws(() => validateAnalysisResult(invalidColor), /feature_colors/);
 });
 
 test('rejects missing required fields and oversized arrays', () => {
   const missing = validResult();
-  delete missing.season_name;
-  assert.throws(() => validateAnalysisResult(missing), /season_name/);
+  delete missing.description;
+  assert.throws(() => validateAnalysisResult(missing), /description/);
 
   const incomplete = validResult();
-  incomplete.best_colors = Array.from({ length: 7 }, () => ({
-    name: '颜色',
-    hex: '#112233',
-  }));
-  assert.throws(() => validateAnalysisResult(incomplete), /exactly 8/);
+  incomplete.feature_colors.pop();
+  assert.throws(() => validateAnalysisResult(incomplete), /exactly 4/);
 });
 
-test('rejects unsupported identities and reordered dimensions', () => {
-  const unsupportedIdentity = validResult();
-  unsupportedIdentity.identity_code = 'SSJ-99';
-  assert.throws(() => validateAnalysisResult(unsupportedIdentity), /not supported/);
-
+test('rejects reordered dimensions', () => {
   const reorderedDimensions = validResult();
   [reorderedDimensions.dimension_data[0], reorderedDimensions.dimension_data[1]] = [
     reorderedDimensions.dimension_data[1],
     reorderedDimensions.dimension_data[0],
   ];
   assert.throws(() => validateAnalysisResult(reorderedDimensions), /key must be/);
+});
+
+test('accepts only the observation fields owned by the model', () => {
+  const full = validResult();
+  const result = validateAnalysisResult({
+    description: full.description,
+    color_impression: full.color_impression,
+    feature_colors: full.feature_colors,
+    dimension_data: full.dimension_data,
+  });
+
+  assert.equal(result.identity_code, '');
+  assert.deepEqual(result.best_colors, []);
+  assert.deepEqual(result.avoid_colors, []);
+  assert.equal(result.dimension_data.length, 16);
+});
+
+test('server knowledge completes the report after observation validation', () => {
+  const full = validResult();
+  const observed = validateAnalysisResult({
+    description: full.description,
+    color_impression: full.color_impression,
+    feature_colors: full.feature_colors,
+    dimension_data: full.dimension_data,
+  });
+  const completed = applyIdentityKnowledge(observed);
+
+  assert.match(completed.identity_code, /^SSJ-\d{2}$/);
+  assert.equal(completed.style_keywords.length, 3);
+  assert.equal(completed.radar_data.length, 5);
+  assert.equal(completed.best_colors.length, 8);
+  assert.equal(completed.avoid_colors.length, 3);
 });
 
 test('accepts a photo rejection without synthetic report fields', () => {
