@@ -6,7 +6,8 @@ import {
 } from '../lib/analysis-handler-adapter.js';
 import { analysisFailureError } from '../lib/analysis-error.js';
 import { processBackgroundAnalysis } from '../lib/analysis-job-worker.js';
-import { createAnalysisHandler } from '../api/analyze.js';
+import analyzeHandler, { createAnalysisHandler } from '../api/analyze.js';
+import { createAnalysisToken } from '../lib/analysis-token.js';
 
 test('supports plain and base64 Netlify background event bodies', () => {
   const verify = (token) => ({ token });
@@ -121,5 +122,53 @@ test('outer analysis handler sentinel preserves the last internal phase', async 
       assert.doesNotMatch(JSON.stringify(error), /private|internal/i);
       return true;
     });
+  }
+});
+
+test('real analysis handler contains OpenAI SDK HTTP and network failures', async () => {
+  const original = {
+    fetch: global.fetch,
+    apiKey: process.env.API_KEY,
+    baseUrl: process.env.BASE_URL,
+    secret: process.env.AUTH_TOKEN_SECRET,
+  };
+  process.env.API_KEY = 'test-api-key';
+  process.env.BASE_URL = 'https://provider.invalid/v1';
+  process.env.AUTH_TOKEN_SECRET = 'test-secret-with-at-least-thirty-two-characters';
+  const body = {
+    imageBase64: 'data:image/jpeg;base64,AA==',
+    analysisToken: createAnalysisToken('a'.repeat(64)),
+    requestId: 'c9a6464f-65ef-4d3e-a9f7-d7e1b443d586',
+  };
+
+  try {
+    global.fetch = async () => Response.json({ error: { message: 'private provider body' } }, {
+      status: 401,
+    });
+    await assert.rejects(
+      runAnalysisHandler(analyzeHandler, body),
+      (error) => error.failureCode === 'model_unavailable',
+    );
+
+    global.fetch = async () => {
+      throw new TypeError('private network failure', {
+        cause: Object.assign(new Error('private socket'), { code: 'ECONNRESET' }),
+      });
+    };
+    await assert.rejects(runAnalysisHandler(analyzeHandler, body), (error) => {
+      assert.equal(error.failureCode, 'model_unavailable');
+      assert.doesNotMatch(JSON.stringify(error), /private|socket|provider/i);
+      return true;
+    });
+  } finally {
+    global.fetch = original.fetch;
+    for (const [name, value] of [
+      ['API_KEY', original.apiKey],
+      ['BASE_URL', original.baseUrl],
+      ['AUTH_TOKEN_SECRET', original.secret],
+    ]) {
+      if (value === undefined) delete process.env[name];
+      else process.env[name] = value;
+    }
   }
 });
