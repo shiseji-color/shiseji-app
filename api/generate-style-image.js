@@ -21,6 +21,7 @@ const SAFE_STYLE_IMAGE_FAILURE_CODES = new Set([
   'style_image_configuration_failed',
   'style_image_request_build_failed',
   'style_image_job_claim_failed',
+  'style_image_job_fail_failed',
   'style_image_model_request_failed',
   'style_image_model_rejected',
   'style_image_response_parse_failed',
@@ -181,20 +182,23 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: '当前照片不适合生成个性化造型' });
     }
     const trustedAnalysis = applyIdentityKnowledge(validated);
-    // Complete all configuration, prompt and JSON work before claiming a job.
-    // A deterministic preflight failure must never strand an unpaid job in processing.
-    const imageRequest = buildImageEditorRequest({ imageBase64, kind, analysis: trustedAnalysis });
     const ownerId = randomUUID();
     const job = await runStyleImageJob({
       claim: () => runStyleImageStage('style_image_job_claim_failed', () => claimStyleImageJob(
         visualAuthorization.codeHash, requestId, kind, ownerId,
       )),
-      generate: () => callImageEditor(imageRequest),
+      // Claim first so deterministic configuration failures are observable. The
+      // job runner releases the unpaid claim when this preparation stage fails.
+      prepare: () => buildImageEditorRequest({ imageBase64, kind, analysis: trustedAnalysis }),
+      generate: (imageRequest) => callImageEditor(imageRequest),
       complete: (resultUrl) => runStyleImageStage(
         'style_image_job_complete_failed',
         () => completeStyleImageJob(requestId, kind, ownerId, resultUrl),
       ),
-      fail: () => failStyleImageJob(requestId, kind, ownerId),
+      fail: () => runStyleImageStage(
+        'style_image_job_fail_failed',
+        () => failStyleImageJob(requestId, kind, ownerId),
+      ),
     });
     if (job.status === 'processing') {
       return res.status(202).json({ kind, status: 'processing' });
