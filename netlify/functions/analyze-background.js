@@ -37,7 +37,7 @@ export const handler = async (event) => {
       console.error('Background analysis diagnostic:', outcome.diagnosticCode);
     }
   } catch (error) {
-    const safeError = preserveAnalysisFailure(error, 'background_handler_failed');
+    const safeError = preserveAnalysisFailure(error, 'background_worker_failed');
     if (claims) {
       try { await failAnalysisJob(claims, safeError.failureCode); }
       catch { console.error('Background analysis failed:', 'analysis_failure_write_failed'); return; }
