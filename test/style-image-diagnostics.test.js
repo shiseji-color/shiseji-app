@@ -23,6 +23,10 @@ test('style image diagnostics expose only fixed safe stage codes', () => {
     'style_image_model_request_failed',
   );
   assert.equal(
+    classifyStyleImageFailure({ diagnosticCode: 'style_image_job_fail_failed' }),
+    'style_image_job_fail_failed',
+  );
+  assert.equal(
     classifyStyleImageFailure({ diagnosticCode: 'https://secret.example/photo' }),
     'style_image_handler_failed',
   );

@@ -91,6 +91,37 @@ test('releases a job after an explicit retryable model rejection', async () => {
   assert.equal(retried.status, 'completed');
 });
 
+test('records and releases a deterministic preparation failure before paid generation', async () => {
+  const store = createJobStore();
+  let generations = 0;
+  await assert.rejects(() => runStyleImageJob({
+    claim: async () => store.claim('first'),
+    prepare: async () => {
+      const error = new Error('configuration unavailable');
+      error.diagnosticCode = 'style_image_configuration_failed';
+      throw error;
+    },
+    generate: async () => { generations += 1; return 'https://example.com/unexpected.png'; },
+    complete: async (url) => store.complete('first', url),
+    fail: async () => store.fail('first'),
+  }), (error) => error.diagnosticCode === 'style_image_configuration_failed');
+
+  const retried = await runStyleImageJob({
+    claim: async () => store.claim('second'),
+    prepare: async () => ({ request: 'safe test request' }),
+    generate: async (prepared) => {
+      assert.deepEqual(prepared, { request: 'safe test request' });
+      generations += 1;
+      return 'https://example.com/retry.png';
+    },
+    complete: async (url) => store.complete('second', url),
+    fail: async () => store.fail('second'),
+  });
+
+  assert.equal(retried.status, 'completed');
+  assert.equal(generations, 1);
+});
+
 test('keeps an unknown network outcome locked so retries cannot pay twice', async () => {
   const store = createJobStore();
   await assert.rejects(() => runStyleImageJob({
