@@ -1,5 +1,10 @@
 import OpenAI from 'openai';
-import { classifyAnalysisFailure, runAnalysisStage, runModelCall } from '../lib/analysis-error.js';
+import {
+  analysisFailureError,
+  runAnalysisStage,
+  runModelCall,
+  safelyClassifyAnalysisFailure,
+} from '../lib/analysis-error.js';
 import { parseAnalysisResult } from '../lib/analysis-result.js';
 import {
   consumeActivationUse,
@@ -233,23 +238,38 @@ ${frameworkPromptReference()}
     return res.status(200).json({ data, remainingUses, visualToken, requestId });
 
   } catch (e) {
-    const classified = classifyAnalysisFailure(e);
+    const classified = safelyClassifyAnalysisFailure(
+      e,
+      'analysis_failure_classification_failed',
+    );
     const failureCode = classified === 'analysis_failed'
       ? fallbackFailureCode
       : classified;
-    console.error('Color analysis failed:', failureCode);
+    try {
+      console.error('Color analysis failed:', failureCode);
+    } catch {
+      // Logging must never replace the fixed diagnostic returned to the worker.
+    }
 
     if (!req.backgroundMode && consumedCodeHash && consumedRequestId) {
       try {
         await refundActivationUse(consumedCodeHash, consumedRequestId);
       } catch {
-        console.error('Activation use refund failed:', 'activation_refund_failed');
+        try {
+          console.error('Activation use refund failed:', 'activation_refund_failed');
+        } catch {
+          // Logging must not turn a handled failure into a handler rejection.
+        }
       }
     }
 
-    return res.status(502).json({
-      error: '色彩诊断失败，系统已尝试退回本次次数，请重试',
-      ...(req.backgroundMode ? { diagnosticCode: failureCode } : {}),
-    });
+    try {
+      return res.status(502).json({
+        error: '色彩诊断失败，系统已尝试退回本次次数，请重试',
+        ...(req.backgroundMode ? { diagnosticCode: failureCode } : {}),
+      });
+    } catch {
+      throw analysisFailureError('analysis_failure_response_failed');
+    }
   }
 }

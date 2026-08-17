@@ -6,6 +6,7 @@ import {
   classifyModelNetworkFailure,
   runAnalysisStage,
   runModelCall,
+  safelyClassifyAnalysisFailure,
 } from '../lib/analysis-error.js';
 
 test('classifies provider and validation failures into a fixed safe vocabulary', () => {
@@ -31,6 +32,25 @@ test('unknown messages and untrusted diagnostic codes never reach persistent sta
   assert.equal(classifyAnalysisFailure(secret), 'analysis_failed');
   assert.equal(analysisFailureError('secret-provider-body').failureCode, 'analysis_failed');
   assert.equal(analysisFailureError('model_invalid_json').failureCode, 'model_invalid_json');
+});
+
+test('hostile error accessors cannot escape failure classification boundaries', async () => {
+  const hostileError = {};
+  Object.defineProperties(hostileError, {
+    failureCode: { get() { throw new Error('private failure code getter'); } },
+    message: { get() { throw new Error('private provider body'); } },
+  });
+
+  assert.equal(
+    safelyClassifyAnalysisFailure(hostileError, 'analysis_failure_classification_failed'),
+    'analysis_failure_classification_failed',
+  );
+  await assert.rejects(runModelCall(async () => { throw hostileError; }), (error) => {
+    assert.equal(error.failureCode, 'model_request_failed');
+    assert.equal(error.message, 'Analysis failed');
+    assert.doesNotMatch(JSON.stringify(error), /private|getter|provider/i);
+    return true;
+  });
 });
 
 test('classifies native fetch failures through nested causes without reading messages', () => {
