@@ -1809,29 +1809,57 @@
         else kicker.innerText = '拾色季 · 穿搭设计生成中';
     }
 
+    const SAFE_STYLE_IMAGE_CLIENT_CODES = new Set([
+        'style_image_configuration_failed',
+        'style_image_request_build_failed',
+        'style_image_job_claim_failed',
+        'style_image_model_request_failed',
+        'style_image_model_rejected',
+        'style_image_response_parse_failed',
+        'style_image_result_extract_failed',
+        'style_image_job_complete_failed',
+        'style_image_download_failed',
+        'style_image_handler_failed',
+        'style_image_processing_timeout',
+        'style_image_client_failed'
+    ]);
+
     async function generatePersonalizedStyleImage(kind, analysis) {
         if (!analysis || !userImageBase64 || window.personalizedImageState[kind] === 'loading') return;
         const loadingCopy = kind === 'beauty' ? '正在设计专属妆发' : '正在设计完整穿搭';
         setPersonalizedImageState(kind, 'loading', loadingCopy);
         try {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 135000);
-            const response = await fetch('/api/generate-style-image', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                signal: controller.signal,
-                body: JSON.stringify({
-                    kind,
-                    imageBase64: userImageBase64,
-                    visualToken: window.visualToken,
-                    requestId: window.visualRequestId,
-                    analysis
-                })
-            });
-            clearTimeout(timeoutId);
-            const payload = await response.json();
-            if (!response.ok || !payload.imageDataUrl) {
-                throw new Error(payload.error || 'STYLE_IMAGE_FAILED');
+            let payload;
+            for (let attempt = 0; attempt < 5; attempt += 1) {
+                if (attempt > 0) await new Promise((resolve) => setTimeout(resolve, 10000));
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 135000);
+                const response = await fetch('/api/generate-style-image', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    signal: controller.signal,
+                    body: JSON.stringify({
+                        kind,
+                        imageBase64: userImageBase64,
+                        visualToken: window.visualToken,
+                        requestId: window.visualRequestId,
+                        analysis
+                    })
+                });
+                clearTimeout(timeoutId);
+                payload = await response.json();
+                if (response.status === 202 && payload.status === 'processing') continue;
+                if (!response.ok || !payload.imageDataUrl) {
+                    const failure = new Error('STYLE_IMAGE_FAILED');
+                    failure.diagnosticCode = payload.diagnosticCode || 'style_image_handler_failed';
+                    throw failure;
+                }
+                break;
+            }
+            if (!payload?.imageDataUrl) {
+                const failure = new Error('STYLE_IMAGE_PROCESSING_TIMEOUT');
+                failure.diagnosticCode = 'style_image_processing_timeout';
+                throw failure;
             }
 
             if (kind === 'beauty') {
@@ -1848,8 +1876,12 @@
             }
             setPersonalizedImageState(kind, 'complete', '专属视觉已完成');
         } catch (error) {
-            console.error(`${kind} personalized image failed:`, error);
-            const failedCopy = kind === 'beauty' ? '妆发图生成未完成' : '穿搭图生成未完成';
+            const diagnosticCode = SAFE_STYLE_IMAGE_CLIENT_CODES.has(error?.diagnosticCode)
+                ? error.diagnosticCode
+                : 'style_image_client_failed';
+            console.error(`${kind} personalized image failed:`, diagnosticCode);
+            const failedLabel = kind === 'beauty' ? '妆发图生成未完成' : '穿搭图生成未完成';
+            const failedCopy = `${failedLabel} · ${diagnosticCode}`;
             setPersonalizedImageState(kind, 'failed', failedCopy);
         }
     }
