@@ -5,6 +5,7 @@ import {
   runAnalysisHandler,
 } from '../lib/analysis-handler-adapter.js';
 import { analysisFailureError } from '../lib/analysis-error.js';
+import { processBackgroundAnalysis } from '../lib/analysis-job-worker.js';
 
 test('supports plain and base64 Netlify background event bodies', () => {
   const verify = (token) => ({ token });
@@ -45,16 +46,53 @@ test('preserves fixed handler diagnostics and classifies malformed success respo
 
   await assert.rejects(runAnalysisHandler((_req, res) => (
     res.status(502).json({ diagnosticCode: 'analysis_failed' })
-  ), {}), (error) => error.failureCode === 'background_handler_failed');
+  ), {}), (error) => error.failureCode === 'analysis_handler_reported_failure');
 });
 
 test('classifies thrown values without exposing them or losing fixed diagnostics', async () => {
   await assert.rejects(runAnalysisHandler(() => { throw 'private string'; }, {}), (error) => {
-    assert.equal(error.failureCode, 'background_handler_failed');
+    assert.equal(error.failureCode, 'analysis_handler_invoke_failed');
     assert.doesNotMatch(JSON.stringify(error), /private|string/i);
+    return true;
+  });
+  await assert.rejects(runAnalysisHandler(async () => {
+    throw new AggregateError([
+      new TypeError('private nested failure'),
+    ], 'private aggregate failure');
+  }, {}), (error) => {
+    assert.equal(error.failureCode, 'analysis_handler_invoke_failed');
+    assert.doesNotMatch(JSON.stringify(error), /private|nested|aggregate/i);
     return true;
   });
   await assert.rejects(runAnalysisHandler(() => {
     throw analysisFailureError('model_invalid_json');
   }, {}), (error) => error.failureCode === 'model_invalid_json');
+});
+
+test('production-shaped adapter fallbacks persist distinct stages and still clean up', async () => {
+  const cases = [
+    {
+      handler: (_req, res) => res.status(502).json({ diagnosticCode: 'analysis_failed' }),
+      expected: 'analysis_handler_reported_failure',
+    },
+    {
+      handler: async () => { throw new TypeError('private handler failure'); },
+      expected: 'analysis_handler_invoke_failed',
+    },
+  ];
+
+  for (const { handler, expected } of cases) {
+    let persistedCode = null;
+    let cleanups = 0;
+    const outcome = await processBackgroundAnalysis({
+      claim: async () => 'claimed',
+      analyze: () => runAnalysisHandler(handler, {}),
+      complete: async () => { assert.fail('completion must not run'); },
+      fail: async (code) => { persistedCode = code; },
+      cleanup: async () => { cleanups += 1; },
+    });
+    assert.equal(outcome.status, 'failed');
+    assert.equal(persistedCode, expected);
+    assert.equal(cleanups, 1);
+  }
 });
