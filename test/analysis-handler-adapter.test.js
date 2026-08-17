@@ -6,6 +6,7 @@ import {
 } from '../lib/analysis-handler-adapter.js';
 import { analysisFailureError } from '../lib/analysis-error.js';
 import { processBackgroundAnalysis } from '../lib/analysis-job-worker.js';
+import { createAnalysisHandler } from '../api/analyze.js';
 
 test('supports plain and base64 Netlify background event bodies', () => {
   const verify = (token) => ({ token });
@@ -97,5 +98,28 @@ test('production-shaped adapter fallbacks persist distinct stages and still clea
     assert.equal(outcome.status, 'failed');
     assert.equal(persistedCode, expected);
     assert.equal(cleanups, 1);
+  }
+});
+
+test('outer analysis handler sentinel preserves the last internal phase', async () => {
+  const stages = [
+    'analysis_handler_setup_failed',
+    'analysis_handler_processing_failed',
+    'analysis_failure_classification_failed',
+    'analysis_failure_logging_failed',
+    'analysis_failure_refund_failed',
+    'analysis_failure_response_failed',
+  ];
+
+  for (const stage of stages) {
+    const handler = createAnalysisHandler(async (_req, _res, setFailureCode) => {
+      setFailureCode(stage);
+      throw new TypeError('private internal failure');
+    });
+    await assert.rejects(runAnalysisHandler(handler, {}), (error) => {
+      assert.equal(error.failureCode, stage);
+      assert.doesNotMatch(JSON.stringify(error), /private|internal/i);
+      return true;
+    });
   }
 });

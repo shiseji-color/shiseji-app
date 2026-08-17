@@ -27,7 +27,8 @@ function backgroundDiagnostic(req, code) {
   return req.backgroundMode === true ? { diagnosticCode: code } : {};
 }
 
-export default async function handler(req, res) {
+async function handleAnalysisRequest(req, res, setFailureCode) {
+  setFailureCode('analysis_handler_setup_failed');
   res.setHeader('Cache-Control', 'no-store');
 
   if (req.method !== 'POST') {
@@ -46,6 +47,7 @@ export default async function handler(req, res) {
   let consumedRequestId = null;
   let fallbackFailureCode = 'background_payload_invalid';
 
+  setFailureCode('analysis_handler_processing_failed');
   try {
     const { imageBase64, analysisToken, requestId } = req.body ?? {};
     let codeHash;
@@ -235,9 +237,13 @@ ${frameworkPromptReference()}
     const visualToken = data.season_en === 'PHOTO_NOT_ELIGIBLE' || backgroundMode
       ? null
       : createVisualToken(codeHash, requestId, data);
-    return res.status(200).json({ data, remainingUses, visualToken, requestId });
+    return runAnalysisStage(
+      'analysis_handler_success_response_failed',
+      () => res.status(200).json({ data, remainingUses, visualToken, requestId }),
+    );
 
   } catch (e) {
+    setFailureCode('analysis_failure_classification_failed');
     const classified = safelyClassifyAnalysisFailure(
       e,
       'analysis_failure_classification_failed',
@@ -245,12 +251,14 @@ ${frameworkPromptReference()}
     const failureCode = classified === 'analysis_failed'
       ? fallbackFailureCode
       : classified;
+    setFailureCode('analysis_failure_logging_failed');
     try {
       console.error('Color analysis failed:', failureCode);
     } catch {
       // Logging must never replace the fixed diagnostic returned to the worker.
     }
 
+    setFailureCode('analysis_failure_refund_failed');
     if (!req.backgroundMode && consumedCodeHash && consumedRequestId) {
       try {
         await refundActivationUse(consumedCodeHash, consumedRequestId);
@@ -263,6 +271,7 @@ ${frameworkPromptReference()}
       }
     }
 
+    setFailureCode('analysis_failure_response_failed');
     try {
       return res.status(502).json({
         error: '色彩诊断失败，系统已尝试退回本次次数，请重试',
@@ -273,3 +282,16 @@ ${frameworkPromptReference()}
     }
   }
 }
+
+export function createAnalysisHandler(operation = handleAnalysisRequest) {
+  return async function boundedAnalysisHandler(req, res) {
+    let failureCode = 'analysis_handler_setup_failed';
+    try {
+      return await operation(req, res, (code) => { failureCode = code; });
+    } catch {
+      throw analysisFailureError(failureCode);
+    }
+  };
+}
+
+export default createAnalysisHandler();
