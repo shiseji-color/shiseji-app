@@ -17,51 +17,116 @@ import {
 import { runStyleImageJob } from '../lib/style-image-job.js';
 
 const MAX_GENERATED_IMAGE_BYTES = 5_500_000;
+const SAFE_STYLE_IMAGE_FAILURE_CODES = new Set([
+  'style_image_configuration_failed',
+  'style_image_request_build_failed',
+  'style_image_job_claim_failed',
+  'style_image_model_request_failed',
+  'style_image_model_rejected',
+  'style_image_response_parse_failed',
+  'style_image_result_extract_failed',
+  'style_image_job_complete_failed',
+  'style_image_download_failed',
+  'style_image_handler_failed',
+]);
+
+class StyleImageStageError extends Error {
+  constructor(diagnosticCode, options = {}) {
+    super(diagnosticCode, options);
+    this.name = 'StyleImageStageError';
+    this.diagnosticCode = diagnosticCode;
+  }
+}
+
+function styleImageStageError(code, cause) {
+  if (cause instanceof StyleImageStageError) return cause;
+  return new StyleImageStageError(code, { cause });
+}
+
+async function runStyleImageStage(code, operation) {
+  try {
+    return await operation();
+  } catch (error) {
+    throw styleImageStageError(code, error);
+  }
+}
+
+export function classifyStyleImageFailure(error) {
+  return SAFE_STYLE_IMAGE_FAILURE_CODES.has(error?.diagnosticCode)
+    ? error.diagnosticCode
+    : 'style_image_handler_failed';
+}
 
 function imageApiEndpoint() {
   const baseUrl = process.env.IMAGE_BASE_URL?.replace(/\/$/, '');
-  if (!baseUrl) throw new Error('IMAGE_BASE_URL is not configured');
+  if (!baseUrl || !process.env.API_KEY) {
+    throw new StyleImageStageError('style_image_configuration_failed');
+  }
   return `${baseUrl}/services/aigc/multimodal-generation/generation`;
 }
 
-async function callImageEditor({ imageBase64, kind, analysis }) {
+export function buildImageEditorRequest({ imageBase64, kind, analysis }) {
+  try {
+    return {
+      endpoint: imageApiEndpoint(),
+      options: {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${process.env.API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: process.env.IMAGE_MODEL_NAME || 'qwen-image-edit-max',
+          input: {
+            messages: [{
+              role: 'user',
+              content: [
+                { image: imageBase64 },
+                { text: buildStyleImagePrompt(kind, analysis) },
+              ],
+            }],
+          },
+          parameters: {
+            n: 1,
+            size: '960*1280',
+            prompt_extend: true,
+            watermark: false,
+            negative_prompt: styleImageNegativePrompt(),
+          },
+        }),
+      },
+    };
+  } catch (error) {
+    throw styleImageStageError('style_image_request_build_failed', error);
+  }
+}
+
+async function callImageEditor({ endpoint, options }) {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 120_000);
   try {
-    const response = await fetch(imageApiEndpoint(), {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${process.env.API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      signal: controller.signal,
-      body: JSON.stringify({
-        model: process.env.IMAGE_MODEL_NAME || 'qwen-image-edit-max',
-        input: {
-          messages: [{
-            role: 'user',
-            content: [
-              { image: imageBase64 },
-              { text: buildStyleImagePrompt(kind, analysis) },
-            ],
-          }],
-        },
-        parameters: {
-          n: 1,
-          size: '960*1280',
-          prompt_extend: true,
-          watermark: false,
-          negative_prompt: styleImageNegativePrompt(),
-        },
-      }),
-    });
-    const payload = await response.json();
+    let response;
+    try {
+      response = await fetch(endpoint, { ...options, signal: controller.signal });
+    } catch (error) {
+      throw styleImageStageError('style_image_model_request_failed', error);
+    }
+    let payload;
+    try {
+      payload = await response.json();
+    } catch (error) {
+      throw styleImageStageError('style_image_response_parse_failed', error);
+    }
     if (!response.ok) {
-      const error = new Error(payload?.message || payload?.code || 'Image generation failed');
+      const error = new StyleImageStageError('style_image_model_rejected');
       error.retryGeneration = response.status >= 400 && response.status < 500;
       throw error;
     }
-    return extractGeneratedImageUrl(payload);
+    try {
+      return extractGeneratedImageUrl(payload);
+    } catch (error) {
+      throw styleImageStageError('style_image_result_extract_failed', error);
+    }
   } finally {
     clearTimeout(timeout);
   }
@@ -89,7 +154,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    enforceRateLimit(req, 'generate-style-image', { limit: 6, windowMs: 60_000 });
+    enforceRateLimit(req, 'generate-style-image', { limit: 12, windowMs: 60_000 });
   } catch (error) {
     res.setHeader('Retry-After', String(error.retryAfter));
     return res.status(429).json({ error: error.message });
@@ -116,22 +181,35 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: '当前照片不适合生成个性化造型' });
     }
     const trustedAnalysis = applyIdentityKnowledge(validated);
+    // Complete all configuration, prompt and JSON work before claiming a job.
+    // A deterministic preflight failure must never strand an unpaid job in processing.
+    const imageRequest = buildImageEditorRequest({ imageBase64, kind, analysis: trustedAnalysis });
     const ownerId = randomUUID();
     const job = await runStyleImageJob({
-      claim: () => claimStyleImageJob(
+      claim: () => runStyleImageStage('style_image_job_claim_failed', () => claimStyleImageJob(
         visualAuthorization.codeHash, requestId, kind, ownerId,
+      )),
+      generate: () => callImageEditor(imageRequest),
+      complete: (resultUrl) => runStyleImageStage(
+        'style_image_job_complete_failed',
+        () => completeStyleImageJob(requestId, kind, ownerId, resultUrl),
       ),
-      generate: () => callImageEditor({ imageBase64, kind, analysis: trustedAnalysis }),
-      complete: (resultUrl) => completeStyleImageJob(requestId, kind, ownerId, resultUrl),
       fail: () => failStyleImageJob(requestId, kind, ownerId),
     });
     if (job.status === 'processing') {
       return res.status(202).json({ kind, status: 'processing' });
     }
-    const imageDataUrl = await downloadAsDataUrl(job.resultUrl);
+    const imageDataUrl = await runStyleImageStage(
+      'style_image_download_failed',
+      () => downloadAsDataUrl(job.resultUrl),
+    );
     return res.status(200).json({ kind, status: 'completed', reused: job.reused, imageDataUrl });
   } catch (error) {
-    console.error('Personalized style image generation failed:', error);
-    return res.status(502).json({ error: '专属造型图暂时生成失败，请稍后重试' });
+    const diagnosticCode = classifyStyleImageFailure(error);
+    console.error('Personalized style image generation failed:', diagnosticCode);
+    return res.status(502).json({
+      error: '专属造型图暂时生成失败，请稍后重试',
+      diagnosticCode,
+    });
   }
 }
