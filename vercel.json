@@ -4,6 +4,17 @@
     "api/start-analysis.js": {
       "maxDuration": 60
     },
+    "api/analysis-worker.js": {
+      "maxDuration": 300,
+      "experimentalTriggers": [
+        {
+          "type": "queue/v2beta",
+          "topic": "analysis-jobs",
+          "retryAfterSeconds": 120,
+          "initialDelaySeconds": 0
+        }
+      ]
+    },
     "api/*.js": {
       "maxDuration": 30
     }

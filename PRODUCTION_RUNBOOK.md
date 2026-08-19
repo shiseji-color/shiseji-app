@@ -9,6 +9,8 @@ timestamps, backup identifier, and outcome in the private operations log.
 - PR remains unmerged until review and all required checks pass.
 - Production backup/PITR restore point is verified and named.
 - Netlify and Vercel contain identical server-only environment variables.
+- The Vercel deployment exposes an `analysis-jobs` queue consumer in
+  Observability, and `api/analysis-worker.js` is not publicly routable.
 - `STYLE_IMAGE_SOURCE_HOSTS` is narrowed to the observed provider result hosts.
 - Platform WAF/rate and spend alerts are configured.
 - A rollback owner and a 30-minute observation window are assigned.
@@ -17,7 +19,8 @@ timestamps, backup identifier, and outcome in the private operations log.
 
 1. Set `STYLE_IMAGE_GENERATION_ENABLED=false` on both platforms.
 2. Deploy the reviewed commit to Vercel without production traffic and verify
-   static pages plus non-model 405/403/503 API behavior.
+   static pages plus non-model 405/403/503 API behavior. Confirm a synthetic
+   queue message can be published and acknowledged before any paid model test.
 3. Deploy the same commit to Netlify. Confirm style-image calls return 503 and
    existing activation/status traffic remains healthy.
 4. Create and verify the production database restore point.

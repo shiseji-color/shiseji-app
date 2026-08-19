@@ -35,8 +35,12 @@ Async provider task IDs are persisted so polling and serverless cold starts can
 resume the same paid generation safely.
 
 The same API routes work on Netlify and Vercel. Netlify dispatches diagnosis to
-its background-function endpoint; Vercel uses `waitUntil()` with the same
-platform-neutral worker. `vercel.json` supplies the SPA fallback and bounded
+its background-function endpoint; Vercel publishes a small signed job to the
+durable `analysis-jobs` Vercel Queue. A private queue consumer runs the same
+platform-neutral worker with a 300-second execution window, while each model
+request remains bounded to 45 seconds. Queue publishing uses the database task
+ID as an idempotency key so a browser retry cannot enqueue a second paid job.
+`vercel.json` supplies the private queue trigger, SPA fallback, and bounded
 function durations. Configure the same server-only environment variables on
 either platform. This repository does not deploy or apply database migrations
 automatically.

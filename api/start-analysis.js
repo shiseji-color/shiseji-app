@@ -50,7 +50,7 @@ export default async function handler(req, res) {
     if (job.status === 'queued') {
       await uploadTemporaryPhoto(job.photoPath, photo);
       const workerClaims = { ...claims, photoPath: job.photoPath };
-      await dispatchBackground(req, buildBackgroundPayload(workerClaims));
+      await dispatchBackground(req, buildBackgroundPayload(workerClaims), job.taskId);
     }
     return res.status(202).json({ taskId: job.taskId, status: job.status, jobToken });
   } catch (error) {

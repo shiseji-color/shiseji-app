@@ -1,23 +1,47 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { DuplicateMessageError } from '@vercel/queue';
 import { createBackgroundDispatcher } from '../lib/background-analysis-dispatch.js';
 
-test('Vercel defers the platform-neutral worker without calling a Netlify URL', async () => {
-  const events = [];
-  const deferred = [];
+test('Vercel durably publishes the worker token without calling a Netlify URL', async () => {
+  const messages = [];
   let fetched = false;
   const dispatch = createBackgroundDispatcher({
     env: { VERCEL: '1' },
-    defer(promise) { deferred.push(promise); },
-    worker: async (event) => { events.push(event); },
+    sendQueue: async (...args) => { messages.push(args); },
     fetchImpl: async () => { fetched = true; throw new Error('must not fetch'); },
   });
 
-  await dispatch({ headers: {} }, '{"workerToken":"test"}');
+  await dispatch({ headers: {} }, '{"workerToken":"test"}', 'task-id');
   assert.equal(fetched, false);
-  assert.equal(deferred.length, 1);
-  await deferred[0];
-  assert.deepEqual(events, [{ body: '{"workerToken":"test"}' }]);
+  assert.deepEqual(messages, [[
+    'analysis-jobs',
+    { workerToken: 'test' },
+    { idempotencyKey: 'analysis-task-id', retentionSeconds: 3600 },
+  ]]);
+});
+
+test('Vercel treats the same durable queue idempotency key as already accepted', async () => {
+  const dispatch = createBackgroundDispatcher({
+    env: { VERCEL: '1' },
+    sendQueue: async (topic, payload, options) => {
+      throw new DuplicateMessageError('duplicate', options.idempotencyKey);
+    },
+  });
+
+  await dispatch({ headers: {} }, '{"workerToken":"test"}', 'same-task');
+});
+
+test('Vercel still rejects unrelated queue publishing failures', async () => {
+  const dispatch = createBackgroundDispatcher({
+    env: { VERCEL: '1' },
+    sendQueue: async () => { throw new Error('queue unavailable'); },
+  });
+
+  await assert.rejects(
+    dispatch({ headers: {} }, '{"workerToken":"test"}', 'task-id'),
+    /queue unavailable/,
+  );
 });
 
 test('Netlify keeps dispatching to its authenticated background function', async () => {

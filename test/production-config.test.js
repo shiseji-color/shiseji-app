@@ -5,6 +5,10 @@ import test from 'node:test';
 test('Vercel fallback leaves API routes to serverless functions', async () => {
   const config = JSON.parse(await readFile(new URL('../vercel.json', import.meta.url), 'utf8'));
   assert.equal(config.functions['api/start-analysis.js'].maxDuration, 60);
+  assert.equal(config.functions['api/analysis-worker.js'].maxDuration, 300);
+  assert.deepEqual(config.functions['api/analysis-worker.js'].experimentalTriggers, [{
+    type: 'queue/v2beta', topic: 'analysis-jobs', retryAfterSeconds: 120, initialDelaySeconds: 0,
+  }]);
   assert.equal(config.functions['api/*.js'].maxDuration, 30);
   assert.deepEqual(config.rewrites, [{
     source: '/((?!api/).*)',
