@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
+import {
+  analysisModelTimeout,
+  BACKGROUND_MODEL_TIMEOUT_MS,
+  INTERACTIVE_MODEL_TIMEOUT_MS,
+} from '../api/analyze.js';
 
 test('Vercel fallback leaves API routes to serverless functions', async () => {
   const config = JSON.parse(await readFile(new URL('../vercel.json', import.meta.url), 'utf8'));
@@ -14,6 +19,19 @@ test('Vercel fallback leaves API routes to serverless functions', async () => {
     source: '/((?!api/).*)',
     destination: '/index.html',
   }]);
+});
+
+test('analysis model timeouts leave cleanup time inside each Vercel function budget', async () => {
+  const config = JSON.parse(await readFile(new URL('../vercel.json', import.meta.url), 'utf8'));
+  const workerBudgetMs = config.functions['api/analysis-worker.js'].maxDuration * 1_000;
+  const interactiveBudgetMs = config.functions['api/*.js'].maxDuration * 1_000;
+
+  assert.equal(analysisModelTimeout(true), BACKGROUND_MODEL_TIMEOUT_MS);
+  assert.equal(analysisModelTimeout(false), INTERACTIVE_MODEL_TIMEOUT_MS);
+  assert.equal(BACKGROUND_MODEL_TIMEOUT_MS, 240_000);
+  assert.equal(INTERACTIVE_MODEL_TIMEOUT_MS, 25_000);
+  assert.ok(BACKGROUND_MODEL_TIMEOUT_MS <= workerBudgetMs - 60_000);
+  assert.ok(INTERACTIVE_MODEL_TIMEOUT_MS <= interactiveBudgetMs - 5_000);
 });
 
 test('style image timeout retries preserve a paid provider task ID', async () => {
