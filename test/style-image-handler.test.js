@@ -79,6 +79,23 @@ test.after(() => {
   else process.env.AUTH_TOKEN_SECRET = originalSecret;
 });
 
+test('maintenance switch blocks generation before authorization or provider access', async () => {
+  let claimed = false;
+  const handler = createStyleImageHandler(dependencies({
+    env: {
+      API_KEY: 'test-key',
+      IMAGE_BASE_URL: 'https://workspace.example/api/v1',
+      STYLE_IMAGE_GENERATION_ENABLED: 'false',
+    },
+    claimJob: async () => { claimed = true; throw new Error('must not claim'); },
+  }));
+  const result = response();
+  await handler({ method: 'POST', headers: {}, body: {} }, result.res);
+  assert.equal(result.output.statusCode, 503);
+  assert.equal(result.output.headers['Retry-After'], '300');
+  assert.equal(claimed, false);
+});
+
 test('submits once, resumes by provider task ID, persists privately, and signs the result', async () => {
   const analysis = analysisResult();
   let claimCount = 0;

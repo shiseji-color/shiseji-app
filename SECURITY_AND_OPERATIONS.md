@@ -13,6 +13,7 @@ checklist before deploying a release.
 - `AUTH_TOKEN_SECRET`: at least 32 random characters, unique per environment
 - `IMAGE_BASE_URL` and `IMAGE_MODEL_NAME`: approved asynchronous image endpoint/model
 - `STYLE_IMAGE_SOURCE_HOSTS`: optional comma-separated generated-image host allowlist
+- `STYLE_IMAGE_GENERATION_ENABLED`: set to `false` during a coordinated migration
 
 Never expose these values to browser code or commit them to Git.
 

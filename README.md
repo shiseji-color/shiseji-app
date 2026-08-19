@@ -34,10 +34,12 @@ Supabase `style-images` bucket, and returned through short-lived signed URLs.
 Async provider task IDs are persisted so polling and serverless cold starts can
 resume the same paid generation safely.
 
-The same API routes work on Netlify and Vercel. `vercel.json` supplies the SPA
-fallback and a bounded function duration; configure the same server-only
-environment variables on either platform. This repository does not deploy or
-apply database migrations automatically.
+The same API routes work on Netlify and Vercel. Netlify dispatches diagnosis to
+its background-function endpoint; Vercel uses `waitUntil()` with the same
+platform-neutral worker. `vercel.json` supplies the SPA fallback and bounded
+function durations. Configure the same server-only environment variables on
+either platform. This repository does not deploy or apply database migrations
+automatically.
 
 ## Development checks
 
