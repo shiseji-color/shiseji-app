@@ -174,9 +174,20 @@ begin
 
   if v_job.status = 'failed' and p_retry then
     update public.style_image_jobs
-    set status = 'claimed',
-        stage = 'claimed',
-        provider_task_id = null,
+    set status = case
+          when failure_code = 'style_image_job_timeout' and provider_task_id is not null
+            then 'processing'
+          else 'claimed'
+        end,
+        stage = case
+          when failure_code = 'style_image_job_timeout' and provider_task_id is not null
+            then 'provider_submitted'
+          else 'claimed'
+        end,
+        provider_task_id = case
+          when failure_code = 'style_image_job_timeout' then provider_task_id
+          else null
+        end,
         result_path = null,
         result_url = null,
         failure_code = null,
