@@ -29,8 +29,15 @@ IMAGE_MODEL_NAME=qwen-image-edit-max
 ```
 
 `IMAGE_BASE_URL` must match the region of `API_KEY`. Generated temporary URLs
-are downloaded by the server immediately and returned as transient data URLs so
-the report export does not depend on the provider's 24-hour result URL.
+are downloaded only from an allowlisted provider host, stored in the private
+Supabase `style-images` bucket, and returned through short-lived signed URLs.
+Async provider task IDs are persisted so polling and serverless cold starts can
+resume the same paid generation safely.
+
+The same API routes work on Netlify and Vercel. `vercel.json` supplies the SPA
+fallback and a bounded function duration; configure the same server-only
+environment variables on either platform. This repository does not deploy or
+apply database migrations automatically.
 
 ## Development checks
 

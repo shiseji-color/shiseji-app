@@ -1,9 +1,11 @@
-import { randomUUID } from 'node:crypto';
+import { createHash } from 'node:crypto';
 import { applyIdentityKnowledge } from '../lib/color-framework.js';
 import {
+  beginStyleImageProviderSubmission,
   claimStyleImageJob,
   completeStyleImageJob,
   failStyleImageJob,
+  saveStyleImageProviderTask,
 } from '../lib/activation-store.js';
 import { validateAnalysisResult } from '../lib/analysis-schema.js';
 import { verifyVisualToken } from '../lib/analysis-token.js';
@@ -11,12 +13,16 @@ import { enforceRateLimit } from '../lib/rate-limit.js';
 import {
   buildStyleImagePrompt,
   extractGeneratedImageUrl,
+  extractStyleImageTaskId,
+  normalizeStyleImageTaskStatus,
   styleImageNegativePrompt,
   validateStyleImageKind,
 } from '../lib/style-image.js';
-import { runStyleImageJob } from '../lib/style-image-job.js';
+import {
+  createStyleImageSignedUrl,
+  persistStyleImage,
+} from '../lib/style-image-storage.js';
 
-const MAX_GENERATED_IMAGE_BYTES = 5_500_000;
 const SAFE_STYLE_IMAGE_FAILURE_CODES = new Set([
   'style_image_configuration_failed',
   'style_image_request_build_failed',
@@ -25,8 +31,11 @@ const SAFE_STYLE_IMAGE_FAILURE_CODES = new Set([
   'style_image_model_rejected',
   'style_image_response_parse_failed',
   'style_image_result_extract_failed',
+  'style_image_provider_task_write_failed',
+  'style_image_storage_failed',
   'style_image_job_complete_failed',
-  'style_image_download_failed',
+  'style_image_sign_failed',
+  'style_image_job_timeout',
   'style_image_handler_failed',
 ]);
 
@@ -51,32 +60,50 @@ async function runStyleImageStage(code, operation) {
   }
 }
 
+async function requireJobWrite(operation) {
+  const result = await operation();
+  if (result !== true) throw new Error('Style image job state was not updated');
+  return result;
+}
+
 export function classifyStyleImageFailure(error) {
   return SAFE_STYLE_IMAGE_FAILURE_CODES.has(error?.diagnosticCode)
     ? error.diagnosticCode
     : 'style_image_handler_failed';
 }
 
-function imageApiEndpoint() {
-  const baseUrl = process.env.IMAGE_BASE_URL?.replace(/\/$/, '');
-  if (!baseUrl || !process.env.API_KEY) {
-    throw new StyleImageStageError('style_image_configuration_failed');
-  }
-  return `${baseUrl}/services/aigc/multimodal-generation/generation`;
+function styleImageOwnerId(codeHash, requestId, kind) {
+  const hex = createHash('sha256').update(`${codeHash}:${requestId}:${kind}`).digest('hex');
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-4${hex.slice(13, 16)}-a${hex.slice(17, 20)}-${hex.slice(20, 32)}`;
 }
 
-export function buildImageEditorRequest({ imageBase64, kind, analysis }) {
+function providerConfig(env = process.env) {
+  const baseUrl = env.IMAGE_BASE_URL?.replace(/\/$/, '');
+  if (!baseUrl || !env.API_KEY) {
+    throw new StyleImageStageError('style_image_configuration_failed');
+  }
+  return {
+    apiKey: env.API_KEY,
+    endpoint: `${baseUrl}/services/aigc/multimodal-generation/generation`,
+    tasksEndpoint: `${baseUrl}/tasks`,
+    model: env.IMAGE_MODEL_NAME || 'qwen-image-edit-max',
+  };
+}
+
+export function buildImageEditorRequest({ imageBase64, kind, analysis }, env = process.env) {
   try {
+    const config = providerConfig(env);
     return {
-      endpoint: imageApiEndpoint(),
+      endpoint: config.endpoint,
       options: {
         method: 'POST',
         headers: {
-          Authorization: `Bearer ${process.env.API_KEY}`,
+          Authorization: `Bearer ${config.apiKey}`,
           'Content-Type': 'application/json',
+          'X-DashScope-Async': 'enable',
         },
         body: JSON.stringify({
-          model: process.env.IMAGE_MODEL_NAME || 'qwen-image-edit-max',
+          model: config.model,
           input: {
             messages: [{
               role: 'user',
@@ -101,13 +128,13 @@ export function buildImageEditorRequest({ imageBase64, kind, analysis }) {
   }
 }
 
-async function callImageEditor({ endpoint, options }) {
+async function requestJson(endpoint, options, fetchImpl) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 120_000);
+  const timeout = setTimeout(() => controller.abort(), 25_000);
   try {
     let response;
     try {
-      response = await fetch(endpoint, { ...options, signal: controller.signal });
+      response = await fetchImpl(endpoint, { ...options, signal: controller.signal });
     } catch (error) {
       throw styleImageStageError('style_image_model_request_failed', error);
     }
@@ -117,99 +144,155 @@ async function callImageEditor({ endpoint, options }) {
     } catch (error) {
       throw styleImageStageError('style_image_response_parse_failed', error);
     }
-    if (!response.ok) {
-      const error = new StyleImageStageError('style_image_model_rejected');
-      error.retryGeneration = response.status >= 400 && response.status < 500;
-      throw error;
-    }
-    try {
-      return extractGeneratedImageUrl(payload);
-    } catch (error) {
-      throw styleImageStageError('style_image_result_extract_failed', error);
-    }
+    if (!response.ok) throw new StyleImageStageError('style_image_model_rejected');
+    return payload;
   } finally {
     clearTimeout(timeout);
   }
 }
 
-async function downloadAsDataUrl(url) {
-  const response = await fetch(url, { redirect: 'follow' });
-  if (!response.ok) throw new Error('Unable to download generated image');
-  const contentType = response.headers.get('content-type') || 'image/png';
-  if (!/^image\/(?:png|jpeg|webp)$/i.test(contentType)) {
-    throw new Error('Generated asset has an unsupported content type');
-  }
-  const bytes = Buffer.from(await response.arrayBuffer());
-  if (!bytes.length || bytes.length > MAX_GENERATED_IMAGE_BYTES) {
-    throw new Error('Generated image is empty or too large');
-  }
-  return `data:${contentType};base64,${bytes.toString('base64')}`;
+function validImage(imageBase64) {
+  return typeof imageBase64 === 'string'
+    && /^data:image\/(?:jpeg|png|webp);base64,/i.test(imageBase64)
+    && imageBase64.length <= 4_000_000;
 }
 
-export default async function handler(req, res) {
-  res.setHeader('Cache-Control', 'no-store');
-  if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST');
-    return res.status(405).json({ error: '仅支持POST请求' });
-  }
+export function createStyleImageHandler(dependencies = {}) {
+  const fetchImpl = dependencies.fetchImpl || globalThis.fetch;
+  const claimJob = dependencies.claimJob || claimStyleImageJob;
+  const beginSubmission = dependencies.beginSubmission || beginStyleImageProviderSubmission;
+  const saveProviderTask = dependencies.saveProviderTask || saveStyleImageProviderTask;
+  const completeJob = dependencies.completeJob || completeStyleImageJob;
+  const failJob = dependencies.failJob || failStyleImageJob;
+  const persistImage = dependencies.persistImage || persistStyleImage;
+  const signImage = dependencies.signImage || createStyleImageSignedUrl;
+  const env = dependencies.env || process.env;
 
-  try {
-    enforceRateLimit(req, 'generate-style-image', { limit: 12, windowMs: 60_000 });
-  } catch (error) {
-    res.setHeader('Retry-After', String(error.retryAfter));
-    return res.status(429).json({ error: error.message });
-  }
+  return async function handler(req, res) {
+    res.setHeader('Cache-Control', 'no-store');
+    if (req.method !== 'POST') {
+      res.setHeader('Allow', 'POST');
+      return res.status(405).json({ error: '仅支持POST请求' });
+    }
 
-  try {
-    const { imageBase64, visualToken, requestId, analysis, kind } = req.body ?? {};
     try {
-      var visualAuthorization = verifyVisualToken(visualToken, requestId, analysis);
+      enforceRateLimit(req, 'generate-style-image', { limit: 60, windowMs: 60_000 });
+    } catch (error) {
+      res.setHeader('Retry-After', String(error.retryAfter));
+      return res.status(429).json({ error: error.message });
+    }
+
+    const { imageBase64, visualToken, requestId, analysis, kind, retry = false } = req.body ?? {};
+    let authorization;
+    try {
+      authorization = verifyVisualToken(visualToken, requestId, analysis);
     } catch {
       return res.status(403).json({ error: '造型生成授权无效或已过期，请重新完成分析' });
     }
-    validateStyleImageKind(kind);
-    if (
-      typeof imageBase64 !== 'string' ||
-      !/^data:image\/(?:jpeg|png|webp);base64,/i.test(imageBase64) ||
-      imageBase64.length > 4_000_000
-    ) {
-      return res.status(400).json({ error: '请上传有效且大小合适的照片' });
-    }
 
-    const validated = validateAnalysisResult(analysis);
-    if (validated.season_en === 'PHOTO_NOT_ELIGIBLE') {
-      return res.status(400).json({ error: '当前照片不适合生成个性化造型' });
-    }
-    const trustedAnalysis = applyIdentityKnowledge(validated);
-    // Complete all configuration, prompt and JSON work before claiming a job.
-    // A deterministic preflight failure must never strand an unpaid job in processing.
-    const imageRequest = buildImageEditorRequest({ imageBase64, kind, analysis: trustedAnalysis });
-    const ownerId = randomUUID();
-    const job = await runStyleImageJob({
-      claim: () => runStyleImageStage('style_image_job_claim_failed', () => claimStyleImageJob(
-        visualAuthorization.codeHash, requestId, kind, ownerId,
-      )),
-      generate: () => callImageEditor(imageRequest),
-      complete: (resultUrl) => runStyleImageStage(
+    try {
+      validateStyleImageKind(kind);
+      const validated = validateAnalysisResult(analysis);
+      if (validated.season_en === 'PHOTO_NOT_ELIGIBLE') {
+        return res.status(400).json({ error: '当前照片不适合生成个性化造型' });
+      }
+      const trustedAnalysis = applyIdentityKnowledge(validated);
+      const ownerId = styleImageOwnerId(authorization.codeHash, requestId, kind);
+      const job = await runStyleImageStage('style_image_job_claim_failed', () => claimJob(
+        authorization.codeHash, requestId, kind, ownerId, retry === true,
+      ));
+
+      if (job.status === 'completed') {
+        const imageUrl = await runStyleImageStage(
+          'style_image_sign_failed',
+          () => signImage(job.resultPath),
+        );
+        return res.status(200).json({ kind, status: 'completed', reused: true, imageUrl });
+      }
+      if (job.status === 'failed') {
+        return res.status(409).json({
+          kind,
+          status: 'failed',
+          diagnosticCode: job.failureCode || 'style_image_handler_failed',
+        });
+      }
+
+      const config = providerConfig(env);
+      let providerTaskId = job.providerTaskId;
+      if (!providerTaskId) {
+        if (job.stage === 'submitting') {
+          return res.status(202).json({ kind, status: 'processing' });
+        }
+        if (!validImage(imageBase64)) {
+          return res.status(400).json({ error: '请上传有效且大小合适的照片' });
+        }
+        const request = buildImageEditorRequest({ imageBase64, kind, analysis: trustedAnalysis }, env);
+        const acquired = await runStyleImageStage(
+          'style_image_provider_task_write_failed',
+          () => beginSubmission(authorization.codeHash, requestId, kind, ownerId),
+        );
+        if (acquired !== true) {
+          return res.status(202).json({ kind, status: 'processing' });
+        }
+        try {
+          const payload = await requestJson(request.endpoint, request.options, fetchImpl);
+          providerTaskId = extractStyleImageTaskId(payload);
+          await runStyleImageStage(
+            'style_image_provider_task_write_failed',
+            () => requireJobWrite(() => saveProviderTask(
+              authorization.codeHash, requestId, kind, ownerId, providerTaskId,
+            )),
+          );
+          return res.status(202).json({ kind, status: 'processing' });
+        } catch (error) {
+          const diagnosticCode = classifyStyleImageFailure(error);
+          if (diagnosticCode === 'style_image_model_rejected') {
+            await failJob(authorization.codeHash, requestId, kind, ownerId, diagnosticCode).catch(() => {});
+          }
+          throw error;
+        }
+      }
+
+      const payload = await requestJson(
+        `${config.tasksEndpoint}/${encodeURIComponent(providerTaskId)}`,
+        { headers: { Authorization: `Bearer ${config.apiKey}` } },
+        fetchImpl,
+      );
+      const providerStatus = normalizeStyleImageTaskStatus(payload);
+      if (providerStatus === 'pending' || providerStatus === 'running' || providerStatus === 'unknown') {
+        return res.status(202).json({ kind, status: 'processing' });
+      }
+      if (providerStatus === 'failed' || providerStatus === 'canceled') {
+        const diagnosticCode = 'style_image_model_rejected';
+        await failJob(authorization.codeHash, requestId, kind, ownerId, diagnosticCode).catch(() => {});
+        return res.status(409).json({ kind, status: 'failed', diagnosticCode });
+      }
+
+      const sourceUrl = await runStyleImageStage(
+        'style_image_result_extract_failed',
+        async () => extractGeneratedImageUrl(payload),
+      );
+      const resultPath = await runStyleImageStage(
+        'style_image_storage_failed',
+        () => persistImage({ sourceUrl, codeHash: authorization.codeHash, requestId, kind }),
+      );
+      await runStyleImageStage(
         'style_image_job_complete_failed',
-        () => completeStyleImageJob(requestId, kind, ownerId, resultUrl),
-      ),
-      fail: () => failStyleImageJob(requestId, kind, ownerId),
-    });
-    if (job.status === 'processing') {
-      return res.status(202).json({ kind, status: 'processing' });
+        () => requireJobWrite(() => completeJob(
+          authorization.codeHash, requestId, kind, ownerId, resultPath,
+        )),
+      );
+      const imageUrl = await runStyleImageStage('style_image_sign_failed', () => signImage(resultPath));
+      return res.status(200).json({ kind, status: 'completed', reused: false, imageUrl });
+    } catch (error) {
+      const diagnosticCode = classifyStyleImageFailure(error);
+      console.error('Personalized style image generation failed:', diagnosticCode);
+      return res.status(502).json({
+        error: '专属造型图暂时生成失败，请稍后重试',
+        diagnosticCode,
+      });
     }
-    const imageDataUrl = await runStyleImageStage(
-      'style_image_download_failed',
-      () => downloadAsDataUrl(job.resultUrl),
-    );
-    return res.status(200).json({ kind, status: 'completed', reused: job.reused, imageDataUrl });
-  } catch (error) {
-    const diagnosticCode = classifyStyleImageFailure(error);
-    console.error('Personalized style image generation failed:', diagnosticCode);
-    return res.status(502).json({
-      error: '专属造型图暂时生成失败，请稍后重试',
-      diagnosticCode,
-    });
-  }
+  };
 }
+
+export default createStyleImageHandler();

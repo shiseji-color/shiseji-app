@@ -1817,46 +1817,54 @@
         'style_image_model_rejected',
         'style_image_response_parse_failed',
         'style_image_result_extract_failed',
+        'style_image_provider_task_write_failed',
+        'style_image_storage_failed',
         'style_image_job_complete_failed',
-        'style_image_download_failed',
+        'style_image_sign_failed',
         'style_image_handler_failed',
+        'style_image_job_timeout',
         'style_image_processing_timeout',
         'style_image_client_failed'
     ]);
 
-    async function generatePersonalizedStyleImage(kind, analysis) {
+    async function generatePersonalizedStyleImage(kind, analysis, retry = false) {
         if (!analysis || !userImageBase64 || window.personalizedImageState[kind] === 'loading') return;
         const loadingCopy = kind === 'beauty' ? '正在设计专属妆发' : '正在设计完整穿搭';
         setPersonalizedImageState(kind, 'loading', loadingCopy);
         try {
             let payload;
-            for (let attempt = 0; attempt < 5; attempt += 1) {
-                if (attempt > 0) await new Promise((resolve) => setTimeout(resolve, 10000));
+            for (let attempt = 0; attempt < 13; attempt += 1) {
+                if (attempt > 0) await new Promise((resolve) => setTimeout(resolve, 5000));
                 const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 135000);
-                const response = await fetch('/api/generate-style-image', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    signal: controller.signal,
-                    body: JSON.stringify({
-                        kind,
-                        imageBase64: userImageBase64,
-                        visualToken: window.visualToken,
-                        requestId: window.visualRequestId,
-                        analysis
-                    })
-                });
-                clearTimeout(timeoutId);
+                const timeoutId = setTimeout(() => controller.abort(), 30000);
+                let response;
+                try {
+                    response = await fetch('/api/generate-style-image', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        signal: controller.signal,
+                        body: JSON.stringify({
+                            kind,
+                            imageBase64: userImageBase64,
+                            visualToken: window.visualToken,
+                            requestId: window.visualRequestId,
+                            analysis,
+                            retry: retry && attempt === 0
+                        })
+                    });
+                } finally {
+                    clearTimeout(timeoutId);
+                }
                 payload = await response.json();
                 if (response.status === 202 && payload.status === 'processing') continue;
-                if (!response.ok || !payload.imageDataUrl) {
+                if (!response.ok || payload.status !== 'completed' || !payload.imageUrl) {
                     const failure = new Error('STYLE_IMAGE_FAILED');
                     failure.diagnosticCode = payload.diagnosticCode || 'style_image_handler_failed';
                     throw failure;
                 }
                 break;
             }
-            if (!payload?.imageDataUrl) {
+            if (!payload?.imageUrl) {
                 const failure = new Error('STYLE_IMAGE_PROCESSING_TIMEOUT');
                 failure.diagnosticCode = 'style_image_processing_timeout';
                 throw failure;
@@ -1864,12 +1872,12 @@
 
             if (kind === 'beauty') {
                 const image = document.getElementById('makeupEditorialAvatar');
-                if (image) image.src = payload.imageDataUrl;
+                if (image) image.src = payload.imageUrl;
             } else {
                 const board = document.getElementById('outfitEditorialBoard');
                 const image = document.getElementById('outfitEditorialImage');
                 if (board && image) {
-                    image.src = payload.imageDataUrl;
+                    image.src = payload.imageUrl;
                     image.classList.remove('hidden');
                     board.classList.add('has-editorial-image');
                 }
@@ -1881,7 +1889,7 @@
                 : 'style_image_client_failed';
             console.error(`${kind} personalized image failed:`, diagnosticCode);
             const failedLabel = kind === 'beauty' ? '妆发图生成未完成' : '穿搭图生成未完成';
-            const failedCopy = `${failedLabel} · ${diagnosticCode}`;
+            const failedCopy = `${failedLabel} · 点击重试`;
             setPersonalizedImageState(kind, 'failed', failedCopy);
         }
     }
@@ -1899,7 +1907,7 @@
 
     function retryPersonalizedImage(kind) {
         if (!['beauty', 'outfit'].includes(kind) || !window.currentAnalysisResult) return;
-        generatePersonalizedStyleImage(kind, window.currentAnalysisResult);
+        generatePersonalizedStyleImage(kind, window.currentAnalysisResult, true);
     }
 
     function renderAIResult(d) {
