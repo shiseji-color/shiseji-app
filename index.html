@@ -12,10 +12,17 @@
         @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500;600;900&display=swap');
         
         :root {
-            --primary-bg: #F7F5F2;
-            --accent-color: #DABFB4;
-            --text-dark: #3D342F;
-            --text-muted: #8C7A70;
+            --primary-bg: #F2F3F3;
+            --surface: #FBFCFC;
+            --surface-muted: #E9ECEA;
+            --accent-color: #315F56;
+            --text-dark: #171918;
+            --text-muted: #515854;
+            --text-tertiary: #66706B;
+            --focus-color: #236B5D;
+            --radius-shell: 24px;
+            --radius-control: 12px;
+            --radius-data: 2px;
             --avoid-bg: #F8ECEC; 
             --avoid-text: #A74E4E; 
             --avoid-border: #EAC4C4; 
@@ -39,7 +46,7 @@
         .glass-panel { 
             background: linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 100%);
             backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px);
-            box-shadow: 0 24px 80px rgba(160, 145, 130, 0.15), inset 0 1px 1px rgba(255,255,255,1);
+            box-shadow: 0 18px 52px rgba(28, 35, 32, 0.09), inset 0 1px 1px rgba(255,255,255,1);
             border: 1px solid rgba(255, 255, 255, 0.8); border-radius: 2.5rem;
         }
         
@@ -165,9 +172,13 @@
         .scrollbar-hide { scrollbar-width: none; -ms-overflow-style: none; }
 
         .hex-color-swatch { box-shadow: inset 0 2px 8px rgba(0,0,0,0.06); border: 2px solid #FFFFFF; }
-        .progress-bar-fill { transition: width 1.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .progress-bar-fill { transform: scaleX(0); transform-origin: left; transition: transform .8s cubic-bezier(0.16, 1, 0.3, 1); }
         
-        input, button { -webkit-appearance: none; appearance: none; outline: none; }
+        input, button { -webkit-appearance: none; appearance: none; }
+        :where(a, button, input, summary, [tabindex]):focus-visible {
+            outline: 2px solid var(--focus-color);
+            outline-offset: 3px;
+        }
         button:active { transform: scale(0.98); transition: transform 0.1s; }
         input::placeholder { color: #A89990 !important; opacity: 1; }
 
@@ -876,6 +887,181 @@
       box-shadow: none;
     }
 
+    /* Calm archive refinement: cool neutrals, one restrained accent, explicit shape rules. */
+    body {
+      color: var(--text-dark);
+      background-color: var(--primary-bg);
+      background-image: none;
+    }
+
+    ::selection { color: #f7faf8; background: var(--accent-color); }
+
+    .glass-panel {
+      border: 1px solid #d8ddda;
+      border-radius: var(--radius-shell);
+      background: rgba(251, 252, 252, .98);
+      box-shadow: 0 18px 52px rgba(28, 35, 32, .09);
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+    }
+
+    .content-card {
+      border: 1px solid #dfe3e1;
+      border-radius: 16px;
+      background: var(--surface);
+      box-shadow: 0 12px 34px rgba(28, 35, 32, .055);
+    }
+
+    .activation-card,
+    .loading-card {
+      background: var(--surface);
+    }
+
+    .activation-signature,
+    .brand-proposition,
+    .activation-card > .text-center .season-spectrum {
+      display: none;
+    }
+
+    #appHeader h1,
+    .activation-card h2,
+    .upload-card h2 {
+      color: var(--text-dark) !important;
+    }
+
+    .activation-card h2,
+    .upload-card h2 {
+      font-family: inherit;
+      letter-spacing: .04em !important;
+    }
+
+    #activationCode,
+    #analyzeBtn,
+    .activation-submit,
+    .privacy-action,
+    .modal-action,
+    .report-action {
+      border-radius: var(--radius-control) !important;
+    }
+
+    #activationCode {
+      border-color: #cfd5d2;
+      color: var(--text-dark);
+      background: #f7f9f8;
+    }
+
+    #activationCode::placeholder { color: #68716d !important; }
+
+    .activation-help,
+    .privacy-summary {
+      color: var(--text-muted);
+      font-size: 12px;
+      line-height: 1.75;
+      letter-spacing: .02em;
+    }
+
+    .activation-help summary,
+    .privacy-policy-link {
+      color: #274f48;
+      text-underline-offset: 3px;
+    }
+
+    .privacy-facts {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+      color: var(--text-muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .privacy-facts div {
+      display: grid;
+      grid-template-columns: 52px minmax(0, 1fr);
+      gap: 10px;
+    }
+
+    .privacy-facts dt { color: var(--text-dark); font-weight: 600; }
+    .privacy-facts dd { min-width: 0; }
+
+    .loading-kicker,
+    .loading-note,
+    .loading-preview-status,
+    .analysis-step,
+    .report-portrait-copy-label,
+    .ai-note {
+      font-size: 12px;
+      letter-spacing: .04em;
+    }
+
+    .loading-note { color: var(--text-muted); }
+    .analysis-step { color: var(--text-tertiary); }
+    .analysis-step.active { color: var(--text-dark); transform: none; }
+    .analysis-step.active::before { background: var(--accent-color); box-shadow: none; }
+    .analysis-step.complete::before { background: #7e8984; border-color: #7e8984; }
+
+    .analysis-meta {
+      margin-top: 18px;
+      color: var(--text-muted);
+      font-size: 12px;
+      line-height: 1.75;
+    }
+
+    .analysis-cancel {
+      min-height: 44px;
+      color: #274f48;
+      font-size: 13px;
+      letter-spacing: .04em;
+      text-decoration: underline;
+      text-underline-offset: 4px;
+    }
+
+    .archive-section > .archive-eyebrow { display: none; }
+    .archive-section { scroll-margin-top: 58px; }
+    .archive-title { color: var(--text-dark); }
+    .archive-copy { color: var(--text-muted); }
+
+    .report-index {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding: 10px 12px;
+      border-bottom: 1px solid #dfe3e1;
+      background: rgba(247, 249, 248, .96);
+      scrollbar-width: none;
+    }
+
+    .report-index a {
+      flex: 0 0 auto;
+      min-height: 36px;
+      padding: 9px 11px 7px;
+      border-radius: 10px;
+      color: var(--text-muted);
+      font-size: 12px;
+      line-height: 1;
+      text-decoration: none;
+    }
+
+    .report-index a[aria-current="location"] {
+      color: #f7faf8;
+      background: var(--accent-color);
+    }
+
+    .modal-panel { border-radius: 16px !important; }
+    .modal-copy { color: var(--text-muted) !important; font-size: 14px !important; letter-spacing: 0 !important; }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        scroll-behavior: auto !important;
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+      }
+    }
+
     @media (max-width: 480px) {
             body { padding: 0 0 env(safe-area-inset-bottom) !important; }
             .app-container { height: 100vh; height: 100dvh; border-radius: 0; border: none; max-width: 100%; }
@@ -897,7 +1083,7 @@
         <h1 class="text-[28px] font-serif-custom font-semibold text-[#3D342F] tracking-[0.25em] ml-1">拾色季</h1>
         <div class="flex items-center justify-center mt-2 opacity-60">
             <div class="h-[1px] w-6 bg-[#8C7A70]"></div>
-            <p class="text-[9px] text-[#8C7A70] tracking-[0.4em] uppercase mx-3 font-medium">Color Season</p>
+            <p class="text-[12px] text-[#515854] tracking-[0.12em] uppercase mx-3 font-medium">Color Season</p>
             <div class="h-[1px] w-6 bg-[#8C7A70]"></div>
         </div>
     </header>
@@ -921,18 +1107,26 @@
                 </div>
 
                 <div class="relative">
-                    <input type="text" id="activationCode" placeholder="输入专属密钥" class="w-full bg-[#FAF9F7]/90 border border-[#E8E1DC] text-[#4A403A] text-sm rounded-[1rem] focus:ring-2 focus:ring-[#DABFB4]/40 focus:border-[#CDB5AA] block p-4 outline-none transition-all duration-300 text-center tracking-[0.3em] shadow-[inset_0_2px_4px_rgba(0,0,0,0.018)] placeholder:tracking-[0.18em]">
+                    <label for="activationCode" class="block mb-2 text-[13px] font-medium text-[#27302C]">专属密钥</label>
+                    <input type="text" id="activationCode" placeholder="例如 SSJ-XXXX-XXX" maxlength="12" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-describedby="activationHelp" class="w-full bg-[#FAF9F7]/90 border border-[#E8E1DC] text-[#4A403A] text-sm rounded-[1rem] focus:ring-2 focus:ring-[#315F56]/30 focus:border-[#315F56] block p-4 transition-all duration-300 text-center tracking-[0.18em] shadow-[inset_0_2px_4px_rgba(0,0,0,0.018)] placeholder:tracking-[0.08em]">
                 </div>
 
-                <div class="flex justify-center items-center mt-3 opacity-70">
-                    <svg class="w-3.5 h-3.5 text-[#BFA89F] mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    <span class="text-[10px] text-[#74665E] tracking-[0.1em]">专属密钥由拾色季店铺发放</span>
+                <div id="activationHelp" class="activation-help mt-3">
+                    <p>没有密钥？请向购买本服务的拾色季店铺获取。</p>
+                    <details class="mt-2">
+                        <summary class="cursor-pointer underline">密钥使用说明</summary>
+                        <ul class="mt-2 space-y-1 pl-4 list-disc">
+                            <li>每成功生成一份有效色彩档案消耗 1 次。</li>
+                            <li>照片不合格或分析失败会返还本次次数。</li>
+                            <li>妆发与穿搭效果图不额外消耗次数。</li>
+                        </ul>
+                    </details>
                 </div>
 
-                <button onclick="verifyCode()" class="w-full text-white bg-[#3D342F] hover:bg-[#2B2420] shadow-[0_7px_18px_rgba(74,62,55,0.16)] font-medium rounded-[1rem] text-[14px] px-5 py-4 text-center mt-6 transition-all duration-300 tracking-[0.22em]">
+                <button id="activationSubmit" onclick="verifyCode()" class="activation-submit w-full text-white bg-[#244D45] hover:bg-[#193B34] shadow-[0_7px_18px_rgba(29,67,59,0.14)] font-medium rounded-[1rem] text-[14px] px-5 py-4 text-center mt-6 transition-all duration-300 tracking-[0.08em]">
                     开启我的色彩档案
                 </button>
-                <p class="text-center text-[10px] text-[#7F6F67] tracking-[0.14em] mt-4">本命色卡 · 妆容建议 · 色彩穿搭</p>
+                <p class="text-center text-[12px] text-[#515854] tracking-[0.06em] mt-4">本命色卡 · 妆容建议 · 色彩穿搭</p>
 
             </div>
 
@@ -972,14 +1166,14 @@
                 <div class="mb-6">
                     <label for="dropzone-file" class="flex flex-col items-center justify-center w-full h-48 border border-[#DED1CA] border-dashed rounded-[1.5rem] cursor-pointer bg-[#FBF8F5] hover:bg-[#F6EFEA] transition-all duration-300 group relative overflow-hidden shadow-sm">
                         <div class="absolute inset-0 z-10 bg-black/5 mix-blend-multiply"></div>
-                        <img id="imagePreview" src="" class="absolute inset-0 w-full h-full object-cover hidden z-0 opacity-80 mix-blend-luminosity grayscale-[20%]" alt="Preview">
+                        <img id="imagePreview" class="absolute inset-0 w-full h-full object-cover hidden z-0 opacity-80 mix-blend-luminosity grayscale-[20%]" alt="已选择的正面照片预览">
                         
                         <div class="flex flex-col items-center justify-center pt-5 pb-6 relative z-20 transition-transform group-hover:scale-105">
                             <div class="w-12 h-12 bg-white backdrop-blur-sm rounded-full flex items-center justify-center shadow-[0_5px_14px_rgba(91,70,60,0.13)] mb-3">
                                 <svg class="w-5 h-5 text-[#C58F79]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                             </div>
                             <p class="text-[14px] text-[#4A403A] tracking-[0.16em] mb-1 font-medium shadow-white drop-shadow-md" id="uploadText">选择一张正面照片</p>
-                            <p class="text-[9px] text-[#8C7A70] tracking-[0.12em] font-medium bg-white/75 px-2.5 py-1 rounded-full mt-1">拍摄或从相册选取</p>
+                            <p class="text-[12px] text-[#515854] tracking-[0.04em] font-medium bg-white/85 px-2.5 py-1 rounded-[8px] mt-1">拍摄或从相册选取</p>
                         </div>
                         <input id="dropzone-file" type="file" accept="image/jpeg,image/png,image/webp" class="hidden" onchange="handleImageUpload(event)" />
                     </label>
@@ -999,16 +1193,21 @@
                     </button>
                 </div>
 
-                <div class="mt-6 rounded-[1rem] border border-[#E9DFDA] bg-[#FCFAF8] px-4 py-3.5">
-                    <p class="text-[10px] leading-[1.8]">
-                        <span class="privacy-lead">照片仅用于本次云端分析及专属妆发、穿搭视觉生成，不在浏览器中长期保存。</span>
-                        <span class="privacy-detail">生成结果会保留个人辨识度，并重新设计妆容、发型与整体造型。</span>
-                    </p>
-                    <label class="mt-3 flex items-center gap-2 text-[10px] text-[#665A53] leading-relaxed cursor-pointer">
-                        <input id="privacyConsent" type="checkbox" class="privacy-check h-3.5 w-3.5">
-                        <span>我已阅读并同意</span>
-                        <button type="button" onclick="event.preventDefault(); showPrivacyModal()" class="border-b border-[#8C7A70]/40 pb-[1px]">隐私政策</button>
-                    </label>
+                <div class="privacy-summary mt-6 rounded-[12px] border border-[#DDE2DF] bg-[#F7F9F8] px-4 py-4">
+                    <p class="font-medium text-[#27302C]">提交照片前，请确认以下处理方式</p>
+                    <dl class="privacy-facts">
+                        <div><dt>处理方</dt><dd>拾色季服务端、阿里云百炼视觉与图像编辑服务。</dd></div>
+                        <div><dt>用途</dt><dd>本次色彩分析，以及经你授权的妆发和穿搭效果生成。</dd></div>
+                        <div><dt>保留</dt><dd>原图仅在私有临时存储中用于任务处理，最长保留 20 分钟。</dd></div>
+                        <div><dt>删除</dt><dd>任务完成、失败或超时后自动删除临时原图；取消等待不会重复提交或重复扣次。</dd></div>
+                    </dl>
+                    <div class="mt-4 flex items-start gap-2 text-[14px] text-[#27302C] leading-relaxed">
+                        <label class="flex items-start gap-2 cursor-pointer">
+                            <input id="privacyConsent" type="checkbox" class="privacy-check h-3.5 w-3.5">
+                            <span>我已阅读并同意</span>
+                        </label>
+                        <button type="button" onclick="showPrivacyModal()" class="privacy-policy-link underline">隐私政策</button>
+                    </div>
                 </div>
                 <div id="photoQuality" class="photo-quality hidden" role="status" aria-live="polite"></div>
                 <button id="analyzeBtn" onclick="startAnalysis()" disabled class="w-full text-white bg-[#3D342F] disabled:opacity-40 disabled:cursor-not-allowed font-medium rounded-[1rem] text-[15px] px-5 py-4 text-center mt-7 transition-all duration-300 tracking-[0.2em]">
@@ -1025,16 +1224,21 @@
                     <div class="loader-ring"></div><div class="loader-ring"></div><div class="loader-ring"></div>
                     <div class="loader-core"><span class="text-[17px] font-serif-custom font-medium tracking-[0.18em] ml-[0.18em]">拾色</span></div>
                 </div>
-                <h3 class="text-[15px] font-serif-custom font-medium text-[#4A403A] tracking-[0.1em] transition-opacity duration-200" id="loadingText">正在读取你与颜色之间的关系</h3>
-                <div class="analysis-steps mx-auto text-left" id="analysisSteps">
-                    <div class="analysis-step active">读取面部色彩特征</div>
+                <h3 class="text-[15px] font-serif-custom font-medium text-[#4A403A] tracking-[0.06em] transition-opacity duration-200" id="loadingText" role="status" aria-live="polite" aria-atomic="true">正在提交分析任务</h3>
+                <div class="analysis-steps mx-auto text-left" id="analysisSteps" aria-label="分析进度">
+                    <div class="analysis-step active" aria-current="step">提交并检查照片</div>
                     <div class="analysis-step">建立个人色彩倾向</div>
                     <div class="analysis-step">生成色卡、妆容与穿搭建议</div>
                 </div>
-                <p class="loading-note">请保持页面开启<br>完成后，你的个人色彩档案将自动呈现</p>
+                <div class="analysis-meta">
+                    <p>通常需要 1-3 分钟，繁忙时最长约 17 分钟。</p>
+                    <p id="analysisElapsed">已等待 0:00</p>
+                    <p>成功生成有效报告后扣 1 次；照片不合格或分析失败会返还。</p>
+                </div>
+                <p class="loading-note">可以留在本页等待。取消只停止当前页面等待，已提交任务可再次继续查询。</p>
                 <p id="loadingPreviewStatus" class="loading-preview-status hidden">本地示例预览 · 不消耗次数</p>
-                <button id="analysisRecoveryBtn" type="button" onclick="cancelAnalysis()" class="hidden mt-6 mx-auto text-[11px] tracking-[0.12em] text-[#8C7A70] border-b border-[#CDB6AB]/60 pb-1">
-                    等待较久？返回重新尝试
+                <button id="analysisRecoveryBtn" type="button" onclick="cancelAnalysis()" class="analysis-cancel mt-4 mx-auto px-3">
+                    取消等待并返回照片
                 </button>
             </div>
         </div>
@@ -1047,7 +1251,7 @@
                 </div>
                 <header class="archive-cover fade-in stagger-1">
                     <div class="report-portrait">
-                        <img id="userAvatarResult" src="" alt="用户上传的分析照片" class="hidden" />
+                        <img id="userAvatarResult" alt="用户上传的分析照片" class="hidden" />
                     </div>
                     <div class="archive-cover-copy">
                         <p class="archive-eyebrow">PRIVATE ISSUE · YOUR COLOR EDIT</p>
@@ -1062,41 +1266,46 @@
 
                 <blockquote class="editorial-quote">“你的美不需要被重新塑造，<br>只需要被正确地看见。”</blockquote>
 
-                <section class="archive-section fade-in stagger-2">
-                    <p class="archive-eyebrow">01 · 色彩身份</p>
+                <nav class="report-index" aria-label="色彩档案目录">
+                    <a href="#report-identity">身份</a>
+                    <a href="#report-palette">色卡</a>
+                    <a href="#report-styling">配色</a>
+                    <a href="#report-beauty">妆发</a>
+                    <a href="#report-outfit">穿搭</a>
+                    <a href="#report-advice">建议</a>
+                </nav>
+
+                <section id="report-identity" class="archive-section fade-in stagger-2">
                     <h2 class="archive-title">你的色彩身份</h2>
                     <p id="res-desc" class="archive-copy">生成中...</p>
                     <div class="identity-editorial">
                         <h2 id="res-season-name" class="text-[27px] font-serif-custom tracking-[0.13em]">生成中</h2>
-                        <p id="res-season-en" class="text-[10px] text-[#A07D6D] tracking-[0.18em] mt-1.5 uppercase">...</p>
-                        <p id="res-identity-code" class="text-[8px] text-[#BFA89F] font-mono tracking-[0.18em] mt-1.5"></p>
+                        <p id="res-season-en" class="text-[12px] text-[#515854] tracking-[0.1em] mt-1.5 uppercase">...</p>
+                        <p id="res-identity-code" class="text-[12px] text-[#66706B] font-mono tracking-[0.08em] mt-1.5"></p>
                         <div id="res-style-keywords" class="flex flex-wrap gap-2 mt-4"></div>
-                        <p id="res-identity-assessment" class="identity-assurance text-[10px] leading-[1.8]"></p>
+                        <p id="res-identity-assessment" class="identity-assurance text-[12px] leading-[1.8]"></p>
                     </div>
                     <details class="evidence-details"><summary>查看专业色彩依据</summary><div class="archive-identity"><div id="res-progress-bars"></div><div id="res-hex-extraction" class="archive-evidence"></div></div></details>
                 </section>
 
-                <section class="archive-section fade-in stagger-3">
-                    <p class="archive-eyebrow">02 · 专属色谱</p>
+                <section id="report-palette" class="archive-section fade-in stagger-3">
                     <h2 class="archive-title">最衬你的本命色</h2>
                     <p class="archive-copy">靠近面部时优先使用前几组颜色；较深的颜色适合包袋、鞋履与轮廓线。</p>
                     <div id="res-best-colors" class="mt-6"></div>
                 </section>
 
-                <section class="archive-section fade-in stagger-3">
-                    <p class="archive-eyebrow">03 · 专属配色</p>
+                <section id="report-styling" class="archive-section fade-in stagger-3">
                     <h2 class="archive-title">你的三组专属配色</h2>
                     <p class="archive-copy">为日常、社交与重要时刻分别安排颜色比例。选择一个场景，查看属于你的搭配关系。</p>
                     <div id="res-color-styling" class="color-styling"></div>
                     <div class="styling-principle"><small>配色秩序</small><p>主色安静地占据大面积，辅助色建立层次，点睛色与金属色只在细节留下记忆。</p></div>
                 </section>
 
-                <section class="archive-section fade-in stagger-4">
-                    <p class="archive-eyebrow">04 · 专属妆发</p>
+                <section id="report-beauty" class="archive-section fade-in stagger-4">
                     <h2 class="archive-title">你的本命妆容</h2>
                     <p id="res-makeup-editorial" class="archive-copy">让肤色、唇色与眼神处在同一种光线里。</p>
                     <div class="editorial-media">
-                        <img id="makeupEditorialAvatar" src="" alt="基于本次照片的妆容色彩灵感">
+                        <img id="makeupEditorialAvatar" alt="基于本次照片的妆容色彩灵感" class="hidden">
                         <div id="beautyGenerationState" class="generation-state hidden" data-status="idle"><span>正在设计专属妆发</span><button type="button" onclick="retryPersonalizedImage('beauty')">重试</button></div>
                     </div>
                     <div class="editorial-figure-caption"><small id="beautyCaptionKicker">原始自拍 · 色彩基准</small><p id="beautyCaptionText">这张照片用于确认真实的你，专属妆发完成后会自动替换。</p></div>
@@ -1105,12 +1314,11 @@
                     <div id="res-beauty-formula" class="beauty-formula" aria-label="专属妆容配色"></div>
                 </section>
 
-                <section class="archive-section fade-in stagger-4">
-                    <p class="archive-eyebrow">05 · 专属穿搭</p>
+                <section id="report-outfit" class="archive-section fade-in stagger-4">
                     <h2 class="archive-title">你的第一套色彩穿搭</h2>
                     <p id="res-outfit-editorial" class="archive-copy">把最衬你的颜色，穿进真实生活。</p>
                     <div id="outfitEditorialBoard" class="outfit-board" aria-label="由本次推荐色生成的穿搭配色造型板">
-                        <img id="outfitEditorialImage" src="" alt="专属色彩穿搭编辑灵感" class="hidden">
+                        <img id="outfitEditorialImage" alt="专属色彩穿搭编辑灵感" class="hidden">
                         <div id="outfitGenerationState" class="generation-state hidden" data-status="idle"><span>正在设计完整穿搭</span><button type="button" onclick="retryPersonalizedImage('outfit')">重试</button></div>
                     </div>
                     <div class="editorial-figure-caption"><small id="outfitCaptionKicker">拾色季 · 穿搭设计生成中</small><p id="res-outfit-formula">...</p></div>
@@ -1123,8 +1331,7 @@
                     <p id="res-makeup" class="hidden">...</p><p id="res-outfit" class="hidden">...</p>
                 </section>
 
-                <section class="archive-section fade-in stagger-4">
-                    <p class="archive-eyebrow">06 · 温柔建议</p>
+                <section id="report-advice" class="archive-section fade-in stagger-4">
                     <h2 class="archive-title">不是禁忌，只是有更好的选择</h2>
                     <div class="archive-avoid"><p id="res-avoid" class="text-[11px] text-[#765F56] leading-[1.9]">...</p></div>
                     <details class="archive-details" id="dimensionDetails" ontoggle="resizeReportChart()">
@@ -1140,8 +1347,8 @@
                 <div class="closing-note"><p>A NOTE FOR YOU</p><blockquote>愿你每一次照镜子，<br>都更接近喜欢的自己。</blockquote><p>这不是一份为你贴标签的报告，而是一本可以反复打开的私人色彩杂志。</p></div>
 
                 <div class="report-footer mt-4">
-                    <p class="text-[10px] tracking-[0.3em] text-[#8C7A70] mb-2">—— 拾色季 · 个人色彩档案 ——</p>
-                    <p id="archive-no" class="font-mono text-[9px] text-[#BFA89F] opacity-80 tracking-widest"></p>
+                    <p class="text-[12px] tracking-[0.08em] text-[#515854] mb-2">拾色季 · 个人色彩档案</p>
+                    <p id="archive-no" class="font-mono text-[12px] text-[#66706B] tracking-[0.06em]"></p>
                 </div>
             </div>
 
@@ -1150,35 +1357,36 @@
                 <button onclick="resetTest()" class="w-full text-[#4A403A] bg-transparent border border-[#4A403A]/30 hover:bg-[#F4EFEA] font-medium rounded-[0.5rem] text-[15px] px-5 py-4 text-center transition-all duration-300 tracking-[0.2em] mt-4">
                     帮闺蜜也测一测
                 </button>
-                <p class="text-[10px] text-[#C5B8B2] mt-5 tracking-widest font-serif-custom opacity-70">拾色季 COLOR ANALYSIS © 2026</p>
+                <p class="text-[12px] text-[#66706B] mt-5 tracking-[0.06em]">拾色季 COLOR ANALYSIS © 2026</p>
             </div>
         </div>
     </div>
 </div>
 
-<div id="customAlert" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm hidden transition-opacity duration-300 opacity-0">
-    <div class="bg-white rounded-[1.5rem] shadow-2xl w-[80%] max-w-sm overflow-hidden transform transition-transform duration-300 scale-95">
+<div id="customAlert" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm hidden transition-opacity duration-300 opacity-0" role="alertdialog" aria-modal="true" aria-labelledby="alertTitle" aria-describedby="alertMessage">
+    <div class="modal-panel bg-white rounded-[1.5rem] shadow-2xl w-[80%] max-w-sm overflow-hidden transform transition-transform duration-300 scale-95">
         <div class="p-7 text-center">
             <div class="w-12 h-12 bg-[#F4EFEA] rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg class="w-6 h-6 text-[#DABFB4]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
             </div>
-            <p id="alertMessage" class="text-[#4A403A] text-[15px] font-medium leading-relaxed tracking-wider"></p>
+            <h2 id="alertTitle" class="text-[16px] font-semibold text-[#171918] mb-2" tabindex="-1">需要处理</h2>
+            <p id="alertMessage" class="text-[#4A403A] text-[15px] font-medium leading-relaxed tracking-normal"></p>
         </div>
         <div class="border-t border-[#F4EFEA]">
-            <button onclick="closeCustomAlert()" class="w-full py-4 text-[#8C7A70] text-[15px] tracking-widest font-semibold hover:bg-[#F9F8F6] transition-colors">知道了</button>
+            <button onclick="closeCustomAlert()" class="modal-action w-full py-4 text-[#315F56] text-[15px] tracking-normal font-semibold hover:bg-[#F1F4F2] transition-colors">知道了</button>
         </div>
     </div>
 </div>
 
-<div id="toastContainer" class="fixed bottom-[6%] left-1/2 z-[110] flex flex-col-reverse items-center pointer-events-none"></div>
+<div id="toastContainer" class="fixed bottom-[6%] left-1/2 z-[110] flex flex-col-reverse items-center pointer-events-none" role="status" aria-live="polite" aria-atomic="true"></div>
 
-<div id="saveOverlay" class="fixed inset-0 z-[200] bg-black/85 backdrop-blur-xl hidden flex-col items-center justify-center p-4 sm:p-6 opacity-0 transition-opacity duration-300">
+<div id="saveOverlay" class="fixed inset-0 z-[200] bg-black/85 backdrop-blur-xl hidden flex-col items-center justify-center p-4 sm:p-6 opacity-0 transition-opacity duration-300" role="dialog" aria-modal="true" aria-labelledby="saveOverlayTitle">
     <div class="w-full max-w-md relative flex flex-col items-center">
         <div class="w-full max-h-[75vh] overflow-y-auto rounded-[1.5rem] shadow-[0_20px_60px_rgba(0,0,0,0.5)] mb-6 scrollbar-hide">
             <img id="saveOverlayImg" class="w-full h-auto block transform scale-95 transition-transform duration-500 origin-top" alt="您的报告">
         </div>
         <div class="flex flex-col items-center gap-4">
-            <p class="text-[#DABFB4] tracking-[0.25em] text-[12px] sm:text-[13px] font-medium animate-pulse flex items-center">
+            <p id="saveOverlayTitle" class="text-[#D4E2DD] tracking-[0.05em] text-[14px] font-medium flex items-center" tabindex="-1">
                 <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
                 请长按上方图片保存到相册
             </p>
@@ -1187,17 +1395,18 @@
     </div>
 </div>
 
-<div id="privacyModal" class="fixed inset-0 z-[150] flex items-center justify-center bg-black/40 backdrop-blur-sm hidden transition-opacity duration-300 opacity-0 p-4">
-    <div class="bg-white rounded-[1.5rem] shadow-2xl w-full max-w-sm overflow-hidden transform transition-transform duration-300 scale-95 flex flex-col max-h-[80vh]">
+<div id="privacyModal" class="fixed inset-0 z-[150] flex items-center justify-center bg-black/40 backdrop-blur-sm hidden transition-opacity duration-300 opacity-0 p-4" role="dialog" aria-modal="true" aria-labelledby="privacyTitle" aria-describedby="privacyIntro">
+    <div class="modal-panel bg-white rounded-[1.5rem] shadow-2xl w-full max-w-sm overflow-hidden transform transition-transform duration-300 scale-95 flex flex-col max-h-[80vh]">
         <div class="p-6 pb-4 border-b border-[#F4EFEA] flex justify-between items-center shrink-0">
-            <h3 class="text-[15px] font-serif-custom font-medium text-[#3D342F] tracking-widest">隐私政策与免责声明</h3>
-            <button onclick="closePrivacyModal()" class="text-[#8C7A70] p-1 hover:text-[#3D342F] transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            <h2 id="privacyTitle" class="text-[16px] font-medium text-[#171918] tracking-normal" tabindex="-1">隐私政策与免责声明</h2>
+            <button onclick="closePrivacyModal()" aria-label="关闭隐私政策" class="text-[#515854] p-2 hover:text-[#171918] transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
         </div>
-        <div class="p-6 overflow-y-auto text-[12px] text-[#6B5D55] leading-relaxed tracking-wide space-y-4 scrollbar-hide">
-            <p>欢迎使用「拾色季」个人色彩档案服务。为保障您的权益，请在开始前了解：</p>
+        <div class="modal-copy p-6 overflow-y-auto text-[14px] text-[#515854] leading-relaxed tracking-normal space-y-4 scrollbar-hide">
+            <p id="privacyIntro">欢迎使用「拾色季」个人色彩档案服务。为保障您的权益，请在开始前了解：</p>
             <div>
                 <h4 class="font-medium text-[#4A403A] mb-1.5 tracking-widest">1. 数据隐私与安全</h4>
-                <p>本系统仅在您主动上传并确认后获取图像。照片会经由本产品云端接口加密传输至阿里云百炼视觉与图像编辑模型，用于完成本次色彩分析，以及基于本人身份特征生成专属妆发和穿搭视觉。产品前端不会将照片写入长期浏览器存储；云服务侧的数据处理与保留以正式隐私政策及服务配置为准。</p>
+                <p>仅在您主动上传并同意后，照片才会经拾色季服务端传输至阿里云百炼视觉与图像编辑服务，用于本次色彩分析和你选择的妆发、穿搭效果生成。拾色季不会把原图写入浏览器长期存储。</p>
+                <p class="mt-2">原图会进入私有临时存储，任务完成或失败后自动删除；超时任务最长保留 20 分钟后进入清理。取消页面等待不会立即终止已提交的云端任务，但不会重复提交或重复扣次。</p>
             </div>
             <div>
                 <h4 class="font-medium text-[#4A403A] mb-1.5 tracking-widest">2. 最小必要原则</h4>
@@ -1207,10 +1416,11 @@
                 <h4 class="font-medium text-[#4A403A] mb-1.5 tracking-widest">3. 免责声明</h4>
                 <p>报告基于 16 型面部算法得出。内容仅供形象美学参考，<b>不具有医疗、皮肤科诊断或法律效力</b>。由于设备色差，结果可能存在微小偏差。</p>
             </div>
-            <p class="pt-3 mt-2 text-[10px] text-[#BFA89F] tracking-widest border-t border-[#F4EFEA]">只有主动勾选同意后才会进入照片分析流程。您可以随时关闭页面终止使用。</p>
+            <p class="pt-3 mt-2 text-[12px] text-[#515854] tracking-normal border-t border-[#E1E5E3]">只有主动同意后才会提交照片。第三方模型侧的日志与保留遵循正式隐私政策和已配置的云服务策略；如需申请删除，请联系向你提供本服务的店铺。</p>
         </div>
-        <div class="p-4 shrink-0 bg-[#F9F8F6]">
-            <button onclick="closePrivacyModal()" class="w-full py-3.5 bg-[#4A403A] text-white rounded-[1rem] text-[13px] tracking-widest font-medium hover:bg-[#3D342F] transition-colors shadow-[0_8px_20px_rgba(74,64,58,0.2)]">我已了解并同意</button>
+        <div class="p-4 shrink-0 bg-[#F7F9F8] grid grid-cols-2 gap-3">
+            <button onclick="closePrivacyModal()" class="privacy-action py-3.5 border border-[#BFC8C4] text-[#315F56] rounded-[1rem] text-[13px] font-medium hover:bg-white transition-colors">关闭</button>
+            <button onclick="acceptPrivacy()" class="privacy-action py-3.5 bg-[#244D45] text-white rounded-[1rem] text-[13px] font-medium hover:bg-[#193B34] transition-colors shadow-[0_8px_20px_rgba(29,67,59,0.16)]">同意并继续</button>
         </div>
     </div>
 </div>
@@ -1263,17 +1473,90 @@
         return processedText;
     }
 
+    let activeModal = null;
+    let modalReturnFocus = null;
+
+    function getModalFocusables(modal) {
+        return Array.from(modal.querySelectorAll(
+            'a[href], button:not([disabled]), input:not([disabled]), summary, [tabindex]:not([tabindex="-1"])'
+        )).filter(element => !element.closest('[hidden]') && element.offsetParent !== null);
+    }
+
+    function openModal(modal, initialFocus) {
+        modalReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+        activeModal = modal;
+        const app = document.querySelector('.app-container');
+        if (app) {
+            app.inert = true;
+            app.setAttribute('inert', '');
+            app.setAttribute('aria-hidden', 'true');
+        }
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            modal.classList.remove('opacity-0');
+            const panel = modal.querySelector(':scope > div');
+            if (panel) panel.classList.remove('scale-95');
+            const target = initialFocus || getModalFocusables(modal)[0];
+            if (target) target.focus();
+        }, 10);
+    }
+
+    function closeModal(modal) {
+        modal.classList.add('opacity-0');
+        const panel = modal.querySelector(':scope > div');
+        if (panel) panel.classList.add('scale-95');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            const app = document.querySelector('.app-container');
+            if (app) {
+                app.inert = false;
+                app.removeAttribute('inert');
+                app.removeAttribute('aria-hidden');
+            }
+            activeModal = null;
+            if (modalReturnFocus?.isConnected) modalReturnFocus.focus();
+            modalReturnFocus = null;
+        }, 300);
+    }
+
+    document.addEventListener('keydown', event => {
+        if (!activeModal) return;
+        if (event.key === 'Escape') {
+            event.preventDefault();
+            if (activeModal.id === 'privacyModal') closePrivacyModal();
+            else if (activeModal.id === 'customAlert') closeCustomAlert();
+            else if (activeModal.id === 'saveOverlay') closeSaveOverlay();
+            return;
+        }
+        if (event.key !== 'Tab') return;
+        const focusables = getModalFocusables(activeModal);
+        if (!focusables.length) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+            event.preventDefault();
+            last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+            event.preventDefault();
+            first.focus();
+        }
+    });
+
     function showPrivacyModal() {
         triggerVibration(30);
         const modal = document.getElementById('privacyModal');
-        modal.classList.remove('hidden');
-        setTimeout(() => { modal.classList.remove('opacity-0'); modal.querySelector('div').classList.remove('scale-95'); }, 10);
+        openModal(modal, document.getElementById('privacyTitle'));
     }
     function closePrivacyModal() {
         triggerVibration(30);
-        const modal = document.getElementById('privacyModal');
-        modal.classList.add('opacity-0'); modal.querySelector('div').classList.add('scale-95');
-        setTimeout(() => modal.classList.add('hidden'), 300);
+        closeModal(document.getElementById('privacyModal'));
+    }
+
+    function acceptPrivacy() {
+        const consent = document.getElementById('privacyConsent');
+        consent.checked = true;
+        consent.dispatchEvent(new Event('change', { bubbles: true }));
+        closePrivacyModal();
     }
 
     function checkLastReport() {
@@ -1292,7 +1575,15 @@
         } else {
             dropzoneInput.setAttribute('accept', 'image/*');
         }
-
+        ['privacyModal', 'customAlert', 'saveOverlay'].forEach(id => {
+            const modal = document.getElementById(id);
+            modal.addEventListener('mousedown', event => {
+                if (event.target !== modal) return;
+                if (id === 'privacyModal') closePrivacyModal();
+                else if (id === 'customAlert') closeCustomAlert();
+                else closeSaveOverlay();
+            });
+        });
     });
 
     let userImageBase64 = "";
@@ -1310,8 +1601,8 @@
         if (analysisRecoveryTimer) clearTimeout(analysisRecoveryTimer);
         progressInterval = null;
         analysisRecoveryTimer = null;
-        const recoveryBtn = document.getElementById('analysisRecoveryBtn');
-        if (recoveryBtn) recoveryBtn.classList.add('hidden');
+        const elapsed = document.getElementById('analysisElapsed');
+        if (elapsed) elapsed.textContent = '已等待 0:00';
     }
 
     function cancelAnalysis() {
@@ -1320,7 +1611,7 @@
         activeAnalysisController = null;
         clearAnalysisRuntime();
         showStep('step-upload');
-      showToast('已返回照片页，可重新尝试');
+        showToast('已停止本页等待。再次开始时会优先恢复已提交任务，不会重复扣次');
     }
 
     function showToast(message, tone = 'default') {
@@ -1342,19 +1633,12 @@
         triggerVibration([50, 50, 50]);
         document.getElementById('alertMessage').textContent = String(message);
         const modal = document.getElementById('customAlert');
-        modal.classList.remove('hidden');
-        setTimeout(() => {
-            modal.classList.remove('opacity-0');
-            modal.querySelector('div').classList.remove('scale-95');
-        }, 10);
+        openModal(modal, document.getElementById('alertTitle'));
     }
 
     function closeCustomAlert() {
         triggerVibration(30);
-        const modal = document.getElementById('customAlert');
-        modal.classList.add('opacity-0');
-        modal.querySelector('div').classList.add('scale-95');
-        setTimeout(() => modal.classList.add('hidden'), 300);
+        closeModal(document.getElementById('customAlert'));
     }
 
     function showStep(stepId) {
@@ -1366,6 +1650,44 @@
         if (appContainer) appContainer.classList.toggle('report-mode', stepId === 'step-result');
         const mainContainer = document.getElementById('mainContainer');
         if (mainContainer) mainContainer.scrollTop = 0;
+        if (stepId === 'step-result') setupReportIndex();
+    }
+
+    let reportIndexObserver = null;
+    function setupReportIndex() {
+        if (reportIndexObserver) reportIndexObserver.disconnect();
+        const links = Array.from(document.querySelectorAll('.report-index a'));
+        const sections = links.map(link => document.querySelector(link.getAttribute('href'))).filter(Boolean);
+        reportIndexObserver = new IntersectionObserver(entries => {
+            const visible = entries
+                .filter(entry => entry.isIntersecting)
+                .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+            if (!visible) return;
+            links.forEach(link => {
+                if (link.getAttribute('href') === `#${visible.target.id}`) link.setAttribute('aria-current', 'location');
+                else link.removeAttribute('aria-current');
+            });
+        }, { root: document.getElementById('mainContainer'), rootMargin: '-15% 0px -65%', threshold: [0, .25, .5] });
+        sections.forEach(section => reportIndexObserver.observe(section));
+    }
+
+    function setRuntimeImage(image, src, onReady) {
+        if (!image || !src) return;
+        image.classList.add('hidden');
+        image.onload = () => {
+            image.classList.remove('hidden');
+            if (onReady) onReady();
+        };
+        image.onerror = () => {
+            image.classList.add('hidden');
+            image.removeAttribute('src');
+        };
+        image.src = src;
+    }
+
+    function isLocalPreview() {
+        const loopback = ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
+        return window.location.protocol === 'file:' || (loopback && new URLSearchParams(window.location.search).has('preview'));
     }
 
     async function verifyCode() {
@@ -1373,7 +1695,7 @@
         const inputElement = document.getElementById('activationCode');
         const code = inputElement.value.trim(); 
 
-        if (window.location.protocol === 'file:') {
+        if (isLocalPreview()) {
             window.currentCode = '';
             window.analysisToken = '';
             showStep('step-upload');
@@ -1389,6 +1711,8 @@
         const submitBtn = document.querySelector('button[onclick="verifyCode()"]');
         const ogText = submitBtn.innerText;
         submitBtn.innerText = "云端鉴权中...";
+        submitBtn.disabled = true;
+        submitBtn.setAttribute('aria-busy', 'true');
         submitBtn.classList.add('opacity-70', 'cursor-wait');
 
         try {
@@ -1420,10 +1744,12 @@
             }
         } catch (error) {
             console.error('云端核销失败:', error);
-            const localPreview = window.location.protocol === 'file:';
+            const localPreview = isLocalPreview();
             showCustomAlert(localPreview ? '当前是本地静态预览，无法验证密钥。请打开正式发布页面。' : '暂时无法连接密钥验证服务，请稍后重试。');
         } finally {
             submitBtn.innerText = ogText;
+            submitBtn.disabled = false;
+            submitBtn.removeAttribute('aria-busy');
             submitBtn.classList.remove('opacity-70', 'cursor-wait');
         }
     }
@@ -1462,13 +1788,24 @@
                     sessionStorage.setItem('shisejiAnalysisRequestId', window.currentAnalysisRequestId);
                     
                     const preview = document.getElementById('imagePreview');
-                    preview.src = userImageBase64;
-                    preview.classList.remove('hidden');
-                document.getElementById('uploadText').innerText = "照片已就绪，轻触可重选";
+                    setRuntimeImage(preview, userImageBase64);
+                    document.getElementById('uploadText').innerText = "照片已就绪，轻触可重选";
                     event.target.value = ''; 
                     document.getElementById('analyzeBtn').disabled = quality.blocking.length > 0;
                 };
+                img.onerror = function() {
+                    userImageBase64 = '';
+                    event.target.value = '';
+                    document.getElementById('uploadText').innerText = '无法读取这张照片，请重新选择';
+                    document.getElementById('analyzeBtn').disabled = true;
+                    renderPhotoQuality({ blocking: ['文件已损坏或不是受支持的照片格式'], warnings: [] });
+                };
                 img.src = e.target.result;
+            };
+            reader.onerror = function() {
+                event.target.value = '';
+                document.getElementById('uploadText').innerText = '无法读取这张照片，请重新选择';
+                renderPhotoQuality({ blocking: ['读取照片失败，请重新选择原图'], warnings: [] });
             };
             reader.readAsDataURL(file);
         }
@@ -1518,7 +1855,7 @@
     }
 
     async function startAnalysis() {
-        const localPreview = window.location.protocol === 'file:';
+        const localPreview = isLocalPreview();
         if (!localPreview && (!window.currentCode || !window.analysisToken)) {
             showCustomAlert("通行证已过期，请重新验签");
             showStep('step-activation'); 
@@ -1542,34 +1879,19 @@
         
         const loadingText = document.getElementById('loadingText');
         const analysisSteps = Array.from(document.querySelectorAll('#analysisSteps .analysis-step'));
-        const states = [
-            "正在读取你与颜色之间的关系",
-            "正在建立个人色彩倾向",
-            "正在生成你的个人色彩档案"
-        ];
-        let textIndex = 0;
-        
-        if(progressInterval) clearInterval(progressInterval);
-        
+        analysisSteps.forEach((step, index) => {
+            step.classList.toggle('active', index === 0);
+            step.classList.remove('complete');
+            if (index === 0) step.setAttribute('aria-current', 'step');
+            else step.removeAttribute('aria-current');
+        });
+        const startedAt = Date.now();
         progressInterval = setInterval(() => {
-            if (textIndex >= states.length - 1) return;
-            analysisSteps[textIndex].classList.remove('active');
-            analysisSteps[textIndex].classList.add('complete');
-            textIndex += 1;
-            analysisSteps[textIndex].classList.add('active');
-            loadingText.style.opacity = 0;
-            setTimeout(() => {
-                loadingText.innerText = states[textIndex];
-                loadingText.style.opacity = 1;
-            }, 180);
-        }, 4200);
-
-        analysisRecoveryTimer = setTimeout(() => {
-            if (currentRunId !== analysisRunId) return;
-            const recoveryBtn = document.getElementById('analysisRecoveryBtn');
-            if (recoveryBtn) recoveryBtn.classList.remove('hidden');
-            loadingText.innerText = '仍在细致分析，请稍候';
-        }, 20000);
+            const totalSeconds = Math.floor((Date.now() - startedAt) / 1000);
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = String(totalSeconds % 60).padStart(2, '0');
+            document.getElementById('analysisElapsed').textContent = `已等待 ${minutes}:${seconds}`;
+        }, 1000);
 
         if (localPreview) {
             setTimeout(() => {
@@ -1578,6 +1900,7 @@
                 analysisSteps.forEach(step => {
                     step.classList.remove('active');
                     step.classList.add('complete');
+                    step.removeAttribute('aria-current');
                 });
                 loadingText.innerText = '示例色彩档案已生成';
 
@@ -1719,7 +2042,13 @@
                         window.currentAnalysisRequestId = crypto.randomUUID();
                         throw new Error('ANALYSIS_FAILED');
                     }
-                    loadingText.innerText = payload.status === 'processing' ? '正在细致分析，请稍候' : '任务已排队，请稍候';
+                    const isProcessing = payload.status === 'processing';
+                    loadingText.innerText = isProcessing ? '正在分析照片与色彩关系' : '任务已排队，正在等待处理';
+                    analysisSteps[0].classList.remove('active');
+                    analysisSteps[0].classList.add('complete');
+                    analysisSteps[0].removeAttribute('aria-current');
+                    analysisSteps[1].classList.toggle('active', isProcessing);
+                    if (isProcessing) analysisSteps[1].setAttribute('aria-current', 'step');
                 }
                 await new Promise(resolve => setTimeout(resolve, 2500 + Math.random() * 1000));
             }
@@ -1730,6 +2059,7 @@
             analysisSteps.forEach(step => {
                 step.classList.remove('active');
                 step.classList.add('complete');
+                step.removeAttribute('aria-current');
             });
             loadingText.innerText = '你的色彩档案已生成';
             
@@ -1877,14 +2207,12 @@
 
             if (kind === 'beauty') {
                 const image = document.getElementById('makeupEditorialAvatar');
-                if (image) image.src = payload.imageUrl;
+                setRuntimeImage(image, payload.imageUrl);
             } else {
                 const board = document.getElementById('outfitEditorialBoard');
                 const image = document.getElementById('outfitEditorialImage');
                 if (board && image) {
-                    image.src = payload.imageUrl;
-                    image.classList.remove('hidden');
-                    board.classList.add('has-editorial-image');
+                    setRuntimeImage(image, payload.imageUrl, () => board.classList.add('has-editorial-image'));
                 }
             }
             setPersonalizedImageState(kind, 'complete', '专属视觉已完成');
@@ -1920,10 +2248,9 @@
         applyReportTheme(d);
         if(userImageBase64) {
             const a = document.getElementById('userAvatarResult');
-            a.src = userImageBase64;
-            a.classList.remove('hidden');
+            setRuntimeImage(a, userImageBase64);
             const makeupEditorialAvatar = document.getElementById('makeupEditorialAvatar');
-            if (makeupEditorialAvatar) makeupEditorialAvatar.src = userImageBase64;
+            setRuntimeImage(makeupEditorialAvatar, userImageBase64);
         }
         updatePersonalizedImageCaption('beauty', 'idle');
         updatePersonalizedImageCaption('outfit', 'idle');
@@ -1951,7 +2278,7 @@
                 ? d.style_keywords.slice(0, 5)
                 : [];
             keywordContainer.innerHTML = keywords.map((keyword) =>
-                `<span class="bg-[#F4EFEA] text-[#6B5D55] text-[10px] tracking-[0.2em] px-3 py-1.5 rounded-full">${escapeHTML(keyword)}</span>`
+                `<span class="bg-[#E9ECEA] text-[#38413D] text-[12px] tracking-[0.06em] px-3 py-1.5 rounded-[8px]">${escapeHTML(keyword)}</span>`
             ).join('');
         }
 
@@ -2020,7 +2347,7 @@
                     <div class="w-9 h-9 rounded-full shadow-inner border border-black/5 flex-shrink-0" style="background-color:${colorHex};"></div>
                     <div class="flex flex-col">
                         <span class="text-[12px] text-[#4A403A] font-medium tracking-widest">${colorLabel}</span>
-                        <span class="text-[10px] text-[#A0A0A0] font-mono mt-0.5 uppercase tracking-wider">${colorHex}</span>
+                        <span class="text-[12px] text-[#66706B] font-mono mt-0.5 uppercase tracking-[0.04em]">${colorHex}</span>
                     </div>
                 </div>`;
             });
@@ -2041,16 +2368,16 @@
                         <span class="text-[12px] text-[#6B5D55] font-medium tracking-widest">${name}</span>
                         <span class="text-[12px] font-serif-custom font-bold text-[#3D342F]">${value}</span>
                     </div>
-                    <div class="w-full bg-[#E8E1DE] rounded-full h-[4px] mb-1.5 overflow-hidden">
-                        <div class="bg-gradient-to-r from-[#5A4E47] to-[#2B2420] h-full rounded-full progress-bar-fill" style="width:0%" data-target-width="${value}%"></div>
+                    <div class="w-full h-[2px] mb-1.5 overflow-hidden">
+                        <div class="bg-[#315F56] h-full progress-bar-fill" style="width:${value}%" data-target-scale="1"></div>
                     </div>
-                    <span class="text-[10px] text-[#BFA89F] tracking-widest">${desc || ''}</span>
+                    <span class="text-[12px] text-[#66706B] tracking-[0.02em]">${desc || ''}</span>
                 </div>`;
             });
         }
         
          setTimeout(() => {
-            document.querySelectorAll('.progress-bar-fill').forEach(e => e.style.width = e.getAttribute('data-target-width'));
+            document.querySelectorAll('.progress-bar-fill').forEach(e => { e.style.transform = 'scaleX(1)'; });
          }, 600);
 
          const dimensions = document.getElementById('res-dimensions');
@@ -2080,7 +2407,7 @@
             c.innerHTML = `<div class="palette-arches">${normalized.slice(0, 4).map((color) =>
                 `<div class="palette-arch" style="background:${color.hex}">${color.name}</div>`
             ).join('')}</div><div class="palette-circles">${normalized.slice(4, 8).map((color) =>
-                `<div><div class="palette-circle" style="background:${color.hex}" title="${color.name}"></div><p class="text-[8px] text-center text-[#9B8980] mt-1.5 truncate">${color.name}</p></div>`
+                    `<div><div class="palette-circle" style="background:${color.hex}" title="${color.name}"></div><p class="text-[12px] text-center text-[#515854] mt-1.5 truncate">${color.name}</p></div>`
             ).join('')}</div>`;
             renderColorStyling(normalized);
             renderEditorialFormulas(normalized);
@@ -2236,9 +2563,8 @@
         const overlay = document.getElementById('saveOverlay');
         const overlayImg = document.getElementById('saveOverlayImg');
         overlayImg.src = dataURL;
-        overlay.classList.remove('hidden');
+        openModal(overlay, document.getElementById('saveOverlayTitle'));
         setTimeout(() => {
-            overlay.classList.remove('opacity-0');
             overlayImg.classList.remove('scale-95');
             overlayImg.classList.add('scale-100');
         }, 10);
@@ -2413,8 +2739,9 @@
         triggerVibration(30);
         const overlay = document.getElementById('saveOverlay');
         const overlayImg = document.getElementById('saveOverlayImg');
-        overlay.classList.add('opacity-0'); overlayImg.classList.remove('scale-100'); overlayImg.classList.add('scale-95');
-        setTimeout(() => overlay.classList.add('hidden'), 300);
+        overlayImg.classList.remove('scale-100');
+        overlayImg.classList.add('scale-95');
+        closeModal(overlay);
     }
 
     async function resetTest() {
@@ -2446,7 +2773,7 @@
                 window.analysisToken = data.analysisToken;
                 document.getElementById('analyzeBtn').disabled = true;
                 const preview = document.getElementById('imagePreview');
-                preview.src = ""; 
+                preview.removeAttribute('src');
                 preview.classList.add('hidden');
                 document.getElementById('uploadText').innerText = "选择一张正面照片";
                 document.getElementById('dropzone-file').value = '';
