@@ -65,3 +65,37 @@ test('binds visual generation authorization to its completed analysis request', 
     /INVALID_VISUAL_TOKEN/,
   );
 });
+
+test('accepts analysis objects whose jsonb fields were reordered', () => {
+  const codeHash = 'd'.repeat(64);
+  const requestId = 'c9a6464f-65ef-4d3e-a9f7-d7e1b443d586';
+  const analysis = {
+    identity_code: 'SSJ-01',
+    best_colors: [
+      { label: '柔雾粉', hex: '#AABBCC' },
+      { label: '晨光蓝', hex: '#DDEEFF' },
+    ],
+    dimension_data: [{ key: 'undertone', value: 72 }],
+  };
+  const persistedAnalysis = {
+    dimension_data: [{ value: 72, key: 'undertone' }],
+    best_colors: [
+      { hex: '#AABBCC', label: '柔雾粉' },
+      { hex: '#DDEEFF', label: '晨光蓝' },
+    ],
+    identity_code: 'SSJ-01',
+  };
+  const token = createVisualToken(codeHash, requestId, analysis, 1_000_000);
+
+  assert.deepEqual(
+    verifyVisualToken(token, requestId, persistedAnalysis, 1_000_001),
+    { codeHash, requestId },
+  );
+  assert.throws(
+    () => verifyVisualToken(token, requestId, {
+      ...persistedAnalysis,
+      best_colors: [...persistedAnalysis.best_colors].reverse(),
+    }, 1_000_001),
+    /INVALID_VISUAL_TOKEN/,
+  );
+});
