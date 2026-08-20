@@ -40,10 +40,12 @@ create table if not exists public.style_image_jobs (
   status text not null default 'claimed'
     check (status in ('claimed', 'processing', 'completed', 'failed')),
   stage text not null default 'claimed'
-    check (stage in ('claimed', 'submitting', 'provider_submitted', 'completed', 'failed')),
+    check (stage in ('claimed', 'submitting', 'provider_submitted', 'provider_completed', 'completed', 'failed')),
   owner_id uuid not null,
   provider_task_id text
     check (provider_task_id is null or provider_task_id ~ '^[A-Za-z0-9._:-]{1,200}$'),
+  source_path text
+    check (source_path is null or source_path ~ '^[0-9a-f-]{36}/[0-9a-f-]{36}\.(jpg|png|webp)$'),
   result_path text,
   result_url text,
   failure_code text,
@@ -108,6 +110,8 @@ to service_role;
 drop function if exists public.claim_style_image_job(text, uuid, text, uuid);
 drop function if exists public.claim_style_image_job(text, uuid, text, uuid, boolean);
 drop function if exists public.save_style_image_provider_task(text, uuid, text, uuid, text);
+drop function if exists public.save_style_image_source(text, uuid, text, uuid, text);
+drop function if exists public.save_style_image_provider_result(text, uuid, text, uuid, text);
 drop function if exists public.begin_style_image_provider_submission(text, uuid, text, uuid);
 drop function if exists public.complete_style_image_job(uuid, text, uuid, text);
 drop function if exists public.complete_style_image_job(text, uuid, text, uuid, text);
@@ -125,7 +129,9 @@ returns table (
   job_status text,
   job_stage text,
   provider_task_id text,
+  source_path text,
   result_path text,
+  result_url text,
   failure_code text
 )
 language plpgsql
@@ -157,17 +163,32 @@ begin
   end if;
 
   if v_job.status in ('claimed', 'processing')
+     and v_job.stage <> 'provider_completed'
      and v_job.updated_at < now() - interval '15 minutes' then
     update public.style_image_jobs
     set status = 'failed',
         stage = 'failed',
-        failure_code = 'style_image_job_timeout',
+        failure_code = case
+          when v_job.stage = 'claimed' then 'style_image_queue_timeout'
+          when v_job.stage = 'submitting' then 'style_image_submission_unknown'
+          else 'style_image_job_timeout'
+        end,
         updated_at = now()
     where request_id = p_request_id and kind = p_kind
     returning * into v_job;
   end if;
 
-  if v_job.status = 'failed' and p_retry then
+  if v_job.status = 'failed' and p_retry and (
+    v_job.failure_code in (
+      'style_image_queue_timeout',
+      'style_image_queue_dispatch_failed',
+      'style_image_photo_download_failed',
+      'style_image_configuration_failed',
+      'style_image_request_build_failed',
+      'style_image_model_rejected'
+    )
+    or (v_job.failure_code = 'style_image_job_timeout' and v_job.provider_task_id is not null)
+  ) then
     update public.style_image_jobs
     set status = case
           when failure_code = 'style_image_job_timeout' and provider_task_id is not null
@@ -183,6 +204,11 @@ begin
           when failure_code = 'style_image_job_timeout' then provider_task_id
           else null
         end,
+        source_path = case
+          when failure_code = 'style_image_job_timeout' and provider_task_id is not null
+            then source_path
+          else null
+        end,
         result_path = null,
         result_url = null,
         failure_code = null,
@@ -195,7 +221,9 @@ begin
     v_job.status,
     v_job.stage,
     v_job.provider_task_id,
+    v_job.source_path,
     v_job.result_path,
+    v_job.result_url,
     v_job.failure_code;
 end;
 $$;
@@ -219,6 +247,75 @@ as $$
     and owner_id = p_owner_id
     and status = 'claimed'
     and stage = 'claimed'
+  returning true;
+$$;
+
+create or replace function public.save_style_image_source(
+  p_code_hash text,
+  p_request_id uuid,
+  p_kind text,
+  p_owner_id uuid,
+  p_source_path text
+)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_existing text;
+begin
+  select source_path into v_existing
+  from public.style_image_jobs
+  where code_hash = lower(p_code_hash)
+    and request_id = p_request_id
+    and kind = p_kind
+    and owner_id = p_owner_id
+  for update;
+
+  if not found or (v_existing is not null and v_existing <> p_source_path) then
+    return false;
+  end if;
+
+  update public.style_image_jobs
+  set source_path = p_source_path,
+      updated_at = now()
+  where code_hash = lower(p_code_hash)
+    and request_id = p_request_id
+    and kind = p_kind
+    and owner_id = p_owner_id
+    and status in ('claimed', 'processing')
+    and stage in ('claimed', 'provider_completed');
+
+  return found;
+end;
+$$;
+
+create or replace function public.save_style_image_provider_result(
+  p_code_hash text,
+  p_request_id uuid,
+  p_kind text,
+  p_owner_id uuid,
+  p_result_url text
+)
+returns boolean
+language sql
+security definer
+set search_path = ''
+as $$
+  update public.style_image_jobs
+  set status = 'processing',
+      stage = 'provider_completed',
+      provider_task_id = null,
+      result_url = p_result_url,
+      updated_at = now()
+  where code_hash = lower(p_code_hash)
+    and request_id = p_request_id
+    and kind = p_kind
+    and owner_id = p_owner_id
+    and status in ('claimed', 'processing')
+    and stage = 'submitting'
+    and p_result_url ~ '^https://'
   returning true;
 $$;
 
@@ -284,6 +381,7 @@ as $$
   update public.style_image_jobs
   set status = 'completed',
       stage = 'completed',
+      source_path = null,
       result_path = p_result_path,
       result_url = null,
       failure_code = null,
@@ -311,6 +409,7 @@ as $$
   update public.style_image_jobs
   set status = 'failed',
       stage = 'failed',
+      source_path = null,
       result_path = null,
       result_url = null,
       failure_code = case
@@ -475,6 +574,10 @@ revoke execute on function public.claim_style_image_job(text, uuid, text, uuid, 
 from public, anon, authenticated, service_role;
 revoke execute on function public.save_style_image_provider_task(text, uuid, text, uuid, text)
 from public, anon, authenticated, service_role;
+revoke execute on function public.save_style_image_source(text, uuid, text, uuid, text)
+from public, anon, authenticated, service_role;
+revoke execute on function public.save_style_image_provider_result(text, uuid, text, uuid, text)
+from public, anon, authenticated, service_role;
 revoke execute on function public.begin_style_image_provider_submission(text, uuid, text, uuid)
 from public, anon, authenticated, service_role;
 revoke execute on function public.complete_style_image_job(text, uuid, text, uuid, text)
@@ -485,6 +588,10 @@ from public, anon, authenticated, service_role;
 grant execute on function public.claim_style_image_job(text, uuid, text, uuid, boolean)
 to service_role;
 grant execute on function public.save_style_image_provider_task(text, uuid, text, uuid, text)
+to service_role;
+grant execute on function public.save_style_image_source(text, uuid, text, uuid, text)
+to service_role;
+grant execute on function public.save_style_image_provider_result(text, uuid, text, uuid, text)
 to service_role;
 grant execute on function public.begin_style_image_provider_submission(text, uuid, text, uuid)
 to service_role;

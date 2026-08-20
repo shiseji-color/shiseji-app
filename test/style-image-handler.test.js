@@ -2,10 +2,11 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { createStyleImageHandler } from '../api/generate-style-image.js';
 import { COLOR_DIMENSION_OPTIONS } from '../lib/color-framework.js';
-import { createVisualToken } from '../lib/analysis-token.js';
+import { createVisualToken, verifyStyleImageWorkerToken } from '../lib/analysis-token.js';
 
 const CODE_HASH = 'a'.repeat(64);
 const REQUEST_ID = '11111111-1111-4111-a111-111111111111';
+const SOURCE_PATH_PATTERN = new RegExp(`^${REQUEST_ID}/[0-9a-f-]{36}\\.png$`, 'i');
 const RESULT_PATH = `${CODE_HASH}/${REQUEST_ID}/beauty.png`;
 const TEST_SECRET = 'style-image-handler-test-secret-123456789';
 
@@ -58,16 +59,12 @@ function response() {
 
 function dependencies(overrides = {}) {
   return {
-    env: {
-      API_KEY: 'test-key',
-      IMAGE_BASE_URL: 'https://workspace.example/api/v1',
-    },
-    beginSubmission: async () => true,
-    saveProviderTask: async () => true,
-    completeJob: async () => true,
-    failJob: async () => true,
-    persistImage: async () => RESULT_PATH,
+    env: {},
+    claimJob: async () => ({ status: 'claimed', stage: 'claimed', sourcePath: null }),
+    dispatchBackground: async () => {},
+    saveSource: async () => true,
     signImage: async () => 'https://storage.example/signed-image',
+    uploadPhoto: async () => ({ stored: true, existed: false }),
     ...overrides,
   };
 }
@@ -79,14 +76,10 @@ test.after(() => {
   else process.env.AUTH_TOKEN_SECRET = originalSecret;
 });
 
-test('maintenance switch blocks generation before authorization or provider access', async () => {
+test('maintenance switch blocks generation before authorization or storage access', async () => {
   let claimed = false;
   const handler = createStyleImageHandler(dependencies({
-    env: {
-      API_KEY: 'test-key',
-      IMAGE_BASE_URL: 'https://workspace.example/api/v1',
-      STYLE_IMAGE_GENERATION_ENABLED: 'false',
-    },
+    env: { STYLE_IMAGE_GENERATION_ENABLED: 'false' },
     claimJob: async () => { claimed = true; throw new Error('must not claim'); },
   }));
   const result = response();
@@ -96,88 +89,76 @@ test('maintenance switch blocks generation before authorization or provider acce
   assert.equal(claimed, false);
 });
 
-test('submits once, resumes by provider task ID, persists privately, and signs the result', async () => {
+test('stores the source once and durably dispatches a signed background job', async () => {
   const analysis = analysisResult();
-  let claimCount = 0;
-  const fetchUrls = [];
-  const savedTaskIds = [];
-  const completedPaths = [];
+  const uploads = [];
+  const savedSources = [];
+  const dispatches = [];
   const handler = createStyleImageHandler(dependencies({
-    claimJob: async () => (++claimCount === 1
-      ? { status: 'claimed', stage: 'claimed', providerTaskId: null }
-      : { status: 'processing', stage: 'provider_submitted', providerTaskId: 'task_12345678' }),
-    fetchImpl: async (url) => {
-      fetchUrls.push(url);
-      return new Response(JSON.stringify(fetchUrls.length === 1
-        ? { output: { task_id: 'task_12345678' } }
-        : { output: { task_status: 'SUCCEEDED', results: [{ url: 'https://cdn.aliyuncs.com/result.png' }] } }), {
-        status: 200,
-        headers: { 'content-type': 'application/json' },
-      });
-    },
-    saveProviderTask: async (...args) => { savedTaskIds.push(args.at(-1)); return true; },
-    completeJob: async (...args) => { completedPaths.push(args.at(-1)); return true; },
+    uploadPhoto: async (...args) => { uploads.push(args); return { stored: true }; },
+    saveSource: async (...args) => { savedSources.push(args); return true; },
+    dispatchBackground: async (...args) => { dispatches.push(args); },
   }));
 
-  const first = response();
-  await handler(request(analysis), first.res);
-  assert.equal(first.output.statusCode, 202);
-  assert.deepEqual(savedTaskIds, ['task_12345678']);
+  const result = response();
+  await handler(request(analysis), result.res);
 
-  const second = response();
-  await handler(request(analysis, { imageBase64: undefined }), second.res);
-  assert.equal(second.output.statusCode, 200);
-  assert.equal(second.output.payload.status, 'completed');
-  assert.equal(second.output.payload.imageUrl, 'https://storage.example/signed-image');
-  assert.deepEqual(completedPaths, [RESULT_PATH]);
-  assert.equal(fetchUrls.length, 2);
+  assert.equal(result.output.statusCode, 202);
+  assert.equal(result.output.payload.status, 'processing');
+  assert.equal(uploads.length, 1);
+  assert.match(uploads[0][0], SOURCE_PATH_PATTERN);
+  assert.match(savedSources[0].at(-1), SOURCE_PATH_PATTERN);
+  assert.equal(dispatches.length, 1);
+  const message = JSON.parse(dispatches[0][1]);
+  const claims = verifyStyleImageWorkerToken(message.workerToken);
+  assert.equal(claims.kind, 'beauty');
+  assert.equal(claims.requestId, REQUEST_ID);
+  assert.match(claims.photoPath, SOURCE_PATH_PATTERN);
+  assert.match(dispatches[0][2], new RegExp(`${REQUEST_ID}-beauty-generate$`));
 });
 
-test('submission lock permits only one paid provider request across concurrent calls', async () => {
+test('polling a submitting job never dispatches a second paid request', async () => {
   const analysis = analysisResult();
-  let lockCalls = 0;
-  let providerCalls = 0;
+  let dispatched = false;
+  let uploaded = false;
   const handler = createStyleImageHandler(dependencies({
-    claimJob: async () => ({ status: 'claimed', stage: 'claimed', providerTaskId: null }),
-    beginSubmission: async () => ++lockCalls === 1,
-    fetchImpl: async () => {
-      providerCalls += 1;
-      return new Response(JSON.stringify({ output: { task_id: 'task_12345678' } }), {
-        status: 200,
-        headers: { 'content-type': 'application/json' },
-      });
-    },
+    claimJob: async () => ({ status: 'claimed', stage: 'submitting', sourcePath: `${REQUEST_ID}/owner.png` }),
+    dispatchBackground: async () => { dispatched = true; },
+    uploadPhoto: async () => { uploaded = true; },
   }));
-  const first = response();
-  const second = response();
-  await Promise.all([handler(request(analysis), first.res), handler(request(analysis), second.res)]);
-  assert.equal(first.output.statusCode, 202);
-  assert.equal(second.output.statusCode, 202);
-  assert.equal(providerCalls, 1);
+
+  const result = response();
+  await handler(request(analysis, { imageBase64: undefined, retry: true }), result.res);
+  assert.equal(result.output.statusCode, 202);
+  assert.equal(dispatched, false);
+  assert.equal(uploaded, false);
 });
 
-test('unknown submission outcome remains locked and is not marked retryable', async () => {
+test('provider-completed jobs are requeued for persistence without resending the source', async () => {
   const analysis = analysisResult();
-  let providerCalls = 0;
-  let failureWrites = 0;
-  const claims = [
-    { status: 'claimed', stage: 'claimed', providerTaskId: null },
-    { status: 'claimed', stage: 'submitting', providerTaskId: null },
-  ];
+  const sourcePath = `${REQUEST_ID}/22222222-2222-4222-a222-222222222222.png`;
+  const dispatches = [];
   const handler = createStyleImageHandler(dependencies({
-    claimJob: async () => claims.shift(),
-    fetchImpl: async () => { providerCalls += 1; throw new TypeError('network'); },
-    failJob: async () => { failureWrites += 1; return true; },
+    claimJob: async () => ({ status: 'processing', stage: 'provider_completed', sourcePath }),
+    dispatchBackground: async (...args) => { dispatches.push(args); },
+    uploadPhoto: async () => { throw new Error('must not upload'); },
   }));
 
-  const first = response();
-  await handler(request(analysis), first.res);
-  assert.equal(first.output.statusCode, 502);
-  assert.equal(first.output.payload.diagnosticCode, 'style_image_model_request_failed');
+  const result = response();
+  await handler(request(analysis, { imageBase64: undefined }), result.res);
+  assert.equal(result.output.statusCode, 202);
+  assert.equal(dispatches.length, 1);
+  assert.match(dispatches[0][2], /-beauty-persist$/);
+});
 
-  const second = response();
-  await handler(request(analysis, { retry: true }), second.res);
-  assert.equal(second.output.statusCode, 202);
-  assert.equal(providerCalls, 1);
-  assert.equal(failureWrites, 0);
+test('completed jobs reuse the private stored result through a fresh signed URL', async () => {
+  const analysis = analysisResult();
+  const handler = createStyleImageHandler(dependencies({
+    claimJob: async () => ({ status: 'completed', stage: 'completed', resultPath: RESULT_PATH }),
+  }));
+  const result = response();
+  await handler(request(analysis, { imageBase64: undefined }), result.res);
+  assert.equal(result.output.statusCode, 200);
+  assert.equal(result.output.payload.reused, true);
+  assert.equal(result.output.payload.imageUrl, 'https://storage.example/signed-image');
 });

@@ -39,3 +39,6 @@
 
 [functions."analyze-background"]
   background = true
+
+[functions."style-image-background"]
+  background = true

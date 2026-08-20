@@ -54,4 +54,5 @@ test('request preflight constructs the provider payload without dispatching it',
   const body = JSON.parse(request.options.body);
   assert.equal(body.model, 'qwen-image-edit-max');
   assert.equal(body.parameters.size, '960*1280');
+  assert.equal(request.options.headers['X-DashScope-Async'], undefined);
 });

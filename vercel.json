@@ -15,6 +15,17 @@
         }
       ]
     },
+    "api/style-image-worker.js": {
+      "maxDuration": 300,
+      "experimentalTriggers": [
+        {
+          "type": "queue/v2beta",
+          "topic": "style-image-jobs",
+          "retryAfterSeconds": 300,
+          "initialDelaySeconds": 0
+        }
+      ]
+    },
     "api/*.js": {
       "maxDuration": 30
     }

@@ -6,6 +6,8 @@ import {
   createVisualToken,
   verifyAnalysisJobToken,
   verifyAnalysisToken,
+  createStyleImageWorkerToken,
+  verifyStyleImageWorkerToken,
   verifyVisualToken,
 } from '../lib/analysis-token.js';
 
@@ -98,4 +100,22 @@ test('accepts analysis objects whose jsonb fields were reordered', () => {
     }, 1_000_001),
     /INVALID_VISUAL_TOKEN/,
   );
+});
+
+test('style worker tokens bind the private photo, kind, and trusted analysis', () => {
+  const claims = {
+    codeHash: 'e'.repeat(64),
+    requestId: 'c9a6464f-65ef-4d3e-a9f7-d7e1b443d586',
+    taskId: 'c9a6464f-65ef-4d3e-a9f7-d7e1b443d586',
+    ownerId: '25250509-5bb4-4664-a601-a850360bed60',
+    photoPath: 'c9a6464f-65ef-4d3e-a9f7-d7e1b443d586/25250509-5bb4-4664-a601-a850360bed60.png',
+    kind: 'beauty',
+    analysis: { identity_code: 'SSJ-01' },
+  };
+  const token = createStyleImageWorkerToken(claims, 1_000_000);
+  assert.deepEqual(
+    verifyStyleImageWorkerToken(token, 1_000_001),
+    { ...claims, type: 'style-worker', exp: 2800 },
+  );
+  assert.throws(() => verifyStyleImageWorkerToken(`${token.slice(0, -1)}x`, 1_000_001));
 });
