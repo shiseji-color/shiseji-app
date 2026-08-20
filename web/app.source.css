@@ -2,16 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 :root {
-            --primary-bg: #F2F3F3;
-            --surface: #FBFCFC;
-            --surface-muted: #E9ECEA;
-            --accent-color: #315F56;
-            --text-dark: #171918;
-            --text-muted: #515854;
-            --text-tertiary: #66706B;
-            --focus-color: #236B5D;
-            --radius-shell: 24px;
-            --radius-control: 12px;
+            --primary-bg: #F7F4F0;
+            --surface: #FFFDFC;
+            --surface-muted: #F2EAE5;
+            --accent-color: #B97861;
+            --text-dark: #3D342F;
+            --text-muted: #6F6058;
+            --text-tertiary: #7D6C63;
+            --focus-color: #8B5B49;
+            --font-serif: ui-serif, "STZhongsong", "Songti SC", "Noto Serif CJK SC", SimSun, serif;
+            --radius-shell: 40px;
+            --radius-control: 16px;
             --radius-data: 2px;
             --avoid-bg: #F8ECEC; 
             --avoid-text: #A74E4E; 
@@ -26,6 +27,9 @@
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
             -webkit-font-smoothing: antialiased;
             background-color: var(--primary-bg);
+            background-image:
+                radial-gradient(circle at 18% 12%, rgba(228, 191, 177, .18), transparent 31%),
+                radial-gradient(circle at 84% 88%, rgba(194, 178, 191, .13), transparent 32%);
             touch-action: manipulation; 
             overflow-x: hidden;
         }
@@ -35,7 +39,7 @@
         .glass-panel { 
             background: linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 100%);
             backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px);
-            box-shadow: 0 18px 52px rgba(28, 35, 32, 0.09), inset 0 1px 1px rgba(255,255,255,1);
+            box-shadow: 0 24px 80px rgba(132, 106, 94, 0.14), inset 0 1px 1px rgba(255,255,255,1);
             border: 1px solid rgba(255, 255, 255, 0.8); border-radius: 2.5rem;
         }
         
@@ -554,9 +558,9 @@
         @media (min-width:700px) { .archive-section { padding:40px 28px; } }
 
         .app-container:has(#step-activation:not(.hidden)) {
-            height: 78vh;
-            height: 78dvh;
-            min-height: 760px;
+            height: min(90vh, 820px);
+            height: min(90dvh, 820px);
+            min-height: min(760px, calc(100dvh - 24px));
         }
 
         /* 首屏三段式构图：保持完整产品画布，只压缩内部节奏。 */
@@ -876,40 +880,39 @@
       box-shadow: none;
     }
 
-    /* Calm archive refinement: cool neutrals, one restrained accent, explicit shape rules. */
+    /* Brand restoration: retain the warm personal-color identity while keeping the hardened UX. */
     body {
       color: var(--text-dark);
       background-color: var(--primary-bg);
-      background-image: none;
+      background-image:
+        radial-gradient(circle at 18% 12%, rgba(228, 191, 177, .18), transparent 31%),
+        radial-gradient(circle at 84% 88%, rgba(194, 178, 191, .13), transparent 32%);
     }
 
-    ::selection { color: #f7faf8; background: var(--accent-color); }
+    ::selection { color: #fffaf7; background: #8b5b49; }
 
     .glass-panel {
-      border: 1px solid #d8ddda;
+      border: 1px solid rgba(255, 255, 255, .86);
       border-radius: var(--radius-shell);
-      background: rgba(251, 252, 252, .98);
-      box-shadow: 0 18px 52px rgba(28, 35, 32, .09);
-      backdrop-filter: none;
-      -webkit-backdrop-filter: none;
+      background: linear-gradient(145deg, rgba(255,255,255,.96), rgba(255,252,249,.89));
+      box-shadow: 0 24px 80px rgba(132, 106, 94, .14), inset 0 1px 1px rgba(255,255,255,1);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
     }
 
     .content-card {
-      border: 1px solid #dfe3e1;
-      border-radius: 16px;
+      border: 1px solid rgba(232, 220, 213, .86);
+      border-radius: 24px;
       background: var(--surface);
-      box-shadow: 0 12px 34px rgba(28, 35, 32, .055);
+      box-shadow: 0 14px 38px rgba(105, 77, 64, .06);
     }
 
     .activation-card,
     .loading-card {
-      background: var(--surface);
-    }
-
-    .activation-signature,
-    .brand-proposition,
-    .activation-card > .text-center .season-spectrum {
-      display: none;
+      background:
+        radial-gradient(circle at 92% 4%, rgba(212,191,200,.13), transparent 30%),
+        radial-gradient(circle at 4% 98%, rgba(231,180,154,.1), transparent 28%),
+        var(--surface);
     }
 
     #appHeader h1,
@@ -920,8 +923,8 @@
 
     .activation-card h2,
     .upload-card h2 {
-      font-family: inherit;
-      letter-spacing: .04em !important;
+      font-family: var(--font-serif);
+      letter-spacing: .12em !important;
     }
 
     #activationCode,
@@ -934,12 +937,12 @@
     }
 
     #activationCode {
-      border-color: #cfd5d2;
+      border-color: #dfd2cb;
       color: var(--text-dark);
-      background: #f7f9f8;
+      background: #fcfaf8;
     }
 
-    #activationCode::placeholder { color: #68716d !important; }
+    #activationCode::placeholder { color: #7e6f67 !important; }
 
     .activation-help,
     .privacy-summary {
@@ -951,7 +954,7 @@
 
     .activation-help summary,
     .privacy-policy-link {
-      color: #274f48;
+      color: #755044;
       text-underline-offset: 3px;
     }
 
@@ -986,8 +989,8 @@
     .loading-note { color: var(--text-muted); }
     .analysis-step { color: var(--text-tertiary); }
     .analysis-step.active { color: var(--text-dark); transform: none; }
-    .analysis-step.active::before { background: var(--accent-color); box-shadow: none; }
-    .analysis-step.complete::before { background: #7e8984; border-color: #7e8984; }
+    .analysis-step.active::before { background: var(--accent-color); box-shadow: 0 0 0 4px rgba(185,120,97,.13); }
+    .analysis-step.complete::before { background: #8c7a70; border-color: #8c7a70; }
 
     .analysis-meta {
       margin-top: 18px;
@@ -998,7 +1001,7 @@
 
     .analysis-cancel {
       min-height: 44px;
-      color: #274f48;
+      color: #755044;
       font-size: 13px;
       letter-spacing: .04em;
       text-decoration: underline;
@@ -1018,8 +1021,8 @@
       gap: 6px;
       overflow-x: auto;
       padding: 10px 12px;
-      border-bottom: 1px solid #dfe3e1;
-      background: rgba(247, 249, 248, .96);
+      border-bottom: 1px solid #e5d9d2;
+      background: rgba(250, 246, 242, .96);
       scrollbar-width: none;
     }
 
@@ -1027,7 +1030,7 @@
       flex: 0 0 auto;
       min-height: 36px;
       padding: 9px 11px 7px;
-      border-radius: 10px;
+      border-radius: 12px;
       color: var(--text-muted);
       font-size: 12px;
       line-height: 1;
@@ -1035,8 +1038,8 @@
     }
 
     .report-index a[aria-current="location"] {
-      color: #f7faf8;
-      background: var(--accent-color);
+      color: #fffaf7;
+      background: #7a5143;
     }
 
     .modal-panel { border-radius: 16px !important; }
