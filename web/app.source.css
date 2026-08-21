@@ -361,16 +361,15 @@
         .preview-reference,
         .preview-disclaimer {
             margin: 4px 0 0;
-            color: #8E817A;
-            font-size: 7.5px;
-            letter-spacing: .06em;
-            line-height: 1.6;
+            color: #76665E;
+            font-size: .59375rem;
+            letter-spacing: .04em;
+            line-height: 1.35;
         }
 
         .preview-disclaimer {
             margin-top: 2px;
-            color: #AA9D96;
-            font-size: 7px;
+            font-size: .5625rem;
         }
 
         .activation-signature {
@@ -1405,8 +1404,6 @@
             .identity-preview-kicker,
             .preview-heading { width: 60%; }
             .preview-palette-zone { width: 76%; }
-            .preview-reference,
-            .preview-disclaimer { line-height: 1.65; }
             .preview-archive-notes { margin-left: -22px; margin-right: -22px; padding-left: 18px; padding-right: 18px; }
             .report-portrait { min-height: 0; aspect-ratio: 4 / 4.25; }
             .archive-cover .report-portrait { aspect-ratio:auto; }
