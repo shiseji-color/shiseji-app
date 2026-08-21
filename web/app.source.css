@@ -320,19 +320,23 @@
 
         .preview-palette {
             display: grid;
-            grid-template-columns: 1.12fr .94fr 1.04fr .88fr 1.08fr;
-            align-items: center;
+            grid-template-columns: 1.5fr repeat(4, 1fr);
+            align-items: end;
             gap: 6px;
             width: 100%;
         }
 
         .preview-palette span {
             display: block;
-            height: 28px;
+            height: 24px;
             border: 1px solid rgba(255, 252, 249, .74);
             border-radius: 6px;
             background: var(--swatch);
             box-shadow: none;
+        }
+
+        .preview-palette span:first-child {
+            height: 30px;
         }
 
         .preview-archive-notes {
@@ -350,7 +354,7 @@
             width: 100%;
             margin: 0;
             color: #66584F;
-            font-size: 8px;
+            font-size: 9px;
             letter-spacing: .1em;
             line-height: 1.5;
             white-space: nowrap;

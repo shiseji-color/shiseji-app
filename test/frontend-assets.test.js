@@ -38,3 +38,20 @@ test('frontend keeps the project-wide adaptive viewport baseline', async () => {
   assert.match(cssSource, /orientation:landscape/);
   assert.match(cssSource, /\.identity-preview \{ min-height:clamp\(/);
 });
+
+test('homepage preview communicates the report value instead of decorative metrics', async () => {
+  const [html, cssSource] = await Promise.all([
+    readFile(new URL('../index.html', import.meta.url), 'utf8'),
+    readFile(new URL('../web/app.source.css', import.meta.url), 'utf8'),
+  ]);
+
+  assert.match(html, /你的专属档案将呈现/);
+  assert.match(html, /暖柔型/);
+  assert.match(html, /示例结论/);
+  assert.match(html, /本命色谱/);
+  assert.match(html, /妆容建议/);
+  assert.match(html, /穿搭方案/);
+  assert.doesNotMatch(html, /暖柔倾向\s*<span>·<\/span>\s*中低对比/);
+  assert.match(cssSource, /grid-template-columns: 1\.5fr repeat\(4, 1fr\)/);
+  assert.match(cssSource, /\.preview-palette span:first-child/);
+});
