@@ -59,7 +59,7 @@ function response() {
 
 function dependencies(overrides = {}) {
   return {
-    env: {},
+    env: { STYLE_IMAGE_GENERATION_ENABLED: 'true' },
     claimJob: async () => ({ status: 'claimed', stage: 'claimed', sourcePath: null }),
     dispatchBackground: async () => {},
     saveSource: async () => true,
@@ -87,6 +87,21 @@ test('maintenance switch blocks generation before authorization or storage acces
   assert.equal(result.output.statusCode, 503);
   assert.equal(result.output.headers['Retry-After'], '300');
   assert.equal(claimed, false);
+});
+
+test('generation fails closed when the maintenance switch is missing or malformed', async () => {
+  for (const value of [undefined, '', 'TRUE', 'yes', '1']) {
+    let claimed = false;
+    const env = value === undefined ? {} : { STYLE_IMAGE_GENERATION_ENABLED: value };
+    const handler = createStyleImageHandler(dependencies({
+      env,
+      claimJob: async () => { claimed = true; throw new Error('must not claim'); },
+    }));
+    const result = response();
+    await handler({ method: 'POST', headers: {}, body: {} }, result.res);
+    assert.equal(result.output.statusCode, 503);
+    assert.equal(claimed, false);
+  }
 });
 
 test('stores the source once and durably dispatches a signed background job', async () => {

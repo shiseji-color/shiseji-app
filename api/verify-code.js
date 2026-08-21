@@ -39,8 +39,8 @@ export default async function handler(req, res) {
       ...status,
       analysisToken: status.valid ? createAnalysisToken(hashActivationCode(code)) : null,
     });
-  } catch (error) {
-    console.error('Activation verification failed:', error);
+  } catch {
+    console.error('Activation verification failed:', 'activation_store_unavailable');
     return res.status(503).json({
       valid: false,
       remainingUses: 0,

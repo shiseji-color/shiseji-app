@@ -57,7 +57,7 @@ export function createStyleImageHandler(dependencies = {}) {
       res.setHeader('Allow', 'POST');
       return res.status(405).json({ error: '仅支持POST请求' });
     }
-    if (env.STYLE_IMAGE_GENERATION_ENABLED === 'false') {
+    if (env.STYLE_IMAGE_GENERATION_ENABLED !== 'true') {
       res.setHeader('Retry-After', '300');
       return res.status(503).json({ error: '专属造型图正在维护，请稍后重试' });
     }

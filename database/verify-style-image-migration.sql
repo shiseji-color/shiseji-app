@@ -9,6 +9,10 @@ select
     as submission_rpc_exists,
   to_regprocedure('public.save_style_image_provider_task(text,uuid,text,uuid,text)') is not null
     as task_rpc_exists,
+  to_regprocedure('public.save_style_image_source(text,uuid,text,uuid,text)') is not null
+    as source_rpc_exists,
+  to_regprocedure('public.save_style_image_provider_result(text,uuid,text,uuid,text)') is not null
+    as provider_result_rpc_exists,
   to_regprocedure('public.complete_style_image_job(text,uuid,text,uuid,text)') is not null
     as completion_rpc_exists,
   to_regprocedure('public.fail_style_image_job(text,uuid,text,uuid,text)') is not null
@@ -60,10 +64,27 @@ where n.nspname = 'public'
     'claim_style_image_job',
     'begin_style_image_provider_submission',
     'save_style_image_provider_task',
+    'save_style_image_source',
+    'save_style_image_provider_result',
     'complete_style_image_job',
     'fail_style_image_job'
   )
 order by p.proname;
+
+select
+  count(*) filter (where conname in (
+    'style_image_jobs_kind_check',
+    'style_image_jobs_code_hash_check',
+    'style_image_jobs_status_check',
+    'style_image_jobs_stage_check',
+    'style_image_jobs_result_state_valid',
+    'style_image_jobs_result_path_valid',
+    'style_image_jobs_provider_task_valid',
+    'style_image_jobs_source_path_valid',
+    'style_image_jobs_failure_state_valid'
+  ) and convalidated) = 9 as all_job_constraints_valid
+from pg_constraint
+where conrelid = 'public.style_image_jobs'::regclass;
 
 select
   count(*) filter (where status = 'completed' and result_path is null) = 0

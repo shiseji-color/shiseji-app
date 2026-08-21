@@ -23,6 +23,8 @@ $$;
 drop function if exists public.claim_style_image_job(text, uuid, text, uuid, boolean);
 drop function if exists public.begin_style_image_provider_submission(text, uuid, text, uuid);
 drop function if exists public.save_style_image_provider_task(text, uuid, text, uuid, text);
+drop function if exists public.save_style_image_source(text, uuid, text, uuid, text);
+drop function if exists public.save_style_image_provider_result(text, uuid, text, uuid, text);
 drop function if exists public.complete_style_image_job(text, uuid, text, uuid, text);
 drop function if exists public.fail_style_image_job(text, uuid, text, uuid, text);
 
@@ -38,10 +40,12 @@ alter table public.style_image_jobs
   drop constraint if exists style_image_jobs_result_state_valid,
   drop constraint if exists style_image_jobs_result_path_valid,
   drop constraint if exists style_image_jobs_provider_task_valid,
+  drop constraint if exists style_image_jobs_source_path_valid,
   drop constraint if exists style_image_jobs_failure_state_valid,
   alter column status drop default,
   drop column if exists stage,
   drop column if exists provider_task_id,
+  drop column if exists source_path,
   drop column if exists result_path,
   drop column if exists failure_code,
   add constraint style_image_jobs_kind_check

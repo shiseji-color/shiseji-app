@@ -17,22 +17,26 @@ timestamps, backup identifier, and outcome in the private operations log.
 
 ## Coordinated order
 
-1. Set `STYLE_IMAGE_GENERATION_ENABLED=false` on both platforms.
-2. Deploy the reviewed commit to Vercel without production traffic and verify
-   static pages plus non-model 405/403/503 API behavior. Confirm a synthetic
-   queue message can be published and acknowledged before any paid model test.
-3. Deploy the same commit to Netlify. Confirm style-image calls return 503 and
-   existing activation/status traffic remains healthy.
-4. Create and verify the production database restore point.
-5. Apply `database/migrate-style-image-jobs.sql` once. Do not retry blindly if
+1. Explicitly set `STYLE_IMAGE_GENERATION_ENABLED=false` on both platforms.
+   A missing or malformed value must also keep generation disabled.
+2. Create and verify the production database backup/PITR restore point, then
+   complete the pre-migration read-only checks.
+3. If needed, deploy the reviewed commit only to preview/no-traffic targets and
+   verify static pages plus non-model 405/403/503 API behavior. Do not publish
+   queue messages or call a paid model before the migration is verified.
+4. Apply `database/migrate-style-image-jobs.sql` once. Do not retry blindly if
    the transaction fails; capture the fixed database error and investigate.
-6. Run the read-only checks in `database/verify-style-image-migration.sql`.
+5. Run `database/verify-style-image-migration.sql`; all seven RPCs, constraints,
+   RLS, grants, and the private bucket must pass.
+6. Deploy the reviewed commit to Netlify with generation still disabled. Verify
+   activation, analysis status, privacy pages, export/save, and 503 behavior
+   without invoking a model.
 7. Set `STYLE_IMAGE_GENERATION_ENABLED=true` on Netlify only.
 8. Run one explicitly approved, budget-capped end-to-end production smoke test:
    analysis, beauty, outfit, polling recovery, signed image access, and retry.
 9. Observe errors, latency, storage writes, and provider spend for 30 minutes.
-10. Enable the Vercel fallback, repeat the approved smoke test there, and only
-    then configure or verify traffic failover.
+10. Deploy and enable the Vercel fallback, repeat the approved smoke test there,
+    verify worker routes reject public requests, and only then verify failover.
 
 ## Abort and rollback
 

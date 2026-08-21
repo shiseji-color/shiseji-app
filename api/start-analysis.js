@@ -53,8 +53,8 @@ export default async function handler(req, res) {
       await dispatchBackground(req, buildBackgroundPayload(workerClaims), job.taskId);
     }
     return res.status(202).json({ taskId: job.taskId, status: job.status, jobToken });
-  } catch (error) {
-    console.error('Analysis enqueue failed:', error?.message || 'unknown');
+  } catch {
+    console.error('Analysis enqueue failed:', 'analysis_enqueue_failed');
     return res.status(502).json({ error: '分析任务暂时无法提交，请稍后重试' });
   }
 }
