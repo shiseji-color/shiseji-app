@@ -55,3 +55,20 @@ test('homepage preview communicates the report value instead of decorative metri
   assert.match(cssSource, /grid-template-columns: 1\.5fr repeat\(4, 1fr\)/);
   assert.match(cssSource, /\.preview-palette span:first-child/);
 });
+
+test('activation input uses a Latin-friendly mobile keyboard and a single branded focus state', async () => {
+  const [html, cssSource] = await Promise.all([
+    readFile(new URL('../index.html', import.meta.url), 'utf8'),
+    readFile(new URL('../web/app.source.css', import.meta.url), 'utf8'),
+  ]);
+
+  const activationInput = html.match(/<input[^>]+id="activationCode"[^>]*>/)?.[0] ?? '';
+  assert.match(activationInput, /inputmode="email"/);
+  assert.match(activationInput, /autocapitalize="characters"/);
+  assert.match(activationInput, /autocorrect="off"/);
+  assert.match(activationInput, /spellcheck="false"/);
+  assert.match(activationInput, /enterkeyhint="done"/);
+  assert.match(activationInput, /maxlength="12"/);
+  assert.doesNotMatch(activationInput, /focus:ring|focus:border/);
+  assert.match(cssSource, /#activationCode:focus-visible[\s\S]*border: 2px solid #8B6657/);
+});

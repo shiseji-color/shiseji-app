@@ -1103,6 +1103,14 @@
       border-color: #dfd2cb;
       color: var(--text-dark);
       background: #fcfaf8;
+      caret-color: #755044;
+    }
+
+    #activationCode:focus,
+    #activationCode:focus-visible {
+      border: 2px solid #8B6657;
+      outline: none;
+      box-shadow: 0 10px 24px rgba(81, 63, 54, .075);
     }
 
     #activationCode::placeholder { color: #7e6f67 !important; }
