@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="robots" content="noindex">
+  <title>隐私说明与删除申请｜拾色季</title>
+  <style>
+    :root { color-scheme:light; --ink:#4a403a; --muted:#6f6058; --line:#e8ddd7; --paper:#fbf8f4; --accent:#755044; --focus:#8b5b49; }
+    * { box-sizing:border-box; }
+    body { margin:0; min-height:100vh; min-height:100svh; min-height:100dvh; padding:max(0px,env(safe-area-inset-top)) max(0px,env(safe-area-inset-right)) max(0px,env(safe-area-inset-bottom)) max(0px,env(safe-area-inset-left)); color:var(--ink); background:#f6f2ed; font-family:"Noto Sans SC","Microsoft YaHei",sans-serif; }
+    main { width:min(100% - 32px,680px); margin:clamp(16px,5dvh,40px) auto; padding:clamp(32px,5vw,44px) clamp(24px,6vw,40px) clamp(36px,6vw,48px); border:1px solid var(--line); border-radius:16px; background:var(--paper); box-shadow:0 20px 52px rgba(74,64,58,.08); }
+    .brand { margin:0 0 34px; font-family:"Songti SC","STSong",serif; font-size:24px; font-weight:400; letter-spacing:.24em; text-align:center; }
+    h1 { margin:0; font-family:"Songti SC","STSong",serif; font-size:28px; font-weight:400; line-height:1.5; letter-spacing:.06em; }
+    .version { margin:8px 0 28px; color:var(--muted); font-size:13px; line-height:1.8; }
+    section { padding:22px 0; border-top:1px solid var(--line); }
+    h2 { margin:0 0 12px; font-size:15px; font-weight:700; line-height:1.6; letter-spacing:.03em; }
+    p, li, dt, dd { color:var(--muted); font-size:14px; line-height:2; }
+    p, dl, dd { margin:0; }
+    p + p { margin-top:10px; }
+    ul { margin:0; padding-inline-start:20px; }
+    dl { display:grid; gap:10px; }
+    dl div { display:grid; grid-template-columns:76px minmax(0,1fr); gap:12px; }
+    dt { color:var(--ink); font-weight:600; }
+    dd { min-width:0; }
+    .notice { padding:14px 16px; border:1px solid #ded1ca; border-radius:12px; background:#f7f1ec; }
+    .actions { display:flex; flex-wrap:wrap; gap:8px 20px; margin-top:28px; }
+    .action { display:inline-flex; align-items:center; min-height:44px; color:var(--accent); font-size:14px; text-decoration-color:rgba(117,80,68,.34); text-underline-offset:4px; }
+    :where(a):focus-visible { outline:2px solid var(--focus); outline-offset:3px; }
+    @media (max-width:560px) {
+      main { margin:clamp(10px,2.5dvh,16px) auto; padding:clamp(28px,4dvh,34px) clamp(20px,6vw,24px) clamp(32px,5dvh,40px); }
+      .brand { margin-bottom:clamp(24px,4dvh,34px); }
+      h1 { font-size:clamp(24px,7vw,28px); }
+      section { padding-block:clamp(18px,3.5dvh,22px); }
+      dl div { grid-template-columns:1fr; gap:2px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="brand">拾色季</p>
+    <h1>隐私说明与删除申请</h1>
+    <p class="version">适用于「拾色季」个人色彩档案服务 · 更新日期：2026 年 8 月 21 日</p>
+
+    <section>
+      <h2>我们处理哪些数据</h2>
+      <dl>
+        <div><dt>原始照片</dt><dd>你主动选择的正面照片，用于色彩分析，以及你主动选择生成的妆发、穿搭效果。</dd></div>
+        <div><dt>分析结果</dt><dd>个人色彩维度、色卡、妆容与穿搭建议，以及任务状态和防重复扣次所需的请求标识。</dd></div>
+        <div><dt>生成效果图</dt><dd>你主动选择生成的妆发或穿搭图片。</dd></div>
+      </dl>
+    </section>
+
+    <section>
+      <h2>处理方与用途</h2>
+      <p>数据由拾色季服务端、配置的私有云存储服务，以及阿里云百炼视觉与图像编辑服务处理，仅用于完成本次分析、生成你选择的效果图、恢复任务状态和避免重复提交或扣次。</p>
+      <p>本服务不要求提供手机号、微信号或位置等与色彩分析无关的信息。请不要上传未经本人允许的他人照片；涉及未成年人时，应由其监护人决定是否使用。</p>
+    </section>
+
+    <section>
+      <h2>保留与访问方式</h2>
+      <ul>
+        <li>原始照片仅进入私有临时存储。任务完成或失败后会清理；超时任务最长保留 20 分钟后进入清理。</li>
+        <li>报告不会写入浏览器长期存储。任务记录与结构化结果可能保留在服务端，用于返回结果、故障恢复和防止重复扣次。</li>
+        <li>生成效果图可能保存在私有存储中，以便同一分析任务重新取得结果。页面获得的是默认 15 分钟有效的临时签名访问链接，不是公开图片地址。</li>
+        <li>当前版本不对生成效果图承诺固定的自动删除时点。如希望删除，请按下方流程向提供服务的店铺提出申请。</li>
+      </ul>
+    </section>
+
+    <section id="deletion">
+      <h2>删除申请</h2>
+      <div class="notice">
+        <p>请联系向你提供本服务的店铺，并提供大致使用日期、专属密钥末 4 位，以及需要删除的内容类型（分析任务、妆发图或穿搭图）。请勿为了申请删除而再次发送原始照片。</p>
+        <p>店铺核实后会通过服务运营流程处理，并向你说明处理结果或仍需补充的信息。临时原始照片通常已按上述自动清理流程删除。</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>第三方服务与安全</h2>
+      <p>第三方视觉服务可能依据其云服务配置处理请求日志或任务信息。拾色季使用私有存储、短时签名链接和服务端权限控制，避免原始照片与效果图以公开地址直接暴露。</p>
+      <p>色彩报告仅供个人形象美学参考，不构成医疗、皮肤科诊断或法律意见；设备显示差异可能造成轻微色差。</p>
+    </section>
+
+    <nav class="actions" aria-label="相关页面">
+      <a class="action" href="index.html">返回拾色季</a>
+      <a class="action" href="usage-rules.html">查看获取与使用规则</a>
+    </nav>
+  </main>
+</body>
+</html>

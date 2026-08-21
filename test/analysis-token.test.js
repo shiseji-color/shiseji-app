@@ -6,6 +6,8 @@ import {
   createVisualToken,
   verifyAnalysisJobToken,
   verifyAnalysisToken,
+  createStyleImageWorkerToken,
+  verifyStyleImageWorkerToken,
   verifyVisualToken,
 } from '../lib/analysis-token.js';
 
@@ -64,4 +66,56 @@ test('binds visual generation authorization to its completed analysis request', 
     () => verifyVisualToken(token, requestId, analysis, 2_800_001),
     /INVALID_VISUAL_TOKEN/,
   );
+});
+
+test('accepts analysis objects whose jsonb fields were reordered', () => {
+  const codeHash = 'd'.repeat(64);
+  const requestId = 'c9a6464f-65ef-4d3e-a9f7-d7e1b443d586';
+  const analysis = {
+    identity_code: 'SSJ-01',
+    best_colors: [
+      { label: '柔雾粉', hex: '#AABBCC' },
+      { label: '晨光蓝', hex: '#DDEEFF' },
+    ],
+    dimension_data: [{ key: 'undertone', value: 72 }],
+  };
+  const persistedAnalysis = {
+    dimension_data: [{ value: 72, key: 'undertone' }],
+    best_colors: [
+      { hex: '#AABBCC', label: '柔雾粉' },
+      { hex: '#DDEEFF', label: '晨光蓝' },
+    ],
+    identity_code: 'SSJ-01',
+  };
+  const token = createVisualToken(codeHash, requestId, analysis, 1_000_000);
+
+  assert.deepEqual(
+    verifyVisualToken(token, requestId, persistedAnalysis, 1_000_001),
+    { codeHash, requestId },
+  );
+  assert.throws(
+    () => verifyVisualToken(token, requestId, {
+      ...persistedAnalysis,
+      best_colors: [...persistedAnalysis.best_colors].reverse(),
+    }, 1_000_001),
+    /INVALID_VISUAL_TOKEN/,
+  );
+});
+
+test('style worker tokens bind the private photo, kind, and trusted analysis', () => {
+  const claims = {
+    codeHash: 'e'.repeat(64),
+    requestId: 'c9a6464f-65ef-4d3e-a9f7-d7e1b443d586',
+    taskId: 'c9a6464f-65ef-4d3e-a9f7-d7e1b443d586',
+    ownerId: '25250509-5bb4-4664-a601-a850360bed60',
+    photoPath: 'c9a6464f-65ef-4d3e-a9f7-d7e1b443d586/25250509-5bb4-4664-a601-a850360bed60.png',
+    kind: 'beauty',
+    analysis: { identity_code: 'SSJ-01' },
+  };
+  const token = createStyleImageWorkerToken(claims, 1_000_000);
+  assert.deepEqual(
+    verifyStyleImageWorkerToken(token, 1_000_001),
+    { ...claims, type: 'style-worker', exp: 2800 },
+  );
+  assert.throws(() => verifyStyleImageWorkerToken(`${token.slice(0, -1)}x`, 1_000_001));
 });

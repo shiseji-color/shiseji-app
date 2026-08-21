@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { claimExpiredAnalysisPhotos, createAnalysisJob } from '../lib/activation-store.js';
 import { createAnalysisJobToken, createAnalysisWorkerToken, verifyAnalysisToken } from '../lib/analysis-token.js';
 import { enforceRateLimit } from '../lib/rate-limit.js';
+import { dispatchBackground } from '../lib/background-analysis-dispatch.js';
 import {
   decodePhotoDataUrl, deleteTemporaryPhotos, temporaryPhotoPath, uploadTemporaryPhoto,
 } from '../lib/temporary-photo-store.js';
@@ -15,14 +16,6 @@ export function buildBackgroundPayload(claims) {
     throw new Error('Background payload exceeds safe limit');
   }
   return body;
-}
-
-function backgroundUrl(req) {
-  const allowed = [process.env.DEPLOY_PRIME_URL, process.env.URL].filter(Boolean).map((value) => new URL(value));
-  const forwardedHost = req.headers?.['x-forwarded-host'] || req.headers?.host;
-  const origin = allowed.find((url) => url.host === forwardedHost) || allowed[0];
-  if (!origin) throw new Error('Netlify site URL is unavailable');
-  return new URL('/.netlify/functions/analyze-background', origin).href;
 }
 
 export default async function handler(req, res) {
@@ -57,15 +50,11 @@ export default async function handler(req, res) {
     if (job.status === 'queued') {
       await uploadTemporaryPhoto(job.photoPath, photo);
       const workerClaims = { ...claims, photoPath: job.photoPath };
-      const queued = await fetch(backgroundUrl(req), {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: buildBackgroundPayload(workerClaims),
-      });
-      if (queued.status !== 202) throw new Error(`Background queue rejected (${queued.status})`);
+      await dispatchBackground(req, buildBackgroundPayload(workerClaims), job.taskId);
     }
     return res.status(202).json({ taskId: job.taskId, status: job.status, jobToken });
-  } catch (error) {
-    console.error('Analysis enqueue failed:', error?.message || 'unknown');
+  } catch {
+    console.error('Analysis enqueue failed:', 'analysis_enqueue_failed');
     return res.status(502).json({ error: '分析任务暂时无法提交，请稍后重试' });
   }
 }

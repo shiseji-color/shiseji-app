@@ -16,6 +16,13 @@ import {
   frameworkPromptReference,
 } from '../lib/color-framework.js';
 
+export const INTERACTIVE_MODEL_TIMEOUT_MS = 25_000;
+export const BACKGROUND_MODEL_TIMEOUT_MS = 240_000;
+
+export function analysisModelTimeout(backgroundMode) {
+  return backgroundMode ? BACKGROUND_MODEL_TIMEOUT_MS : INTERACTIVE_MODEL_TIMEOUT_MS;
+}
+
 export function createModelClient(factory = (options) => new OpenAI(options)) {
   return runAnalysisStage('model_request_build_failed', () => factory({
     apiKey: process.env.API_KEY,
@@ -200,7 +207,7 @@ ${frameworkPromptReference()}
     fallbackFailureCode = 'model_request_failed';
     const response = await runModelCall(() => openai.chat.completions.create(
       modelRequest,
-      { timeout: 45_000 },
+      { timeout: analysisModelTimeout(backgroundMode) },
     ));
 
     // 处理AI返回结果

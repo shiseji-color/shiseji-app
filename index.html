@@ -5,889 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>拾色季 | 个人色彩档案</title>
     
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@300;400;500;600;900&display=swap');
-        
-        :root {
-            --primary-bg: #F7F5F2;
-            --accent-color: #DABFB4;
-            --text-dark: #3D342F;
-            --text-muted: #8C7A70;
-            --avoid-bg: #F8ECEC; 
-            --avoid-text: #A74E4E; 
-            --avoid-border: #EAC4C4; 
-            --report-primary: #D9947B;
-            --report-secondary: #CBA28E;
-            --report-metal: #B79A70;
-            --report-deep: #44362F;
-        }
-
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; 
-            -webkit-font-smoothing: antialiased;
-            background-color: var(--primary-bg); 
-            background-image: url('https://www.transparenttextures.com/patterns/cream-paper.png');
-            touch-action: manipulation; 
-            overflow-x: hidden;
-        }
-        
-        .font-serif-custom { font-family: 'Noto Serif SC', serif; }
-        
-        .glass-panel { 
-            background: linear-gradient(145deg, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 100%);
-            backdrop-filter: blur(28px); -webkit-backdrop-filter: blur(28px);
-            box-shadow: 0 24px 80px rgba(160, 145, 130, 0.15), inset 0 1px 1px rgba(255,255,255,1);
-            border: 1px solid rgba(255, 255, 255, 0.8); border-radius: 2.5rem;
-        }
-        
-        .content-card { background: #FFFFFF; border-radius: 1.5rem; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.02); border: 1px solid rgba(240, 235, 230, 0.9); position: relative; overflow: hidden; }
-
-        .color-capsule { display: inline-block; padding: 1px 8px; border-radius: 6px; font-size: 11px; font-weight: 500; margin: 0 3px; position: relative; top: -1px; border: 1px solid rgba(0,0,0,0.04); box-shadow: 0 2px 4px rgba(0,0,0,0.02); letter-spacing: 1px; }
-        .color-capsule-avoid { display:inline; padding:0; border:0; border-radius:0; margin:0; background:transparent; color:#765f56; box-shadow:none; font-size:11px; font-weight:500; letter-spacing:.08em; }
-        .color-capsule-avoid + .color-capsule-avoid::before { content:' · '; color:#b89d8f; }
-
-        #step-result p.leading-luxury, #res-desc {
-            line-height: 2.2 !important;
-            color: #3D342F !important;
-            letter-spacing: 1.5px !important;
-            text-align: justify;
-        }
-        #step-result p.leading-luxury b, #step-result p.leading-luxury strong,
-        #res-desc b, #res-desc strong {
-            color: #DABFB4 !important;
-            font-weight: 600 !important;
-            border-bottom: 1px solid rgba(218,191,180,0.3);
-        }
-
-        .report-footer { text-align: center; padding: 30px 0 10px; position: relative; }
-        .report-footer::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 40px; height: 1px; background: #DABFB4; opacity: 0.5; }
-
-        .fade-in { animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        @keyframes slideUpFade { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        
-        .stagger-1 { animation-delay: 0.1s; opacity: 0; animation-fill-mode: both; }
-        .stagger-2 { animation-delay: 0.2s; opacity: 0; animation-fill-mode: both; }
-        .stagger-3 { animation-delay: 0.3s; opacity: 0; animation-fill-mode: both; }
-        .stagger-4 { animation-delay: 0.4s; opacity: 0; animation-fill-mode: both; }
-
-        .premium-loader { position: relative; width: 112px; height: 112px; display: flex; align-items: center; justify-content: center; }
-        .loader-ring { position: absolute; border-radius: 50%; border: 1.5px solid var(--accent-color); animation: ripple 2.8s infinite cubic-bezier(0.21, 0.53, 0.56, 0.8); }
-        .loader-ring:nth-child(2) { animation-delay: 0.8s; }
-        .loader-ring:nth-child(3) { animation-delay: 1.6s; }
-        @keyframes ripple { 0% { width: 0; height: 0; opacity: 1; } 100% { width: 100%; height: 100%; opacity: 0; } }
-
-        .loader-core {
-            position: relative;
-            z-index: 2;
-            width: 64px;
-            height: 64px;
-            display: grid;
-            place-items: center;
-            border: 1px solid rgba(218,191,180,.72);
-            border-radius: 50%;
-            color: #433832;
-            background: rgba(255,253,251,.94);
-            box-shadow: 0 8px 24px rgba(89,69,59,.10);
-        }
-
-        .loader-core::after {
-            content: '';
-            position: absolute;
-            bottom: -9px;
-            left: 50%;
-            width: 34px;
-            height: 3px;
-            border-radius: 999px;
-            background: linear-gradient(90deg, #D99378, #CBA48F, #AD8B67, #756772);
-            transform: translateX(-50%);
-        }
-
-        .loading-card {
-            width: 100%;
-            padding: 38px 28px 30px;
-            text-align: center;
-            background:
-                radial-gradient(circle at 90% 3%, rgba(212,191,200,.13), transparent 31%),
-                radial-gradient(circle at 6% 97%, rgba(231,180,154,.10), transparent 28%),
-                #fff;
-        }
-
-        .loading-kicker {
-            color: #927E73;
-            font-size: 9px;
-            letter-spacing: .3em;
-        }
-
-        .loading-note {
-            margin-top: 24px;
-            color: #99877E;
-            font-size: 9px;
-            line-height: 1.8;
-            letter-spacing: .12em;
-        }
-
-        .toast-preview {
-            color: #806F66;
-            background: rgba(255, 253, 251, .88);
-            border: 1px solid rgba(218, 191, 180, .62);
-            box-shadow: 0 6px 18px rgba(77, 61, 52, .06);
-            backdrop-filter: blur(10px);
-        }
-
-        .toast-preview svg {
-            color: #CFA993;
-        }
-
-        .loading-preview-status {
-            width: fit-content;
-            margin: 20px auto 0;
-            padding: 8px 14px;
-            color: #806F66;
-            border: 1px solid rgba(218, 191, 180, .58);
-            border-radius: 999px;
-            background: rgba(255, 253, 251, .72);
-            font-size: 9px;
-            letter-spacing: .1em;
-        }
-        
-        .scan-container { position: relative; overflow: hidden; }
-        .scan-line {
-            position: absolute; left: 0; top: 0; width: 100%; height: 100%;
-            background: linear-gradient(to bottom, rgba(218,191,180,0) 0%, rgba(218,191,180,0.3) 50%, rgba(218,191,180,0) 100%);
-            animation: scanning 2.5s infinite ease-in-out; pointer-events: none; z-index: 10;
-        }
-        @keyframes scanning { 0% { transform: translateY(-100%); } 100% { transform: translateY(100%); } }
-
-        ::-webkit-scrollbar { display: none; }
-        .scrollbar-hide { scrollbar-width: none; -ms-overflow-style: none; }
-
-        .hex-color-swatch { box-shadow: inset 0 2px 8px rgba(0,0,0,0.06); border: 2px solid #FFFFFF; }
-        .progress-bar-fill { transition: width 1.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
-        
-        input, button { -webkit-appearance: none; appearance: none; outline: none; }
-        button:active { transform: scale(0.98); transition: transform 0.1s; }
-        input::placeholder { color: #A89990 !important; opacity: 1; }
-
-        .toast-enter { animation: toastIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        .toast-exit { animation: toastOut 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        @keyframes toastIn { from { opacity: 0; transform: translate(-50%, 20px); } to { opacity: 1; transform: translate(-50%, 0); } }
-        @keyframes toastOut { from { opacity: 1; transform: translate(-50%, 0); } to { opacity: 0; transform: translate(-50%, -20px); } }
-
-        .app-container { height: 90vh; height: 90dvh; }
-        .app-container.report-mode > #appHeader { display: none; }
-        .app-container.report-mode #mainContainer { padding-left: 0; padding-right: 0; padding-bottom: 0; }
-        .app-container.report-mode #step-result { animation:none; transform:none; opacity:1; }
-
-        .report-kicker { color: var(--report-primary); letter-spacing: .32em; text-transform: uppercase; }
-        .report-hero { padding: 0; overflow: hidden; background: #fffdfb; }
-        .report-portrait { position: relative; aspect-ratio: 4 / 4.2; min-height: 0; overflow: hidden; background: #eee8e3; border: 1px solid #eadfd9; border-radius: 26px; box-shadow: 0 18px 42px rgba(68,52,44,.09), inset 0 0 0 5px rgba(255,255,255,.22); }
-        .report-portrait::after { content: none; }
-        .report-portrait img { width: 100%; height: 100%; object-fit: cover; object-position: center 38%; }
-        .report-portrait-copy { margin-top: 12px; padding: 16px 18px; border: 1px solid #eadfd9; border-radius: 18px; background: rgba(255,255,255,.82); text-align: left; box-shadow: 0 10px 28px rgba(91,67,57,.05); }
-        .report-portrait-copy-label { color:#a18e84; font-size:8px; letter-spacing:.28em; margin-bottom:7px; }
-        .palette-arches { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
-        .palette-arch { min-height:84px; border-radius:2px; display:flex; align-items:flex-end; justify-content:center; padding:10px 7px; color:white; text-align:center; text-shadow:0 1px 4px rgba(0,0,0,.2); font-size:9px; box-shadow:inset 0 0 0 1px rgba(70,49,39,.035); }
-        .palette-circles { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-top:16px; }
-        .palette-circle { width:100%; height:34px; margin:0 auto; border-radius:2px; border:1px solid rgba(255,255,255,.9); box-shadow:none; }
-        .photo-quality { border-radius: 14px; padding: 11px 13px; font-size: 10px; line-height: 1.7; letter-spacing: .04em; }
-        .photo-quality.good { color: #526855; background: #F1F6F1; border: 1px solid #DDE9DE; }
-        .photo-quality.warn { color: #8A6644; background: #FBF5EA; border: 1px solid #EEDFC7; }
-        .photo-quality.block { color: #984F4F; background: #F9EEEE; border: 1px solid #ECCFCF; }
-        .ai-note { display: inline-flex; align-items: center; gap: 5px; font-size: 9px; color: #9B8980; letter-spacing: .12em; }
-        .effect-share-action { width:100%; margin-top:14px; padding:11px 14px; border:1px solid #d9cbc3; border-radius:2px; background:rgba(255,255,255,.5); color:#69584f; font-size:10px; letter-spacing:.16em; text-align:center; transition:background .2s ease,border-color .2s ease; }
-        .effect-share-action:hover { border-color:#bda89d; background:#fff; }
-
-        .season-spectrum {
-            height: 2px;
-            width: 116px;
-            margin: 13px auto 0;
-            border-radius: 999px;
-            background: linear-gradient(90deg, #E7B49A 0%, #CDBEC9 34%, #A88970 67%, #655969 100%);
-            opacity: 0.72;
-        }
-
-        .season-spectrum span {
-            display: none;
-        }
-
-        .activation-card {
-            background:
-                radial-gradient(circle at 88% 4%, rgba(212, 191, 200, 0.13), transparent 31%),
-                radial-gradient(circle at 8% 95%, rgba(231, 180, 154, 0.10), transparent 28%),
-                #FFFFFF;
-        }
-
-        .identity-preview {
-            position: relative;
-            margin: 14px 22px 0;
-            padding: 19px 20px 17px;
-            border: 1px solid rgba(222, 211, 204, 0.82);
-            border-radius: 22px;
-            color: #4A403A;
-            background:
-                radial-gradient(circle at 92% 0%, rgba(205,190,201,.14), transparent 38%),
-                radial-gradient(circle at 4% 100%, rgba(231,180,154,.12), transparent 32%),
-                linear-gradient(145deg, #FFFDFC 0%, #FBF8F6 100%);
-            box-shadow: 0 9px 24px rgba(126, 105, 94, 0.055);
-            overflow: hidden;
-        }
-
-        .identity-preview-kicker {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-            margin-bottom: 9px;
-            color: #8F7164;
-            font-size: 8px;
-            letter-spacing: .24em;
-            text-transform: uppercase;
-        }
-
-        .brand-proposition {
-            color: #927E73;
-            font-size: 9px;
-            letter-spacing: .32em;
-            font-weight: 500;
-        }
-
-        .identity-preview-id {
-            color: #B5A59C;
-            letter-spacing: .16em;
-            white-space: nowrap;
-        }
-
-        .identity-preview::after {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(120deg, transparent 42%, rgba(255,255,255,0.68) 52%, transparent 62%);
-            pointer-events: none;
-        }
-
-        .preview-palette {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-
-        .preview-palette span {
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            border: 2px solid rgba(255,255,255,0.9);
-            box-shadow: 0 3px 9px rgba(77, 63, 55, 0.10);
-        }
-
-        .preview-rule { height: 1px; background: rgba(191,168,159,.34); margin: 15px 0 11px; }
-
-        .preview-deliverables {
-            color: #74665E;
-            font-size: 8px;
-            letter-spacing: .08em;
-            line-height: 1.65;
-            text-align: right;
-            white-space: nowrap;
-        }
-
-        .activation-signature {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 11px;
-            margin-top: 18px;
-            color: #8F7E75;
-            font-size: 8px;
-            letter-spacing: .2em;
-        }
-
-        .activation-signature::before,
-        .activation-signature::after { content: ''; width: 28px; height: 1px; background: #D8C9C1; }
-
-        .upload-card {
-            background:
-                radial-gradient(circle at 92% 2%, rgba(212,191,200,.12), transparent 29%),
-                radial-gradient(circle at 4% 98%, rgba(231,180,154,.09), transparent 27%),
-                #fff;
-        }
-
-        .upload-kicker {
-            color: #927E73;
-            font-size: 9px;
-            letter-spacing: .3em;
-            text-align: center;
-        }
-
-        .photo-guide-grid {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 8px;
-            margin-top: 18px;
-        }
-
-        .photo-guide-item {
-            padding: 11px 6px 10px;
-            border: 1px solid #EAE1DC;
-            border-radius: 14px;
-            background: rgba(252,250,248,.86);
-            text-align: center;
-        }
-
-        .photo-guide-mark {
-            display: block;
-            width: 5px;
-            height: 5px;
-            margin: 0 auto 7px;
-            border-radius: 50%;
-            background: #C99A86;
-            box-shadow: 0 0 0 3px rgba(201,154,134,.12);
-        }
-
-        .photo-guide-item strong {
-            display: block;
-            color: #554841;
-            font-size: 10px;
-            font-weight: 500;
-            letter-spacing: .08em;
-        }
-
-        .photo-guide-item span:last-child {
-            display: block;
-            margin-top: 4px;
-            color: #9A8980;
-            font-size: 8px;
-            line-height: 1.5;
-        }
-
-        .photo-avoid {
-            margin-top: 10px;
-            color: #825F55;
-            font-size: 10px;
-            line-height: 1.7;
-            letter-spacing: .04em;
-            text-align: center;
-        }
-
-        .privacy-lead {
-            display: block;
-            color: #65564E;
-            font-weight: 500;
-            letter-spacing: .03em;
-        }
-
-        .privacy-detail {
-            display: block;
-            margin-top: 3px;
-            color: #94827A;
-        }
-
-        .privacy-check {
-            -webkit-appearance: none !important;
-            appearance: none !important;
-            width: 14px;
-            height: 14px;
-            border: 1px solid #AFA098;
-            border-radius: 3px;
-            background-color: rgba(255,255,255,0.84);
-            box-shadow: inset 0 1px 2px rgba(69, 55, 48, 0.035);
-            transition: background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease;
-            flex: 0 0 auto;
-        }
-
-        .privacy-check:checked {
-            border-color: #3D342F;
-            background-color: #3D342F;
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 14 14'%3E%3Cpath d='M3.2 7.2 5.7 9.6 10.9 4.3' fill='none' stroke='white' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-            box-shadow: 0 2px 6px rgba(61, 52, 47, 0.16);
-        }
-
-        .privacy-check:focus-visible {
-            box-shadow: 0 0 0 3px rgba(218, 191, 180, 0.32);
-        }
-
-        #step-activation {
-            padding-bottom: 22px;
-        }
-
-        #step-activation .content-card {
-            overflow: visible;
-        }
-
-        /* 正式报告：以编辑部档案为骨架，所有内容均由本次分析结果驱动。 */
-        .archive-report { --report-paper:#fbf8f4; color:#40342f; }
-        .archive-section { padding:34px 22px; border-top:1px solid rgba(234,223,217,.78); }
-        .archive-eyebrow { margin-bottom:9px; color:#a18e84; font-size:9px; letter-spacing:.3em; text-transform:uppercase; }
-        .archive-title { margin:0; font-family:var(--font-serif); font-size:24px; font-weight:500; letter-spacing:.08em; }
-        .archive-copy { margin-top:12px; color:#76665e; font-size:12px; line-height:1.95; }
-        .archive-cover { padding:38px 22px 30px; text-align:center; background:linear-gradient(180deg,#fff 0,#fbf8f4 100%); }
-        .report-masthead { padding:30px 22px 22px; text-align:center; background:#fff; }
-        .report-masthead h1 { font-family:var(--font-serif); font-size:27px; font-weight:600; letter-spacing:.25em; color:#3d342f; }
-        .report-masthead-rule { display:flex; align-items:center; justify-content:center; gap:12px; margin-top:8px; color:#8c7a70; opacity:.62; font-size:8px; font-weight:500; letter-spacing:.4em; text-transform:uppercase; }
-        .report-masthead-rule::before,.report-masthead-rule::after { content:''; width:24px; height:1px; background:#8c7a70; }
-        .archive-cover .report-portrait { margin-top:26px; aspect-ratio:4/4.2; border-radius:26px; }
-        .archive-identity { margin-top:22px; padding:22px; border:1px solid #eadfd9; border-radius:22px; background:#fff; box-shadow:0 16px 44px rgba(91,67,57,.05); }
-        .archive-identity #res-progress-bars { margin-top:20px; }
-        .archive-evidence { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-top:20px; }
-        .archive-palette-note { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; margin-top:18px; }
-        .archive-palette-note > div { padding:15px; border:1px solid #eadfd9; border-radius:16px; background:#fff; }
-        .archive-guide { display:grid; gap:10px; margin-top:22px; }
-        .archive-guide article { padding:18px; border:1px solid #eadfd9; border-radius:18px; background:#fff; }
-        .archive-guide h4 { margin:0 0 8px; font-family:var(--font-serif); font-size:17px; font-weight:500; letter-spacing:.08em; }
-        .archive-guide p { color:#806f67; font-size:11px; line-height:1.9; }
-        .archive-avoid { margin-top:20px; padding:18px; border-radius:16px; background:#f1e7e2; }
-        .archive-details { margin-top:20px; border-top:1px solid #dfd4cd; border-bottom:1px solid #dfd4cd; border-radius:0; background:transparent; overflow:hidden; }
-        .archive-details summary { padding:17px 2px; cursor:pointer; color:#6c5b53; font-size:10px; letter-spacing:.12em; list-style:none; }
-        .archive-details summary::-webkit-details-marker { display:none; }
-        .archive-details summary::after { content:'＋'; float:right; color:#b59788; }
-        .archive-details[open] summary::after { content:'－'; }
-        .archive-details-body { padding:4px 2px 22px; }
-        .dimension-appendix { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:24px; margin-top:14px; border-top:1px solid #e4dad4; }
-        .dimension-row { display:grid; grid-template-columns:minmax(0,1fr) 30px; align-items:center; gap:10px; padding:11px 0 9px; border-bottom:1px solid #e4dad4; }
-        .dimension-row-main { min-width:0; }
-        .dimension-row-title { display:flex; justify-content:space-between; gap:8px; color:#6b5d55; font-size:9px; line-height:1.5; }
-        .dimension-row-index { color:#ba9989; margin-right:5px; }
-        .dimension-row-value { color:#44362f; font-family:var(--font-serif); font-size:12px; text-align:right; }
-        .dimension-row-track { height:2px; margin-top:7px; background:#e9e1dc; overflow:hidden; }
-        .dimension-row-fill { height:100%; background:linear-gradient(90deg,#d7b7a8,#78675e); }
-        .dimension-appendix-note { color:#aa9185; font-size:8px; line-height:1.7; letter-spacing:.05em; }
-        /* 私人色彩杂志：让结论先成为可感知的视觉叙事。 */
-        .archive-report { background:#f7f3ed; }
-        .report-masthead { position:relative; z-index:2; padding:24px 22px 18px; background:#f7f3ed; }
-        .report-masthead h1 { font-size:25px; }
-        .archive-cover { position:relative; padding:0; text-align:left; background:#201a17; }
-        .archive-cover .report-portrait { margin:0; aspect-ratio:4/5.35; border:0; border-radius:0; box-shadow:none; }
-        .archive-cover .report-portrait::after { content:''; position:absolute; inset:0; background:linear-gradient(180deg,rgba(25,18,14,.03) 30%,rgba(24,17,13,.78) 100%); }
-        .archive-cover .report-portrait img { filter:saturate(.88) contrast(.96); }
-        .archive-cover-copy { position:absolute; z-index:2; left:25px; right:25px; bottom:30px; color:#fff; }
-        .archive-cover-copy .archive-eyebrow { color:rgba(255,255,255,.78); }
-        .archive-cover-copy .archive-title { max-width:290px; font-size:35px; line-height:1.3; letter-spacing:.08em; }
-        .archive-cover-copy .archive-copy { max-width:285px; margin-top:10px; color:rgba(255,255,255,.82); font-family:var(--font-serif); font-size:14px; }
-        .report-portrait-copy { position:relative; margin:0; padding:29px 25px 30px 42px; border:0; border-bottom:1px solid #e6ddd6; border-radius:0; background:#f4eee8; color:var(--report-deep); box-shadow:none; }
-        .report-portrait-copy::before { content:''; position:absolute; left:25px; top:30px; bottom:31px; width:1px; background:var(--report-primary); opacity:.72; }
-        .report-portrait-copy-label { color:#9c7c6d; }
-        .report-portrait-copy #res-color-impression { max-width:330px; color:var(--report-deep)!important; font-size:18px; line-height:1.85!important; letter-spacing:.07em!important; }
-        .archive-section { padding:42px 24px; background:#f9f6f1; }
-        .archive-section:nth-of-type(even) { background:#f2ece5; }
-        .archive-title { font-size:27px; line-height:1.4; }
-        .archive-copy { font-size:13px; }
-        .archive-identity { border:0; border-radius:0; padding:25px 0 0; background:transparent; box-shadow:none; }
-        .archive-identity h2 { font-size:34px!important; }
-        .editorial-quote { position:relative; margin:0; padding:33px 25px 35px 42px; border-bottom:1px solid #e6ddd6; background:#faf7f2; color:#54463f; font-family:var(--font-serif); font-size:18px; line-height:1.85; letter-spacing:.04em; }
-        .editorial-quote::before { content:'“'; position:absolute; left:22px; top:27px; color:var(--report-primary); font-family:Georgia,serif; font-size:29px; line-height:1; opacity:.75; }
-        .editorial-media { position:relative; margin:24px -24px 0; aspect-ratio:4/4.8; overflow:hidden; background:#e5d9d0; }
-        .editorial-media img { width:100%; height:100%; object-fit:cover; object-position:center 38%; filter:saturate(.9) contrast(.96); }
-        .editorial-media::after { content:none; }
-        .editorial-figure-caption { padding:14px 0 3px; border-bottom:1px solid #ded4cc; }
-        .editorial-figure-caption small { color:#a08071; font-size:8px; letter-spacing:.22em; }
-        .editorial-figure-caption p { margin:6px 0 0; color:#6f5e55; font-family:var(--font-serif); font-size:12px; line-height:1.75; }
-        .generation-state { position:absolute; z-index:6; top:18px; right:18px; max-width:210px; padding:9px 12px; border:1px solid rgba(255,255,255,.64); border-radius:2px; background:rgba(250,247,242,.9); color:#75645b; font-size:8px; line-height:1.5; letter-spacing:.08em; text-align:center; backdrop-filter:blur(10px); box-shadow:0 8px 22px rgba(52,39,33,.08); }
-        .generation-state[data-status="loading"]::before { content:''; display:inline-block; width:6px; height:6px; margin-right:6px; border-radius:50%; background:var(--report-primary); animation:pulse 1.2s ease-in-out infinite; }
-        .generation-state[data-status="complete"] { display:none; }
-        .generation-state button { display:none; margin-left:5px; border-bottom:1px solid currentColor; color:#76594c; }
-        .generation-state[data-status="failed"] button { display:inline; }
-        .editorial-recipe { display:grid; margin-top:20px; border-top:1px solid #d8ccc3; }
-        .editorial-recipe > div { display:grid; grid-template-columns:65px 1fr; gap:12px; padding:13px 0; border-bottom:1px solid #ded4cc; }
-        .editorial-recipe b { font-size:11px; letter-spacing:.12em; }
-        .editorial-recipe span { color:#806e65; font-size:11px; line-height:1.7; }
-        .beauty-formula { display:grid; grid-template-columns:repeat(3,1fr); align-items:end; gap:16px; margin-top:24px; }
-        .beauty-tone { text-align:center; }
-        .beauty-tone i { display:block; width:52px; height:52px; margin:0 auto 11px; border-radius:48% 52% 46% 54%; box-shadow:inset 0 0 0 1px rgba(55,38,31,.06),0 7px 16px rgba(79,57,47,.12); transform:rotate(-7deg); }
-        .beauty-tone:nth-child(2) i { width:64px; height:64px; opacity:.82; filter:blur(.2px); transform:rotate(8deg); }
-        .beauty-tone:nth-child(3) i { width:47px; height:47px; border-radius:55% 45% 52% 48%; transform:rotate(13deg); }
-        .beauty-tone b { display:block; color:#51443d; font-family:var(--font-serif); font-size:12px; font-weight:500; }
-        .beauty-tone span { display:block; margin-top:4px; color:#9a877d; font-size:8px; line-height:1.5; }
-        .wardrobe-formula { display:grid; grid-template-columns:repeat(3,1fr); gap:13px; margin-top:20px; }
-        .wardrobe-piece { text-align:center; }
-        .wardrobe-piece i { display:block; width:32px; height:32px; margin:0 auto 10px; border-radius:50%; border:1px solid rgba(255,255,255,.9); box-shadow:0 3px 9px rgba(67,49,41,.08); }
-        .wardrobe-piece div { padding:0; }
-        .wardrobe-piece small { color:#a08a7e; font-size:7px; letter-spacing:.16em; }
-        .wardrobe-piece b { display:block; margin-top:5px; color:#554740; font-family:var(--font-serif); font-size:12px; font-weight:500; }
-        .wardrobe-piece span { display:block; margin-top:4px; color:#9a887e; font-size:8px; line-height:1.5; }
-        .color-styling { margin-top:26px; }
-        .color-styling-tabs { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; margin-bottom:10px; }
-        .color-styling-tab { padding:10px 5px; border:1px solid #dfd4cc; background:rgba(255,255,255,.55); color:#8d7970; font-size:9px; letter-spacing:.08em; }
-        .color-styling-tab.active { border-color:#cbb8ad; background:#eee5de; color:#4f413a; box-shadow:inset 0 -2px 0 var(--report-primary); }
-        .color-look { position:relative; overflow:hidden; min-height:0; padding:22px 6px 21px; background:transparent; border-top:1px solid #ded3cb; border-bottom:1px solid #ded3cb; }
-        .color-look-head { position:relative; z-index:2; display:flex; align-items:flex-start; justify-content:space-between; gap:14px; }
-        .color-look h3 { margin:2px 0 4px; font-family:var(--font-serif); font-size:20px; font-weight:500; letter-spacing:.07em; }
-        .color-look-scene { color:#9b877c; font-size:9px; letter-spacing:.18em; }
-        .color-ratio { position:relative; z-index:2; display:flex; height:62px; margin:21px 0 17px; overflow:hidden; border-radius:62px 62px 7px 7px; box-shadow:none; }
-        .color-ratio i { display:flex; align-items:flex-end; justify-content:center; padding-bottom:8px; color:#fff; font-style:normal; font-size:8px; text-shadow:0 1px 5px rgba(0,0,0,.28); }
-        .color-look-formula { position:relative; z-index:2; display:grid; gap:9px; }
-        .color-look-formula p { margin:0; color:#66574f; font-size:11px; line-height:1.8; }
-        .color-look-formula b { color:#a17c68; font-size:9px; font-weight:500; letter-spacing:.12em; }
-        .styling-principle { position:relative; margin-top:14px; padding:19px 14px 19px 28px; border-top:1px solid #ded2ca; border-bottom:1px solid #ded2ca; background:transparent; color:#554740; }
-        .styling-principle::before { content:''; position:absolute; left:15px; top:19px; bottom:19px; width:1px; background:var(--report-primary); opacity:.7; }
-        .styling-principle small { color:#9a7d6e; font-size:8px; letter-spacing:.22em; }
-        .styling-principle p { margin:8px 0 0; font-family:var(--font-serif); font-size:14px; line-height:1.8; }
-        .outfit-board { position:relative; margin:24px -24px 0; min-height:390px; overflow:hidden; background:linear-gradient(145deg,#eee6df 0,#f6f1ec 56%,#e9ddd4 100%); }
-        .outfit-board:not(.has-editorial-image) { min-height:220px; background:
-            linear-gradient(90deg, transparent 0 12%, rgba(201,177,163,.08) 12% 34%, transparent 34% 39%, rgba(178,151,135,.07) 39% 61%, transparent 61% 66%, rgba(156,132,120,.06) 66% 88%, transparent 88%),
-            #f3ece6; }
-        .outfit-board > img { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; object-position:center 42%; filter:saturate(.9) contrast(.97); }
-        .outfit-board:not(.has-editorial-image)::before { content:'专属造型正在制作'; position:absolute; left:50%; top:43%; width:80%; transform:translate(-50%,-50%); color:#9f897d; font-family:var(--font-serif); font-size:13px; line-height:1.8; letter-spacing:.12em; text-align:center; }
-        .outfit-board:not(.has-editorial-image)::after { content:'正在协调妆发、色彩与完整造型'; position:absolute; left:50%; top:57%; width:80%; transform:translate(-50%,-50%); color:#b3a199; font-size:8px; letter-spacing:.1em; text-align:center; }
-        .outfit-board.has-editorial-image::after { content:none; }
-        .archive-guide { margin-top:18px; }
-        .archive-guide article { border:0; border-bottom:1px solid #ddd2ca; border-radius:0; padding:16px 0; background:transparent; }
-        .archive-avoid { padding:18px 0; border-top:1px solid #ded2ca; border-bottom:1px solid #ded2ca; border-radius:0; background:transparent; }
-        .closing-note { position:relative; padding:42px 28px 42px 44px; border-top:1px solid #ded2ca; border-bottom:1px solid #ded2ca; background:#f0e8e1; color:#51433c; text-align:left; }
-        .closing-note::before { content:''; position:absolute; left:28px; top:43px; bottom:43px; width:1px; background:var(--report-primary); opacity:.72; }
-        .closing-note p:first-child { color:#9a7d6e; font-size:8px; letter-spacing:.3em; }
-        .closing-note blockquote { margin:14px 0; font-family:var(--font-serif); font-size:21px; line-height:1.75; }
-        .closing-note p:last-child { color:#8c7970; font-size:10px; line-height:1.8; }
-        .identity-editorial { position:relative; margin:24px 0 0; padding:26px 0 3px 16px; border-top:1px solid #ded2ca; color:#51433c; background:transparent; }
-        .identity-editorial::before { content:''; position:absolute; left:0; top:27px; bottom:3px; width:1px; background:var(--report-primary); opacity:.72; }
-        .identity-editorial #res-season-name { color:#51433c; font-size:36px!important; line-height:1.2; }
-        .identity-editorial #res-season-en,.identity-editorial #res-identity-code { color:#9a877d!important; }
-        .identity-editorial #res-style-keywords span { padding:0!important; border:0; border-radius:0; background:transparent!important; color:#65564e!important; }
-        .identity-assurance { margin-top:17px; padding-top:15px; border-top:1px solid #ded4cc; color:#87756c!important; }
-        .evidence-details { margin:20px 0 0; border-top:1px solid #dfd4cc; border-bottom:1px solid #dfd4cc; }
-        .evidence-details summary { display:flex; justify-content:space-between; padding:16px 0; list-style:none; cursor:pointer; color:#76665e; font-size:10px; letter-spacing:.14em; }
-        .evidence-details summary::after { content:'＋'; color:#ad8e7f; }
-        .evidence-details[open] summary::after { content:'－'; }
-        .evidence-details .archive-identity { padding:4px 0 18px; }
-        .evidence-details #res-progress-bars { margin-top:0; }
-        @media (min-width:700px) { .archive-section { padding:40px 28px; } }
-
-        .app-container:has(#step-activation:not(.hidden)) {
-            height: 78vh;
-            height: 78dvh;
-            min-height: 760px;
-        }
-
-        /* 首屏三段式构图：保持完整产品画布，只压缩内部节奏。 */
-        .analysis-steps { width: min(100%, 280px); margin-top: 28px; display: grid; gap: 13px; }
-        .analysis-step { display: flex; align-items: center; gap: 12px; color: #B3A49C; font-size: 11px; letter-spacing: .08em; transition: color .35s ease, transform .35s ease; }
-        .analysis-step::before { content: ''; width: 7px; height: 7px; border-radius: 50%; border: 1px solid #DABFB4; background: transparent; transition: background .35s ease, box-shadow .35s ease; }
-        .analysis-step.active { color: #4A403A; transform: translateX(4px); }
-        .analysis-step.active::before { background: #DABFB4; box-shadow: 0 0 0 5px rgba(218,191,180,.18); }
-        .analysis-step.complete { color: #8C7A70; }
-        .analysis-step.complete::before { background: #8C7A70; border-color: #8C7A70; }
-
-        /* 2026-08 visual refinement: preserve all shell dimensions and business behavior. */
-        #step-activation .activation-card,
-        #step-upload .upload-card,
-        #step-loading .loading-card {
-            border-color: rgba(226, 216, 210, .72);
-            box-shadow: 0 14px 38px rgba(81, 63, 54, .055);
-        }
-
-        #step-activation .identity-preview {
-            border-color: rgba(222, 211, 204, .62);
-            box-shadow: none;
-        }
-
-        #step-upload .upload-card {
-            padding-top: 30px !important;
-            padding-bottom: 30px !important;
-        }
-
-        #step-upload label[for="dropzone-file"] {
-            border-color: rgba(205, 184, 173, .72);
-            background: #f5f0eb;
-            box-shadow: none;
-        }
-
-        #step-upload .photo-guide-grid {
-            gap: 0;
-            border-top: 1px solid #e7ddd7;
-            border-bottom: 1px solid #e7ddd7;
-        }
-
-        #step-upload .photo-guide-item {
-            padding: 13px 5px 12px;
-            border: 0;
-            border-radius: 0;
-            background: transparent;
-        }
-
-        #step-upload .photo-guide-item + .photo-guide-item {
-            border-left: 1px solid #e7ddd7;
-        }
-
-        #step-upload .photo-guide-mark {
-            width: 4px;
-            height: 4px;
-            box-shadow: none;
-        }
-
-        #step-upload .photo-avoid {
-            margin-top: 12px;
-            color: #927b70;
-            font-size: 9px;
-        }
-
-        #step-upload .privacy-lead,
-        #step-upload .privacy-detail {
-            font-weight: 400;
-        }
-
-        #step-upload #analyzeBtn {
-            box-shadow: 0 12px 28px rgba(61, 52, 47, .13);
-        }
-
-        #step-loading .loading-card {
-            padding-top: 44px;
-            padding-bottom: 36px;
-        }
-
-        #step-loading .loading-preview-status {
-            margin-top: 24px;
-            padding: 7px 13px;
-            background: transparent;
-            box-shadow: none;
-        }
-
-        .archive-report .archive-section {
-            border-top-color: rgba(222, 210, 202, .66);
-        }
-
-        .archive-report .archive-section:nth-of-type(even) {
-            background: #f5efe8;
-        }
-
-        .archive-report .archive-title {
-            max-width: 360px;
-            letter-spacing: .065em;
-        }
-
-        .archive-report .archive-copy {
-            max-width: 390px;
-        }
-
-        .archive-report .evidence-details {
-            margin-top: 24px;
-            border-color: rgba(207, 192, 183, .72);
-        }
-
-        .archive-report .evidence-details summary {
-            color: #8a756b;
-            font-size: 9px;
-        }
-
-        .archive-report .editorial-media,
-        .archive-report .outfit-board.has-editorial-image {
-            box-shadow: 0 18px 42px rgba(76, 56, 47, .08);
-        }
-
-        .archive-report .editorial-media img,
-        .archive-report .outfit-board > img {
-            filter: saturate(.94) contrast(.98);
-        }
-
-        .archive-report .generation-state {
-            top: auto;
-            right: 14px;
-            bottom: 14px;
-            border-radius: 999px;
-            background: rgba(250, 247, 242, .86);
-            box-shadow: 0 6px 20px rgba(52, 39, 33, .06);
-        }
-
-        .archive-report .effect-share-action {
-            margin-top: 12px;
-            border-color: rgba(201, 180, 169, .72);
-            background: transparent;
-            letter-spacing: .12em;
-        }
-
-        .archive-report .outfit-board:not(.has-editorial-image) {
-            background:
-                linear-gradient(90deg, transparent 0 16%, rgba(201,177,163,.055) 16% 36%, transparent 36% 41%, rgba(178,151,135,.05) 41% 61%, transparent 61% 66%, rgba(156,132,120,.045) 66% 86%, transparent 86%),
-                #f5efe9;
-        }
-
-        .archive-report .color-styling-tab {
-            background: transparent;
-        }
-
-        .archive-report .color-styling-tab.active {
-            background: rgba(238, 229, 222, .62);
-            box-shadow: inset 0 -1px 0 var(--report-primary);
-        }
-
-        .archive-report .closing-note {
-            background: #f3ece6;
-        }
-
-        .archive-report .report-footer,
-        #step-result > .mt-6 {
-            box-shadow: none;
-        }
-
-    /* Report polish: typography, professional appendix, and generated-visual states. */
-    .archive-report .archive-section:has(#dimensionDetails) > .archive-title {
-      font-size: 25px;
-      line-height: 1.48;
-      letter-spacing: .015em;
-      word-break: normal;
-      overflow-wrap: break-word;
-      text-wrap: balance;
-    }
-
-    #dimensionDetails {
-      border-color: rgba(132, 102, 86, .18);
-      background: rgba(255, 253, 250, .52);
-      box-shadow: none;
-    }
-
-    #dimensionDetails > summary {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      color: var(--cocoa);
-      font-size: 13px;
-      letter-spacing: .08em;
-    }
-
-    #dimensionDetails > summary::after {
-      float: none;
-      color: var(--peach);
-      font-weight: 400;
-    }
-
-    #dimensionDetails[open] > summary {
-      border-bottom-color: rgba(132, 102, 86, .16);
-    }
-
-    #dimensionDetails .dimension-appendix-note {
-      margin-bottom: 18px;
-      color: rgba(132, 102, 86, .72);
-      font-size: 11px;
-      line-height: 1.7;
-      letter-spacing: .075em;
-    }
-
-    #dimensionDetails .dimension-appendix {
-      gap: 0 26px;
-    }
-
-    #dimensionDetails .dimension-row {
-      padding: 12px 0 13px;
-      border-bottom: 1px solid rgba(132, 102, 86, .14);
-      background: transparent;
-      border-radius: 0;
-    }
-
-    #dimensionDetails .dimension-row:nth-last-child(-n + 2) {
-      border-bottom-color: transparent;
-    }
-
-    #dimensionDetails .dimension-row-title {
-      color: rgba(72, 53, 45, .86);
-      font-size: 12px;
-      letter-spacing: .025em;
-    }
-
-    #dimensionDetails .dimension-row-index {
-      color: var(--peach);
-      font-family: Georgia, "Times New Roman", serif;
-      font-style: italic;
-      letter-spacing: .04em;
-    }
-
-    #dimensionDetails .dimension-row-value {
-      color: var(--cocoa);
-      font-family: Georgia, "Times New Roman", serif;
-      font-size: 18px;
-      font-weight: 400;
-    }
-
-    #dimensionDetails .dimension-row-track {
-      height: 2px;
-      margin-top: 8px;
-      background: rgba(72, 53, 45, .09);
-    }
-
-    #dimensionDetails .dimension-row-fill {
-      background: linear-gradient(90deg, rgba(220, 149, 119, .58), rgba(72, 53, 45, .78));
-    }
-
-    #dimensionDetails .archive-details-body > div:has(#radarChart) {
-      position: relative;
-      margin-top: 28px;
-      padding-top: 38px;
-      border-top: 1px solid rgba(132, 102, 86, .15);
-    }
-
-    #dimensionDetails .archive-details-body > div:has(#radarChart)::before {
-      content: "COLOR RELATIONSHIP";
-      position: absolute;
-      top: 14px;
-      left: 0;
-      right: 0;
-      color: rgba(132, 102, 86, .62);
-      font-size: 9px;
-      line-height: 1;
-      letter-spacing: .24em;
-      text-align: center;
-    }
-
-    #radarChart {
-      opacity: .88;
-      filter: saturate(.82) contrast(.96);
-    }
-
-    .archive-report .editorial-media:has(.generation-state[data-status="loading"]) img,
-    .archive-report .outfit-board:has(.generation-state[data-status="loading"]) img {
-      filter: saturate(.7) brightness(1.04);
-      opacity: .62;
-    }
-
-    .archive-report .generation-state[data-status="loading"] {
-      border-color: rgba(220, 149, 119, .32);
-      background: rgba(255, 252, 248, .88);
-      color: rgba(72, 53, 45, .72);
-      box-shadow: 0 10px 26px rgba(72, 53, 45, .07);
-    }
-
-    .archive-report .generation-state[data-status="failed"] {
-      border-color: rgba(161, 103, 88, .34);
-      background: rgba(255, 250, 246, .94);
-      color: #7b544a;
-      box-shadow: 0 10px 26px rgba(123, 84, 74, .08);
-    }
-
-    .archive-report .generation-state[data-status="failed"] button {
-      border-bottom: 1px solid currentColor;
-      color: inherit;
-      font-weight: 500;
-      letter-spacing: .04em;
-    }
-
-    .archive-report .generation-state[data-status="complete"] {
-      display: none;
-    }
-
-    .archive-report .outfit-board:not(.has-editorial-image) {
-      background:
-        radial-gradient(circle at 50% 32%, rgba(255, 255, 255, .72), transparent 34%),
-        linear-gradient(145deg, rgba(244, 235, 228, .9), rgba(237, 225, 216, .62));
-    }
-
-    .archive-report .effect-share-action {
-      border-color: rgba(132, 102, 86, .24);
-      background: rgba(255, 253, 250, .72);
-      color: rgba(72, 53, 45, .84);
-      box-shadow: none;
-    }
-
-    @media (max-width: 480px) {
-            body { padding: 0 0 env(safe-area-inset-bottom) !important; }
-            .app-container { height: 100vh; height: 100dvh; border-radius: 0; border: none; max-width: 100%; }
-            .app-container:has(#step-activation:not(.hidden)) { height: 100vh; height: 100dvh; min-height: 0; }
-            #step-activation { padding-bottom: 18px; }
-            .identity-preview { margin-left: 4px; margin-right: 4px; }
-            .report-portrait { min-height: 0; aspect-ratio: 4 / 4.25; }
-            .archive-cover .report-portrait { aspect-ratio:4/5.2; }
-            .archive-cover-copy .archive-title { font-size:32px; }
-            .archive-cover-copy .archive-copy { font-size:12px; line-height:1.7; }
-        }
-    </style>
+    <link rel="stylesheet" href="./web/app.css">
+    <script src="./web/vendor/html2canvas.min.js" defer></script>
+    <script src="./web/vendor/chart.umd.js" defer></script>
+    <script src="./web/app.js" defer></script>
 </head>
 <body class="min-h-screen flex items-center justify-center p-3 text-[#4A403A]">
 
@@ -896,9 +17,9 @@
     <header id="appHeader" class="pt-10 pb-4 px-8 text-center shrink-0 z-10 bg-gradient-to-b from-white/50 to-white/0">
         <h1 class="text-[28px] font-serif-custom font-semibold text-[#3D342F] tracking-[0.25em] ml-1">拾色季</h1>
         <div class="flex items-center justify-center mt-2 opacity-60">
-            <div class="h-[1px] w-6 bg-[#8C7A70]"></div>
-            <p class="text-[9px] text-[#8C7A70] tracking-[0.4em] uppercase mx-3 font-medium">Color Season</p>
-            <div class="h-[1px] w-6 bg-[#8C7A70]"></div>
+            <div class="h-[1px] w-6 bg-[#CFC3BC]"></div>
+            <p class="text-[12px] text-[#6F6058] tracking-[0.12em] uppercase mx-3 font-medium">Color Season</p>
+            <div class="h-[1px] w-6 bg-[#CFC3BC]"></div>
         </div>
     </header>
 
@@ -921,41 +42,43 @@
                 </div>
 
                 <div class="relative">
-                    <input type="text" id="activationCode" placeholder="输入专属密钥" class="w-full bg-[#FAF9F7]/90 border border-[#E8E1DC] text-[#4A403A] text-sm rounded-[1rem] focus:ring-2 focus:ring-[#DABFB4]/40 focus:border-[#CDB5AA] block p-4 outline-none transition-all duration-300 text-center tracking-[0.3em] shadow-[inset_0_2px_4px_rgba(0,0,0,0.018)] placeholder:tracking-[0.18em]">
+                    <label for="activationCode" class="sr-only">专属密钥</label>
+                    <input type="text" id="activationCode" placeholder="输入专属密钥" autocomplete="off" inputmode="email" lang="en" maxlength="12" autocapitalize="characters" autocorrect="off" spellcheck="false" enterkeyhint="done" pattern="[A-Za-z0-9]{12}" aria-describedby="activationStatus" aria-invalid="false" class="w-full bg-[#FAF9F7]/90 border border-[#E8E1DC] text-[#4A403A] text-sm rounded-[1rem] block p-4 transition-all duration-300 text-center tracking-[0.18em] shadow-[inset_0_2px_4px_rgba(0,0,0,0.018)] placeholder:tracking-[0.08em]">
                 </div>
 
-                <div class="flex justify-center items-center mt-3 opacity-70">
-                    <svg class="w-3.5 h-3.5 text-[#BFA89F] mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    <span class="text-[10px] text-[#74665E] tracking-[0.1em]">专属密钥由拾色季店铺发放</span>
+                <div class="activation-meta mt-3">
+                    <a id="activationHelp" href="usage-rules.html" class="activation-rules-link">获取与使用规则</a>
+                    <p id="activationStatus" class="activation-status" role="status" aria-live="polite" hidden></p>
                 </div>
 
-                <button onclick="verifyCode()" class="w-full text-white bg-[#3D342F] hover:bg-[#2B2420] shadow-[0_7px_18px_rgba(74,62,55,0.16)] font-medium rounded-[1rem] text-[14px] px-5 py-4 text-center mt-6 transition-all duration-300 tracking-[0.22em]">
+                <button type="button" id="activationSubmit" onclick="verifyCode()" disabled aria-disabled="true" class="activation-submit w-full text-white shadow-[0_7px_18px_rgba(74,62,55,0.16)] font-medium rounded-[1rem] text-[14px] px-5 py-4 text-center mt-6 transition-all duration-300 tracking-[0.14em]">
                     开启我的色彩档案
                 </button>
-                <p class="text-center text-[10px] text-[#7F6F67] tracking-[0.14em] mt-4">本命色卡 · 妆容建议 · 色彩穿搭</p>
 
             </div>
 
-            <div class="identity-preview" aria-label="个人色彩档案效果预览">
-                <div class="relative z-[1]">
+            <div class="identity-preview" aria-label="个人色彩档案示例，包含色彩身份、本命色谱、妆容建议与穿搭方案">
+                <img class="preview-cover-image" src="web/assets/color-archive-cover-v3-candidate.jpg" alt="" width="1200" height="800" loading="eager" decoding="async" fetchpriority="high" aria-hidden="true">
+                <div class="preview-cover-content">
                     <div class="identity-preview-kicker">
-                        <span>私人色谱笺</span>
-                        <span class="identity-preview-id">十六色型</span>
+                        <span>你的专属档案将呈现</span>
                     </div>
-                    <div class="flex items-end justify-between gap-4">
-                        <div>
-                            <p class="font-serif-custom text-[20px] tracking-[0.14em]">你的专属色谱</p>
-                        </div>
+                    <div class="preview-heading">
+                        <p class="preview-title">暖柔型</p>
+                        <span class="preview-sample-mark">示例结论</span>
                     </div>
                     <div class="preview-rule"></div>
-                    <div class="flex items-end justify-between gap-4">
+                    <div class="preview-palette-zone">
                         <div class="preview-palette" aria-hidden="true">
-                            <span style="background:#D9947B"></span>
-                            <span style="background:#CBA28E"></span>
-                            <span style="background:#A68769"></span>
-                            <span style="background:#756772"></span>
+                            <span style="--swatch:#E7D5C8"></span>
+                            <span style="--swatch:#C99A8C"></span>
+                            <span style="--swatch:#B89A7D"></span>
+                            <span style="--swatch:#8C8A78"></span>
+                            <span style="--swatch:#AD7C60"></span>
                         </div>
-                        <p class="preview-deliverables">色卡 · 妆容 · 穿搭</p>
+                    </div>
+                    <div class="preview-archive-notes">
+                        <p class="preview-metrics">本命色谱 <span>·</span> 妆容建议 <span>·</span> 穿搭方案</p>
                     </div>
                 </div>
             </div>
@@ -972,14 +95,14 @@
                 <div class="mb-6">
                     <label for="dropzone-file" class="flex flex-col items-center justify-center w-full h-48 border border-[#DED1CA] border-dashed rounded-[1.5rem] cursor-pointer bg-[#FBF8F5] hover:bg-[#F6EFEA] transition-all duration-300 group relative overflow-hidden shadow-sm">
                         <div class="absolute inset-0 z-10 bg-black/5 mix-blend-multiply"></div>
-                        <img id="imagePreview" src="" class="absolute inset-0 w-full h-full object-cover hidden z-0 opacity-80 mix-blend-luminosity grayscale-[20%]" alt="Preview">
+                        <img id="imagePreview" class="absolute inset-0 w-full h-full object-cover hidden z-0 opacity-80 mix-blend-luminosity grayscale-[20%]" alt="已选择的正面照片预览">
                         
-                        <div class="flex flex-col items-center justify-center pt-5 pb-6 relative z-20 transition-transform group-hover:scale-105">
-                            <div class="w-12 h-12 bg-white backdrop-blur-sm rounded-full flex items-center justify-center shadow-[0_5px_14px_rgba(91,70,60,0.13)] mb-3">
+                        <div class="upload-choice flex flex-col items-center justify-center pt-5 pb-6 relative z-20 transition-transform group-hover:scale-105">
+                            <div class="upload-choice-icon w-12 h-12 bg-white backdrop-blur-sm rounded-full flex items-center justify-center shadow-[0_5px_14px_rgba(91,70,60,0.13)] mb-3">
                                 <svg class="w-5 h-5 text-[#C58F79]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                             </div>
-                            <p class="text-[14px] text-[#4A403A] tracking-[0.16em] mb-1 font-medium shadow-white drop-shadow-md" id="uploadText">选择一张正面照片</p>
-                            <p class="text-[9px] text-[#8C7A70] tracking-[0.12em] font-medium bg-white/75 px-2.5 py-1 rounded-full mt-1">拍摄或从相册选取</p>
+                            <p class="text-[14px] text-[#4A403A] tracking-[0.16em] mb-1 font-medium shadow-white drop-shadow-md" id="uploadText" role="status" aria-live="polite">选择一张正面照片</p>
+                            <p class="text-[12px] text-[#6F6058] tracking-[0.04em] font-medium bg-white/85 px-2.5 py-1 rounded-[8px] mt-1">拍摄或从相册选取</p>
                         </div>
                         <input id="dropzone-file" type="file" accept="image/jpeg,image/png,image/webp" class="hidden" onchange="handleImageUpload(event)" />
                     </label>
@@ -999,19 +122,19 @@
                     </button>
                 </div>
 
-                <div class="mt-6 rounded-[1rem] border border-[#E9DFDA] bg-[#FCFAF8] px-4 py-3.5">
-                    <p class="text-[10px] leading-[1.8]">
-                        <span class="privacy-lead">照片仅用于本次云端分析及专属妆发、穿搭视觉生成，不在浏览器中长期保存。</span>
-                        <span class="privacy-detail">生成结果会保留个人辨识度，并重新设计妆容、发型与整体造型。</span>
-                    </p>
-                    <label class="mt-3 flex items-center gap-2 text-[10px] text-[#665A53] leading-relaxed cursor-pointer">
-                        <input id="privacyConsent" type="checkbox" class="privacy-check h-3.5 w-3.5">
-                        <span>我已阅读并同意</span>
-                        <button type="button" onclick="event.preventDefault(); showPrivacyModal()" class="border-b border-[#8C7A70]/40 pb-[1px]">隐私政策</button>
-                    </label>
+                <div class="privacy-summary mt-6 rounded-[12px] border border-[#E7DCD6] bg-[#FCF9F7] px-4 py-4">
+                    <p class="privacy-lead">照片仅用于本次分析和你授权的造型图</p>
+                    <p class="privacy-detail">原图私有临时处理，任务结束或最迟 20 分钟自动删除。</p>
+                    <div class="privacy-consent-row flex items-start gap-2 text-[14px] text-[#4A403A] leading-relaxed">
+                        <label class="flex items-start gap-2 cursor-pointer">
+                            <input id="privacyConsent" type="checkbox" class="privacy-check h-3.5 w-3.5">
+                            <span>我已阅读并同意</span>
+                        </label>
+                        <button type="button" onclick="showPrivacyModal()" class="privacy-policy-link underline">隐私政策</button>
+                    </div>
                 </div>
                 <div id="photoQuality" class="photo-quality hidden" role="status" aria-live="polite"></div>
-                <button id="analyzeBtn" onclick="startAnalysis()" disabled class="w-full text-white bg-[#3D342F] disabled:opacity-40 disabled:cursor-not-allowed font-medium rounded-[1rem] text-[15px] px-5 py-4 text-center mt-7 transition-all duration-300 tracking-[0.2em]">
+                <button id="analyzeBtn" onclick="startAnalysis()" disabled aria-disabled="true" class="w-full text-white bg-[#3D342F] disabled:opacity-40 disabled:cursor-not-allowed font-medium rounded-[1rem] text-[15px] px-5 py-4 text-center mt-7 transition-all duration-300 tracking-[0.2em]">
                     开始生成我的色彩档案 · 使用 1 次
                 </button>
             </div>
@@ -1025,16 +148,21 @@
                     <div class="loader-ring"></div><div class="loader-ring"></div><div class="loader-ring"></div>
                     <div class="loader-core"><span class="text-[17px] font-serif-custom font-medium tracking-[0.18em] ml-[0.18em]">拾色</span></div>
                 </div>
-                <h3 class="text-[15px] font-serif-custom font-medium text-[#4A403A] tracking-[0.1em] transition-opacity duration-200" id="loadingText">正在读取你与颜色之间的关系</h3>
-                <div class="analysis-steps mx-auto text-left" id="analysisSteps">
-                    <div class="analysis-step active">读取面部色彩特征</div>
+                <h3 class="text-[15px] font-serif-custom font-medium text-[#4A403A] tracking-[0.06em] transition-opacity duration-200" id="loadingText" role="status" aria-live="polite" aria-atomic="true">正在提交分析任务</h3>
+                <div class="analysis-steps mx-auto text-left" id="analysisSteps" aria-label="分析进度">
+                    <div class="analysis-step active" aria-current="step">提交并检查照片</div>
                     <div class="analysis-step">建立个人色彩倾向</div>
                     <div class="analysis-step">生成色卡、妆容与穿搭建议</div>
                 </div>
-                <p class="loading-note">请保持页面开启<br>完成后，你的个人色彩档案将自动呈现</p>
+                <div class="analysis-meta">
+                    <p>通常需要 1-3 分钟，繁忙时最长约 17 分钟。</p>
+                    <p id="analysisElapsed">已等待 0:00</p>
+                    <p>成功生成有效报告后扣 1 次；照片不合格或分析失败会返还。</p>
+                </div>
+                <p class="loading-note">可以留在本页等待。取消只停止当前页面等待，已提交任务可再次继续查询。</p>
                 <p id="loadingPreviewStatus" class="loading-preview-status hidden">本地示例预览 · 不消耗次数</p>
-                <button id="analysisRecoveryBtn" type="button" onclick="cancelAnalysis()" class="hidden mt-6 mx-auto text-[11px] tracking-[0.12em] text-[#8C7A70] border-b border-[#CDB6AB]/60 pb-1">
-                    等待较久？返回重新尝试
+                <button id="analysisRecoveryBtn" type="button" onclick="cancelAnalysis()" class="analysis-cancel mt-4 mx-auto px-3">
+                    取消等待并返回照片
                 </button>
             </div>
         </div>
@@ -1046,1429 +174,190 @@
                     <div class="report-masthead-rule">Color Season</div>
                 </div>
                 <header class="archive-cover fade-in stagger-1">
-                    <div class="report-portrait">
-                        <img id="userAvatarResult" src="" alt="用户上传的分析照片" class="hidden" />
+                    <div class="archive-cover-main">
+                        <figure class="report-portrait">
+                            <img id="userAvatarResult" alt="本次色彩分析使用的照片" class="hidden" />
+                            <figcaption>本次分析照片</figcaption>
+                        </figure>
+                        <div class="archive-cover-copy">
+                            <p class="archive-eyebrow">PERSONAL COLOR FILE</p>
+                            <h2 id="res-season-name" class="font-serif-custom">生成中</h2>
+                            <p id="res-season-en">...</p>
+                            <p id="res-identity-code" class="font-mono"></p>
+                        </div>
                     </div>
-                    <div class="archive-cover-copy">
-                        <p class="archive-eyebrow">PRIVATE ISSUE · YOUR COLOR EDIT</p>
-                        <h2 class="archive-title">你的色彩，<br>正在显现</h2>
-                        <p class="archive-copy">不是重新定义你，而是看见原本属于你的色彩。</p>
+                    <div class="archive-cover-summary">
+                        <p class="report-portrait-copy-label">YOUR COLOR IMPRESSION</p>
+                        <p id="res-color-impression"></p>
+                        <div id="res-style-keywords" class="archive-keywords"></div>
                     </div>
                 </header>
-                <div class="report-portrait-copy">
-                    <p class="report-portrait-copy-label">YOUR COLOR IMPRESSION</p>
-                    <p id="res-color-impression" class="text-[19px] font-serif-custom text-[#4A403A] tracking-[0.1em] leading-[1.65]"></p>
-                </div>
 
-                <blockquote class="editorial-quote">“你的美不需要被重新塑造，<br>只需要被正确地看见。”</blockquote>
+                <nav class="report-index" aria-label="色彩档案目录">
+                    <a href="#report-palette">色卡</a>
+                    <a href="#report-identity">身份</a>
+                    <a href="#report-styling">配色</a>
+                    <a href="#report-beauty">妆发</a>
+                    <a href="#report-outfit">穿搭</a>
+                    <a href="#report-advice">建议</a>
+                </nav>
 
-                <section class="archive-section fade-in stagger-2">
-                    <p class="archive-eyebrow">01 · 色彩身份</p>
-                    <h2 class="archive-title">你的色彩身份</h2>
-                    <p id="res-desc" class="archive-copy">生成中...</p>
-                    <div class="identity-editorial">
-                        <h2 id="res-season-name" class="text-[27px] font-serif-custom tracking-[0.13em]">生成中</h2>
-                        <p id="res-season-en" class="text-[10px] text-[#A07D6D] tracking-[0.18em] mt-1.5 uppercase">...</p>
-                        <p id="res-identity-code" class="text-[8px] text-[#BFA89F] font-mono tracking-[0.18em] mt-1.5"></p>
-                        <div id="res-style-keywords" class="flex flex-wrap gap-2 mt-4"></div>
-                        <p id="res-identity-assessment" class="identity-assurance text-[10px] leading-[1.8]"></p>
-                    </div>
-                    <details class="evidence-details"><summary>查看专业色彩依据</summary><div class="archive-identity"><div id="res-progress-bars"></div><div id="res-hex-extraction" class="archive-evidence"></div></div></details>
-                </section>
-
-                <section class="archive-section fade-in stagger-3">
-                    <p class="archive-eyebrow">02 · 专属色谱</p>
+                <section id="report-palette" class="archive-section fade-in stagger-3">
                     <h2 class="archive-title">最衬你的本命色</h2>
                     <p class="archive-copy">靠近面部时优先使用前几组颜色；较深的颜色适合包袋、鞋履与轮廓线。</p>
                     <div id="res-best-colors" class="mt-6"></div>
                 </section>
 
-                <section class="archive-section fade-in stagger-3">
-                    <p class="archive-eyebrow">03 · 专属配色</p>
+                <section id="report-identity" class="archive-section fade-in stagger-2">
+                    <h2 class="archive-title">你的色彩身份</h2>
+                    <p id="res-desc" class="archive-copy">生成中...</p>
+                    <p id="res-identity-assessment" class="identity-assurance text-[12px] leading-[1.8]"></p>
+                    <details class="evidence-details"><summary>查看专业色彩依据</summary><div class="archive-identity"><div id="res-progress-bars"></div><div id="res-hex-extraction" class="archive-evidence"></div></div></details>
+                </section>
+
+                <section id="report-styling" class="archive-section fade-in stagger-3">
                     <h2 class="archive-title">你的三组专属配色</h2>
                     <p class="archive-copy">为日常、社交与重要时刻分别安排颜色比例。选择一个场景，查看属于你的搭配关系。</p>
                     <div id="res-color-styling" class="color-styling"></div>
                     <div class="styling-principle"><small>配色秩序</small><p>主色安静地占据大面积，辅助色建立层次，点睛色与金属色只在细节留下记忆。</p></div>
                 </section>
 
-                <section class="archive-section fade-in stagger-4">
-                    <p class="archive-eyebrow">04 · 专属妆发</p>
+                <section id="report-beauty" class="archive-section fade-in stagger-4">
                     <h2 class="archive-title">你的本命妆容</h2>
                     <p id="res-makeup-editorial" class="archive-copy">让肤色、唇色与眼神处在同一种光线里。</p>
+                    <div id="res-beauty-formula" class="beauty-formula" aria-label="专属妆容配色"></div>
+                    <div class="editorial-recipe"><div><b>妆容方向</b><span id="res-makeup-recipe">...</span></div><div><b>使用原则</b><span>以推荐色作为选色参考，保留真实肤质与个人特征。</span></div></div>
                     <div class="editorial-media">
-                        <img id="makeupEditorialAvatar" src="" alt="基于本次照片的妆容色彩灵感">
+                        <img id="makeupEditorialAvatar" alt="基于本次照片的妆容色彩灵感" class="hidden">
                         <div id="beautyGenerationState" class="generation-state hidden" data-status="idle"><span>正在设计专属妆发</span><button type="button" onclick="retryPersonalizedImage('beauty')">重试</button></div>
                     </div>
-                    <div class="editorial-figure-caption"><small id="beautyCaptionKicker">原始自拍 · 色彩基准</small><p id="beautyCaptionText">这张照片用于确认真实的你，专属妆发完成后会自动替换。</p></div>
-                    <button id="beautyEffectSaveBtn" type="button" class="effect-share-action hidden" onclick="saveEffectImage('beauty')">保存我的妆发效果图</button>
-                    <div class="editorial-recipe"><div><b>妆容方向</b><span id="res-makeup-recipe">...</span></div><div><b>使用原则</b><span>以推荐色作为选色参考，保留真实肤质与个人特征。</span></div></div>
-                    <div id="res-beauty-formula" class="beauty-formula" aria-label="专属妆容配色"></div>
+                    <div class="editorial-figure-footer"><div class="editorial-figure-caption"><small id="beautyCaptionKicker">原始自拍 · 色彩基准</small><p id="beautyCaptionText">这张照片用于确认真实的你，专属妆发完成后会自动替换。</p></div><button id="beautyEffectSaveBtn" type="button" class="effect-share-action hidden" aria-label="保存这张妆发效果图" onclick="saveEffectImage('beauty')"><span class="effect-save-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4v10m0 0 4-4m-4 4-4-4M5 18h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="effect-save-label">保存</span></button></div>
                 </section>
 
-                <section class="archive-section fade-in stagger-4">
-                    <p class="archive-eyebrow">05 · 专属穿搭</p>
+                <section id="report-outfit" class="archive-section fade-in stagger-4">
                     <h2 class="archive-title">你的第一套色彩穿搭</h2>
                     <p id="res-outfit-editorial" class="archive-copy">把最衬你的颜色，穿进真实生活。</p>
+                    <div class="wardrobe-intro" aria-hidden="true"><small>COLOR COMPOSITION</small><span>从靠近面部的颜色开始，建立整套穿搭。</span></div>
+                    <div id="res-wardrobe-formula" class="wardrobe-formula" aria-label="专属穿搭配色拆解"></div>
                     <div id="outfitEditorialBoard" class="outfit-board" aria-label="由本次推荐色生成的穿搭配色造型板">
-                        <img id="outfitEditorialImage" src="" alt="专属色彩穿搭编辑灵感" class="hidden">
+                        <img id="outfitEditorialImage" alt="专属色彩穿搭编辑灵感" class="hidden">
                         <div id="outfitGenerationState" class="generation-state hidden" data-status="idle"><span>正在设计完整穿搭</span><button type="button" onclick="retryPersonalizedImage('outfit')">重试</button></div>
                     </div>
-                    <div class="editorial-figure-caption"><small id="outfitCaptionKicker">拾色季 · 穿搭设计生成中</small><p id="res-outfit-formula">...</p></div>
-                    <button id="outfitEffectSaveBtn" type="button" class="effect-share-action hidden" onclick="saveEffectImage('outfit')">保存我的穿搭效果图</button>
-                    <div id="res-wardrobe-formula" class="wardrobe-formula" aria-label="专属穿搭配色拆解"></div>
+                    <div class="editorial-figure-footer"><div class="editorial-figure-caption"><small id="outfitCaptionKicker">拾色季 · 穿搭设计生成中</small><p id="res-outfit-formula">...</p></div><button id="outfitEffectSaveBtn" type="button" class="effect-share-action hidden" aria-label="保存这张穿搭效果图" onclick="saveEffectImage('outfit')"><span class="effect-save-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4v10m0 0 4-4m-4 4-4-4M5 18h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="effect-save-label">保存</span></button></div>
                     <div class="archive-guide">
-                        <article><h4>饰品与质感</h4><p id="res-accessory">...</p></article>
-                        <article><h4>风格意象</h4><p id="res-style-reference">...</p></article>
+                        <article><h3>饰品与质感</h3><p id="res-accessory">...</p></article>
+                        <article><h3>风格意象</h3><p id="res-style-reference">...</p></article>
                     </div>
                     <p id="res-makeup" class="hidden">...</p><p id="res-outfit" class="hidden">...</p>
                 </section>
 
-                <section class="archive-section fade-in stagger-4">
-                    <p class="archive-eyebrow">06 · 温柔建议</p>
+                <section id="report-advice" class="archive-section fade-in stagger-4">
                     <h2 class="archive-title">不是禁忌，只是有更好的选择</h2>
-                    <div class="archive-avoid"><p id="res-avoid" class="text-[11px] text-[#765F56] leading-[1.9]">...</p></div>
-                    <details class="archive-details" id="dimensionDetails" ontoggle="resizeReportChart()">
-                        <summary>查看拾色季 16 维观察</summary>
+                    <div class="archive-avoid">
+                        <p class="archive-avoid-label">靠近面部时，建议降低出现面积</p>
+                        <div id="res-avoid" class="archive-avoid-colors">...</div>
+                        <p class="archive-avoid-note">喜欢这些颜色也无需舍弃。可以留给下装、小面积配饰，或用本命色作过渡。</p>
+                    </div>
+                    <details class="archive-details" id="dimensionDetails">
+                        <summary><span><b>拾色季 16 维观察</b><small>专业附录 · 点击展开</small></span></summary>
                         <div class="archive-details-body">
-                            <p class="dimension-appendix-note">专业附录 · 基于本次照片条件生成，仅作个人色彩参考</p>
+                            <p class="dimension-appendix-note">基于本次照片条件生成，仅作个人色彩参考。分值表示特征倾向的明显程度，不代表审美高低。</p>
+                            <div class="dimension-scale-note" aria-label="分值范围从 0 到 100"><span>0</span><p>倾向较弱</p><i aria-hidden="true"></i><p>倾向较明显</p><span>100</span></div>
                             <div id="res-dimensions" class="dimension-appendix"></div>
-                            <div class="relative w-full h-[170px] mt-7"><canvas id="radarChart"></canvas></div>
+                            <div class="dimension-chart"><canvas id="radarChart"></canvas></div>
                         </div>
                     </details>
                 </section>
 
-                <div class="closing-note"><p>A NOTE FOR YOU</p><blockquote>愿你每一次照镜子，<br>都更接近喜欢的自己。</blockquote><p>这不是一份为你贴标签的报告，而是一本可以反复打开的私人色彩杂志。</p></div>
-
-                <div class="report-footer mt-4">
-                    <p class="text-[10px] tracking-[0.3em] text-[#8C7A70] mb-2">—— 拾色季 · 个人色彩档案 ——</p>
-                    <p id="archive-no" class="font-mono text-[9px] text-[#BFA89F] opacity-80 tracking-widest"></p>
-                </div>
+                <section class="closing-note" aria-labelledby="closing-note-title">
+                    <div id="res-closing-colors" class="closing-palette" aria-label="你的四组核心本命色"></div>
+                    <blockquote id="closing-note-title">愿你每一次照镜子，<br>都更接近喜欢的自己。</blockquote>
+                    <p class="closing-copy">色彩不是新的标准，而是一种更轻松地看见自己的方式。把本命色放在离脸最近的位置，其余颜色，依然可以自由地留在生活里。</p>
+                    <footer class="report-footer">
+                        <div class="report-signature"><b>拾色季</b><span>个人色彩档案</span></div>
+                        <p id="archive-no" class="font-mono"></p>
+                    </footer>
+                </section>
             </div>
 
-            <div class="mt-6 mb-8 text-center px-1 fade-in stagger-4">
-                <button id="saveBtn" onclick="saveAsImage()" class="w-full text-[#4A403A] bg-white/70 border border-[#DCCFC8] font-medium rounded-[0.5rem] text-[13px] px-5 py-3.5 text-center transition-all duration-300 tracking-[0.16em] mt-3">保存完整长图报告</button>
-                <button onclick="resetTest()" class="w-full text-[#4A403A] bg-transparent border border-[#4A403A]/30 hover:bg-[#F4EFEA] font-medium rounded-[0.5rem] text-[15px] px-5 py-4 text-center transition-all duration-300 tracking-[0.2em] mt-4">
-                    帮闺蜜也测一测
+            <section class="report-actions fade-in stagger-4" aria-label="保存与继续">
+                <p class="report-action-note">保存后，可以随时查看你的本命色、妆容与穿搭建议。</p>
+                <button type="button" id="saveBtn" class="report-action report-action-primary" onclick="saveAsImage()">
+                    <span class="report-action-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4v10m0 0 4-4m-4 4-4-4M5 18h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+                    <span class="report-action-label">保存完整色彩档案</span>
                 </button>
-                <p class="text-[10px] text-[#C5B8B2] mt-5 tracking-widest font-serif-custom opacity-70">拾色季 COLOR ANALYSIS © 2026</p>
-            </div>
+                <button type="button" class="report-action-secondary" onclick="resetTest()">为朋友开启一份新档案</button>
+                <p class="report-copyright">拾色季 COLOR ANALYSIS © 2026</p>
+            </section>
         </div>
     </div>
 </div>
 
-<div id="customAlert" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm hidden transition-opacity duration-300 opacity-0">
-    <div class="bg-white rounded-[1.5rem] shadow-2xl w-[80%] max-w-sm overflow-hidden transform transition-transform duration-300 scale-95">
+<div id="customAlert" class="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 backdrop-blur-sm hidden transition-opacity duration-300 opacity-0" role="alertdialog" aria-modal="true" aria-labelledby="alertTitle" aria-describedby="alertMessage">
+    <div class="modal-panel bg-white rounded-[1.5rem] shadow-2xl w-[80%] max-w-sm overflow-hidden transform transition-transform duration-300 scale-95">
         <div class="p-7 text-center">
             <div class="w-12 h-12 bg-[#F4EFEA] rounded-full flex items-center justify-center mx-auto mb-4">
                 <svg class="w-6 h-6 text-[#DABFB4]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
             </div>
-            <p id="alertMessage" class="text-[#4A403A] text-[15px] font-medium leading-relaxed tracking-wider"></p>
+            <h2 id="alertTitle" class="text-[16px] font-semibold text-[#3D342F] mb-2" tabindex="-1">需要处理</h2>
+            <p id="alertMessage" class="text-[#4A403A] text-[15px] font-medium leading-relaxed tracking-normal"></p>
         </div>
         <div class="border-t border-[#F4EFEA]">
-            <button onclick="closeCustomAlert()" class="w-full py-4 text-[#8C7A70] text-[15px] tracking-widest font-semibold hover:bg-[#F9F8F6] transition-colors">知道了</button>
+            <button onclick="closeCustomAlert()" class="modal-action w-full py-4 text-[#755044] text-[15px] tracking-normal font-semibold hover:bg-[#FBF5F1] transition-colors">知道了</button>
         </div>
     </div>
 </div>
 
-<div id="toastContainer" class="fixed bottom-[6%] left-1/2 z-[110] flex flex-col-reverse items-center pointer-events-none"></div>
+<div id="toastContainer" class="fixed bottom-[6%] left-1/2 z-[110] flex flex-col-reverse items-center pointer-events-none" role="status" aria-live="polite" aria-atomic="true"></div>
 
-<div id="saveOverlay" class="fixed inset-0 z-[200] bg-black/85 backdrop-blur-xl hidden flex-col items-center justify-center p-4 sm:p-6 opacity-0 transition-opacity duration-300">
-    <div class="w-full max-w-md relative flex flex-col items-center">
-        <div class="w-full max-h-[75vh] overflow-y-auto rounded-[1.5rem] shadow-[0_20px_60px_rgba(0,0,0,0.5)] mb-6 scrollbar-hide">
-            <img id="saveOverlayImg" class="w-full h-auto block transform scale-95 transition-transform duration-500 origin-top" alt="您的报告">
+<div id="saveOverlay" class="save-overlay hidden opacity-0 transition-opacity duration-300" role="dialog" aria-modal="true" aria-labelledby="saveOverlayTitle" aria-describedby="saveOverlayDescription">
+    <div class="save-overlay-shell transform scale-95 transition-transform duration-300">
+        <header class="save-overlay-header">
+            <h2 id="saveOverlayTitle" tabindex="-1">图片已经准备好</h2>
+            <p id="saveOverlayDescription">长按图片可直接保存，或使用系统分享。</p>
+        </header>
+        <div class="save-overlay-preview scrollbar-hide">
+            <img id="saveOverlayImg" class="w-full h-auto block transform scale-95 transition-transform duration-500 origin-top" alt="已生成的拾色季图片">
         </div>
-        <div class="flex flex-col items-center gap-4">
-            <p class="text-[#DABFB4] tracking-[0.25em] text-[12px] sm:text-[13px] font-medium animate-pulse flex items-center">
-                <svg class="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                请长按上方图片保存到相册
-            </p>
-            <button onclick="closeSaveOverlay()" class="text-white/60 text-[12px] tracking-[0.2em] border border-white/20 rounded-full px-8 py-2.5 hover:bg-white/10 transition-colors backdrop-blur-sm">返回</button>
+        <div class="save-overlay-actions">
+            <button type="button" id="shareGeneratedBtn" class="save-overlay-primary" onclick="shareGeneratedImage()">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 16V4m0 0 4 4m-4-4L8 8M5 12v7h14v-7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span id="shareGeneratedLabel">保存或分享</span>
+            </button>
+            <button type="button" class="save-overlay-secondary" onclick="closeSaveOverlay()">返回报告</button>
         </div>
     </div>
 </div>
 
-<div id="privacyModal" class="fixed inset-0 z-[150] flex items-center justify-center bg-black/40 backdrop-blur-sm hidden transition-opacity duration-300 opacity-0 p-4">
-    <div class="bg-white rounded-[1.5rem] shadow-2xl w-full max-w-sm overflow-hidden transform transition-transform duration-300 scale-95 flex flex-col max-h-[80vh]">
+<div id="privacyModal" class="fixed inset-0 z-[150] flex items-center justify-center bg-black/40 backdrop-blur-sm hidden transition-opacity duration-300 opacity-0 p-4" role="dialog" aria-modal="true" aria-labelledby="privacyTitle" aria-describedby="privacyIntro">
+    <div class="modal-panel bg-white rounded-[1.5rem] shadow-2xl w-full max-w-sm overflow-hidden transform transition-transform duration-300 scale-95 flex flex-col max-h-[80vh]">
         <div class="p-6 pb-4 border-b border-[#F4EFEA] flex justify-between items-center shrink-0">
-            <h3 class="text-[15px] font-serif-custom font-medium text-[#3D342F] tracking-widest">隐私政策与免责声明</h3>
-            <button onclick="closePrivacyModal()" class="text-[#8C7A70] p-1 hover:text-[#3D342F] transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            <h2 id="privacyTitle" class="text-[16px] font-medium text-[#3D342F] tracking-normal" tabindex="-1">隐私政策与免责声明</h2>
+            <button onclick="closePrivacyModal()" aria-label="关闭隐私政策" class="privacy-close text-[#6F6058] p-2 hover:text-[#3D342F] transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
         </div>
-        <div class="p-6 overflow-y-auto text-[12px] text-[#6B5D55] leading-relaxed tracking-wide space-y-4 scrollbar-hide">
-            <p>欢迎使用「拾色季」个人色彩档案服务。为保障您的权益，请在开始前了解：</p>
+        <div class="modal-copy p-6 overflow-y-auto text-[14px] text-[#6F6058] leading-relaxed tracking-normal space-y-4 scrollbar-hide">
+            <p id="privacyIntro">欢迎使用「拾色季」个人色彩档案服务。为保障您的权益，请在开始前了解：</p>
             <div>
-                <h4 class="font-medium text-[#4A403A] mb-1.5 tracking-widest">1. 数据隐私与安全</h4>
-                <p>本系统仅在您主动上传并确认后获取图像。照片会经由本产品云端接口加密传输至阿里云百炼视觉与图像编辑模型，用于完成本次色彩分析，以及基于本人身份特征生成专属妆发和穿搭视觉。产品前端不会将照片写入长期浏览器存储；云服务侧的数据处理与保留以正式隐私政策及服务配置为准。</p>
+                <h3 class="font-medium text-[#4A403A] mb-1.5 tracking-widest">1. 数据隐私与安全</h3>
+                <p>仅在您主动上传并同意后，照片才会经拾色季服务端传输至阿里云百炼视觉与图像编辑服务，用于本次色彩分析和你选择的妆发、穿搭效果生成。拾色季不会把原图写入浏览器长期存储。</p>
+                <p class="mt-2">原图会进入私有临时存储，任务完成或失败后自动删除；超时任务最长保留 20 分钟后进入清理。取消页面等待不会立即终止已提交的云端任务，但不会重复提交或重复扣次。</p>
             </div>
             <div>
-                <h4 class="font-medium text-[#4A403A] mb-1.5 tracking-widest">2. 最小必要原则</h4>
+                <h3 class="font-medium text-[#4A403A] mb-1.5 tracking-widest">2. 最小必要原则</h3>
                 <p>本系统为极简在线工具，<b>不强制收集手机号、微信号、位置</b>等与色彩诊断无关的数据。</p>
             </div>
             <div>
-                <h4 class="font-medium text-[#4A403A] mb-1.5 tracking-widest">3. 免责声明</h4>
+                <h3 class="font-medium text-[#4A403A] mb-1.5 tracking-widest">3. 免责声明</h3>
                 <p>报告基于 16 型面部算法得出。内容仅供形象美学参考，<b>不具有医疗、皮肤科诊断或法律效力</b>。由于设备色差，结果可能存在微小偏差。</p>
             </div>
-            <p class="pt-3 mt-2 text-[10px] text-[#BFA89F] tracking-widest border-t border-[#F4EFEA]">只有主动勾选同意后才会进入照片分析流程。您可以随时关闭页面终止使用。</p>
+            <p class="pt-3 mt-2 text-[12px] text-[#6F6058] tracking-normal border-t border-[#E7DCD6]">只有主动同意后才会提交照片。生成效果图会进入私有存储并通过短时签名链接返回；第三方服务的处理遵循已配置的云服务策略。</p>
+            <a class="privacy-full-link" href="privacy-policy.html#deletion" target="_blank" rel="noopener">查看完整隐私说明与删除申请<span class="sr-only">（新窗口打开）</span></a>
         </div>
-        <div class="p-4 shrink-0 bg-[#F9F8F6]">
-            <button onclick="closePrivacyModal()" class="w-full py-3.5 bg-[#4A403A] text-white rounded-[1rem] text-[13px] tracking-widest font-medium hover:bg-[#3D342F] transition-colors shadow-[0_8px_20px_rgba(74,64,58,0.2)]">我已了解并同意</button>
+        <div class="p-4 shrink-0 bg-[#FBF6F2] grid grid-cols-2 gap-3">
+            <button onclick="closePrivacyModal()" class="privacy-action py-3.5 border border-[#D8C6BD] text-[#755044] rounded-[1rem] text-[13px] font-medium hover:bg-white transition-colors">关闭</button>
+            <button onclick="acceptPrivacy()" class="privacy-action py-3.5 bg-[#4A403A] text-white rounded-[1rem] text-[13px] font-medium hover:bg-[#302824] transition-colors shadow-[0_8px_20px_rgba(74,62,55,0.16)]">同意并继续</button>
         </div>
     </div>
 </div>
-
-<script>
-    function triggerVibration(pattern) {
-        if (navigator.vibrate) {
-            try { navigator.vibrate(pattern); } catch(e){}
-        }
-    }
-
-    async function getDeviceFingerprint() {
-        try {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            ctx.textBaseline = "top"; ctx.font = "14px 'Arial'"; ctx.textBaseline = "alphabetic";
-            ctx.fillStyle = "#f60"; ctx.fillRect(125,1,62,20);
-            ctx.fillStyle = "#069"; ctx.fillText("拾色季 SHISEJI", 2, 15);
-            ctx.fillStyle = "rgba(102, 204, 0, 0.7)"; ctx.fillText("拾色季 SHISEJI", 4, 17);
-            const b64 = canvas.toDataURL();
-            let hash = 0;
-            for (let i = 0; i < b64.length; i++) {
-                hash = ((hash << 5) - hash) + b64.charCodeAt(i);
-                hash = hash & hash;
-            }
-            return hash.toString(16) + "-" + screen.colorDepth + "-" + screen.width;
-        } catch(e) { return "fallback-fp-" + Date.now(); }
-    }
-
-    function escapeHTML(value) {
-        return String(value ?? '').replace(/[&<>"']/g, character => ({
-            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-        })[character]);
-    }
-
-    function highlightColors(text) {
-        if (!text) return text;
-        const colorMap = {
-            "玫瑰粉": "#FFF0F5", "珊瑚红": "#FFE4E1", "奶油黄": "#FFFFE0", "薄荷绿": "#F0FFF0", "雾霾蓝": "#F0F8FF", 
-            "奶茶色": "#FDF5E6", "炭灰色": "#F5F5F5", "藏青色": "#F0F4F8", "酒红色": "#FFF0F0", "香槟色": "#FFF8E7", 
-            "燕麦色": "#FDF9F1", "莫兰迪": "#F4F4F4", "卡其色": "#F5E6D3", "豆沙色": "#E8C8C8", "裸粉色": "#F7E1D7",
-            "樱花粉": "#FDE6E8", "抹茶绿": "#E8F0E4", "克莱因蓝": "#E6EEF8"
-        };
-        let processedText = escapeHTML(text);
-        for (const [colorName, bgColor] of Object.entries(colorMap)) {
-            const regex = new RegExp(colorName, "g");
-            const capsuleHTML = `<span class="color-capsule" style="background-color: ${bgColor}; color: #5A504B;">${colorName}</span>`;
-            processedText = processedText.replace(regex, capsuleHTML);
-        }
-        return processedText;
-    }
-
-    function showPrivacyModal() {
-        triggerVibration(30);
-        const modal = document.getElementById('privacyModal');
-        modal.classList.remove('hidden');
-        setTimeout(() => { modal.classList.remove('opacity-0'); modal.querySelector('div').classList.remove('scale-95'); }, 10);
-    }
-    function closePrivacyModal() {
-        triggerVibration(30);
-        const modal = document.getElementById('privacyModal');
-        modal.classList.add('opacity-0'); modal.querySelector('div').classList.add('scale-95');
-        setTimeout(() => modal.classList.add('hidden'), 300);
-    }
-
-    function checkLastReport() {
-        document.getElementById('restoreContainer').classList.add('hidden');
-    }
-
-    function restoreLastReport() {
-        showToast("为保护隐私，照片与报告不会在浏览器中长期保存");
-    }
-
-    document.addEventListener('DOMContentLoaded', () => {
-        const dropzoneInput = document.getElementById('dropzone-file');
-        const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-        if (isIOS) {
-            dropzoneInput.setAttribute('accept', 'image/jpeg, image/png, image/jpg, image/heic');
-        } else {
-            dropzoneInput.setAttribute('accept', 'image/*');
-        }
-
-    });
-
-    let userImageBase64 = "";
-    window.currentCode = "";
-    window.analysisToken = "";
-    window.currentAnalysisResult = null;
-    window.personalizedImageState = { beauty: 'idle', outfit: 'idle' };
-    let progressInterval = null; 
-    let analysisRecoveryTimer = null;
-    let activeAnalysisController = null;
-    let analysisRunId = 0;
-
-    function clearAnalysisRuntime() {
-        if (progressInterval) clearInterval(progressInterval);
-        if (analysisRecoveryTimer) clearTimeout(analysisRecoveryTimer);
-        progressInterval = null;
-        analysisRecoveryTimer = null;
-        const recoveryBtn = document.getElementById('analysisRecoveryBtn');
-        if (recoveryBtn) recoveryBtn.classList.add('hidden');
-    }
-
-    function cancelAnalysis() {
-        analysisRunId += 1;
-        if (activeAnalysisController) activeAnalysisController.abort();
-        activeAnalysisController = null;
-        clearAnalysisRuntime();
-        showStep('step-upload');
-      showToast('已返回照片页，可重新尝试');
-    }
-
-    function showToast(message, tone = 'default') {
-        const container = document.getElementById('toastContainer');
-        const toast = document.createElement('div');
-        toast.className = tone === 'preview'
-            ? 'toast-preview text-[11px] tracking-[0.12em] px-5 py-2.5 rounded-full mb-3 toast-enter flex items-center gap-2'
-            : 'bg-[#3D342F]/90 backdrop-blur-md text-[#F4EFEA] text-[13px] tracking-widest px-6 py-3 rounded-full shadow-xl mb-3 toast-enter flex items-center gap-2';
-        toast.innerHTML = '<svg class="w-4 h-4 text-[#DABFB4]" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>';
-        toast.appendChild(document.createTextNode(String(message)));
-        container.appendChild(toast);
-        setTimeout(() => {
-            toast.classList.replace('toast-enter', 'toast-exit');
-            setTimeout(() => toast.remove(), 400);
-        }, tone === 'preview' ? 1600 : 2500);
-    }
-
-    function showCustomAlert(message) {
-        triggerVibration([50, 50, 50]);
-        document.getElementById('alertMessage').textContent = String(message);
-        const modal = document.getElementById('customAlert');
-        modal.classList.remove('hidden');
-        setTimeout(() => {
-            modal.classList.remove('opacity-0');
-            modal.querySelector('div').classList.remove('scale-95');
-        }, 10);
-    }
-
-    function closeCustomAlert() {
-        triggerVibration(30);
-        const modal = document.getElementById('customAlert');
-        modal.classList.add('opacity-0');
-        modal.querySelector('div').classList.add('scale-95');
-        setTimeout(() => modal.classList.add('hidden'), 300);
-    }
-
-    function showStep(stepId) {
-        ['step-activation','step-upload','step-loading','step-result'].forEach(id => {
-            document.getElementById(id).classList.add('hidden');
-        });
-        document.getElementById(stepId).classList.remove('hidden');
-        const appContainer = document.querySelector('.app-container');
-        if (appContainer) appContainer.classList.toggle('report-mode', stepId === 'step-result');
-        const mainContainer = document.getElementById('mainContainer');
-        if (mainContainer) mainContainer.scrollTop = 0;
-    }
-
-    async function verifyCode() {
-        triggerVibration(50);
-        const inputElement = document.getElementById('activationCode');
-        const code = inputElement.value.trim(); 
-
-        if (window.location.protocol === 'file:') {
-            window.currentCode = '';
-            window.analysisToken = '';
-            showStep('step-upload');
-            showToast('已进入本地界面预览，不验证或消耗密钥');
-            return;
-        }
-        
-        if (!code) { 
-            showCustomAlert("请输入您的专属密钥");
-            return; 
-        }
-        
-        const submitBtn = document.querySelector('button[onclick="verifyCode()"]');
-        const ogText = submitBtn.innerText;
-        submitBtn.innerText = "云端鉴权中...";
-        submitBtn.classList.add('opacity-70', 'cursor-wait');
-
-        try {
-            const response = await fetch('/api/verify-code', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ activationCode: code })
-            });
-
-            const data = await response.json();
-
-            if (response.ok && data.valid) {
-                window.currentCode = code;
-                window.analysisToken = data.analysisToken;
-                
-                checkLastReport();
-                showStep('step-upload');
-                
-                let premiumMsg = "";
-                if (data.remainingUses !== undefined) {
-                    premiumMsg = `密钥验证通过，可生成次数剩余 ${data.remainingUses} 次`;
-                } else {
-                    premiumMsg = "密钥验证通过，可以开始生成色彩档案";
-                }
-                showToast(premiumMsg);
-                
-            } else {
-                showCustomAlert(data.error || '该密钥无效或可用次数已用完，请联系店铺客服。');
-            }
-        } catch (error) {
-            console.error('云端核销失败:', error);
-            const localPreview = window.location.protocol === 'file:';
-            showCustomAlert(localPreview ? '当前是本地静态预览，无法验证密钥。请打开正式发布页面。' : '暂时无法连接密钥验证服务，请稍后重试。');
-        } finally {
-            submitBtn.innerText = ogText;
-            submitBtn.classList.remove('opacity-70', 'cursor-wait');
-        }
-    }
-
-    function handleImageUpload(event) {
-        const file = event.target.files[0];
-        if(file) {
-            triggerVibration(50);
-            document.getElementById('uploadText').innerText = "图像引擎处理中...";
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const img = new Image();
-                img.onload = function() {
-                    const quality = evaluateImageQuality(img);
-                    renderPhotoQuality(quality);
-                    const canvas = document.createElement('canvas');
-                    let width = img.width;
-                    let height = img.height;
-                    const MAX_SIZE = 800; 
-
-                    if (width > height) {
-                        if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; }
-                    } else {
-                        if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; }
-                    }
-
-                    canvas.width = width; canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
-
-                    userImageBase64 = canvas.toDataURL('image/jpeg', 0.7);
-                    const pendingJob = JSON.parse(sessionStorage.getItem('shisejiAnalysisJob') || 'null');
-                    window.currentAnalysisRequestId = pendingJob?.requestId
-                        || sessionStorage.getItem('shisejiAnalysisRequestId')
-                        || crypto.randomUUID();
-                    sessionStorage.setItem('shisejiAnalysisRequestId', window.currentAnalysisRequestId);
-                    
-                    const preview = document.getElementById('imagePreview');
-                    preview.src = userImageBase64;
-                    preview.classList.remove('hidden');
-                document.getElementById('uploadText').innerText = "照片已就绪，轻触可重选";
-                    event.target.value = ''; 
-                    document.getElementById('analyzeBtn').disabled = quality.blocking.length > 0;
-                };
-                img.src = e.target.result;
-            };
-            reader.readAsDataURL(file);
-        }
-    }
-
-    function evaluateImageQuality(img) {
-        const blocking = [];
-        const warnings = [];
-        if (Math.min(img.naturalWidth, img.naturalHeight) < 480) blocking.push('照片分辨率偏低，请选择更清晰的原图');
-
-        const sample = document.createElement('canvas');
-        sample.width = 72; sample.height = 72;
-        const ctx = sample.getContext('2d', { willReadFrequently: true });
-        ctx.drawImage(img, 0, 0, sample.width, sample.height);
-        const pixels = ctx.getImageData(0, 0, sample.width, sample.height).data;
-        let total = 0; let totalSq = 0; let edge = 0; let previous = null;
-        for (let i = 0; i < pixels.length; i += 4) {
-            const luma = pixels[i] * .2126 + pixels[i + 1] * .7152 + pixels[i + 2] * .0722;
-            total += luma; totalSq += luma * luma;
-            if (previous !== null) edge += Math.abs(luma - previous);
-            previous = luma;
-        }
-        const count = pixels.length / 4;
-        const mean = total / count;
-        const deviation = Math.sqrt(Math.max(0, totalSq / count - mean * mean));
-        const detail = edge / Math.max(1, count - 1);
-        if (mean < 48) warnings.push('画面偏暗，建议换到窗边自然光');
-        if (mean > 220) warnings.push('画面偏亮，面部可能过曝');
-        if (deviation < 22 || detail < 5) warnings.push('画面细节偏少，请确认对焦清晰且未使用重度磨皮');
-        return { blocking, warnings };
-    }
-
-    function renderPhotoQuality({ blocking, warnings }) {
-        const el = document.getElementById('photoQuality');
-        el.className = 'photo-quality';
-        if (blocking.length) {
-            el.classList.add('block');
-            el.innerHTML = `<b>暂不建议分析</b><br>${blocking.map(escapeHTML).join('；')}`;
-        } else if (warnings.length) {
-            el.classList.add('warn');
-            el.innerHTML = `<b>照片可用，但还能更准</b><br>${warnings.map(escapeHTML).join('；')}`;
-        } else {
-            el.classList.add('good');
-            el.innerHTML = '<b>照片基础质量良好</b><br>可继续分析；请再确认是自然光、正面且无重度滤镜。';
-        }
-        el.classList.remove('hidden');
-    }
-
-    async function startAnalysis() {
-        const localPreview = window.location.protocol === 'file:';
-        if (!localPreview && (!window.currentCode || !window.analysisToken)) {
-            showCustomAlert("通行证已过期，请重新验签");
-            showStep('step-activation'); 
-            return; 
-        }
-        if (!userImageBase64) {
-            showCustomAlert("请先选择一张照片");
-            return;
-        }
-        if (!document.getElementById('privacyConsent').checked) {
-            showCustomAlert("请先阅读并同意隐私政策");
-            return;
-        }
-
-        triggerVibration(50);
-        const currentRunId = ++analysisRunId;
-        clearAnalysisRuntime();
-        showStep('step-loading');
-        const previewStatus = document.getElementById('loadingPreviewStatus');
-        if (previewStatus) previewStatus.classList.toggle('hidden', !localPreview);
-        
-        const loadingText = document.getElementById('loadingText');
-        const analysisSteps = Array.from(document.querySelectorAll('#analysisSteps .analysis-step'));
-        const states = [
-            "正在读取你与颜色之间的关系",
-            "正在建立个人色彩倾向",
-            "正在生成你的个人色彩档案"
-        ];
-        let textIndex = 0;
-        
-        if(progressInterval) clearInterval(progressInterval);
-        
-        progressInterval = setInterval(() => {
-            if (textIndex >= states.length - 1) return;
-            analysisSteps[textIndex].classList.remove('active');
-            analysisSteps[textIndex].classList.add('complete');
-            textIndex += 1;
-            analysisSteps[textIndex].classList.add('active');
-            loadingText.style.opacity = 0;
-            setTimeout(() => {
-                loadingText.innerText = states[textIndex];
-                loadingText.style.opacity = 1;
-            }, 180);
-        }, 4200);
-
-        analysisRecoveryTimer = setTimeout(() => {
-            if (currentRunId !== analysisRunId) return;
-            const recoveryBtn = document.getElementById('analysisRecoveryBtn');
-            if (recoveryBtn) recoveryBtn.classList.remove('hidden');
-            loadingText.innerText = '仍在细致分析，请稍候';
-        }, 20000);
-
-        if (localPreview) {
-            setTimeout(() => {
-                if (currentRunId !== analysisRunId) return;
-                clearInterval(progressInterval);
-                analysisSteps.forEach(step => {
-                    step.classList.remove('active');
-                    step.classList.add('complete');
-                });
-                loadingText.innerText = '示例色彩档案已生成';
-
-                const dimensionValues = {
-                    skin_temperature: 72,
-                    skin_lightness: 70,
-                    skin_clarity: 58,
-                    skin_softness: 82,
-                    cheek_temperature: 74,
-                    lip_temperature: 70,
-                    eye_depth: 44,
-                    eye_clarity: 60,
-                    hair_depth: 66,
-                    hair_temperature: 68,
-                    hair_skin_contrast: 46,
-                    facial_contrast: 42,
-                    depth_capacity: 48,
-                    brightness_capacity: 68,
-                    chroma_capacity: 46,
-                    muted_capacity: 84
-                };
-                const dimensionNames = {
-                    skin_temperature: '肤色冷暖倾向',
-                    skin_lightness: '肤色明度',
-                    skin_clarity: '肤色清透度',
-                    skin_softness: '肤色柔和度',
-                    cheek_temperature: '面颊色调',
-                    lip_temperature: '原生唇色倾向',
-                    eye_depth: '瞳孔深浅',
-                    eye_clarity: '瞳孔清晰度',
-                    hair_depth: '原生发色深浅',
-                    hair_temperature: '原生发色冷暖',
-                    hair_skin_contrast: '发肤对比度',
-                    facial_contrast: '五官整体对比度',
-                    depth_capacity: '深色承载力',
-                    brightness_capacity: '明亮色承载力',
-                    chroma_capacity: '鲜艳色承载力',
-                    muted_capacity: '柔雾色适配度'
-                };
-                const demoResult = {
-                    identity_code: 'SSJ-02',
-                    season_name: '柔光暖春',
-                    season_en: 'WARM · LIGHT · SOFT',
-                    description: '你的整体色彩关系柔和而偏暖，轻盈、细腻且具有自然光感。',
-                    style_keywords: ['柔光', '温暖', '清透'],
-                    color_impression: '柔和、温暖、清透。让颜色衬托你，而不是盖过你。',
-                    feature_colors: [
-                        { label: '肌肤', hex: '#E5B7A1' },
-                        { label: '瞳色', hex: '#5D453B' },
-                        { label: '发色', hex: '#4A3832' },
-                        { label: '对比', hex: '#A78B7E' }
-                    ],
-                    radar_data: [
-                        { name: '冷暖', value: 72, desc: '偏暖色更容易提气色' },
-                        { name: '明度', value: 70, desc: '中浅色更显轻盈' },
-                        { name: '纯度', value: 46, desc: '降低饱和度更协调' },
-                        { name: '柔和度', value: 82, desc: '柔和过渡更自然' },
-                        { name: '对比度', value: 44, desc: '低对比搭配更耐看' }
-                    ],
-                    dimension_data: Object.entries(dimensionValues).map(([key, value]) => ({
-                        key,
-                        name: dimensionNames[key],
-                        value,
-                        observation: '本地界面预览示例'
-                    })),
-                    best_colors: [
-                        { name: '蜜桃珊瑚', hex: '#D9967C' },
-                        { name: '裸杏玫瑰', hex: '#CDA48F' },
-                        { name: '榛果棕', hex: '#A78969' },
-                        { name: '柔炭棕', hex: '#7C707B' },
-                        { name: '杏仁奶油', hex: '#EED0B5' },
-                        { name: '暖沙金', hex: '#B49A76' },
-                        { name: '燕麦米', hex: '#D8C9B7' },
-                        { name: '雾桃灰', hex: '#B99E98' }
-                    ],
-                    makeup_advice: '选择蜜桃豆沙唇色、柔暖珊瑚腮红与香槟米金眼妆，让肤色与五官处在同一种柔暖光线里。',
-                    outfit_advice: '以燕麦针织搭配暖米半裙，用榛果棕配件建立轮廓，适合日常通勤与轻社交。',
-                    accessory_advice: '优先香槟金、柔棕皮具与低对比配饰，避免过度冷硬的金属光泽。',
-                    style_reference: '柔焦午后、天然织物与安静温暖的低对比层次。',
-                    avoid_colors: ['冷硬纯黑', '荧光玫粉', '冰冷浅灰']
-                };
-
-                setTimeout(() => {
-                    if (currentRunId !== analysisRunId) return;
-                    clearAnalysisRuntime();
-                    renderAIResult(demoResult);
-                    showStep('step-result');
-                    triggerVibration([80, 40, 120]);
-                    showToast('当前为本地示例报告，不消耗密钥次数');
-                }, 250);
-            }, 1200);
-            return;
-        }
-
-        try {
-            let successData = null;
-            const requestId = window.currentAnalysisRequestId || crypto.randomUUID();
-            window.currentAnalysisRequestId = requestId;
-            sessionStorage.setItem('shisejiAnalysisRequestId', requestId);
-            let task = JSON.parse(sessionStorage.getItem('shisejiAnalysisJob') || 'null');
-            if (!task || task.requestId !== requestId) {
-                const controller = new AbortController();
-                activeAnalysisController = controller;
-                const timeoutId = setTimeout(() => controller.abort(), 12000);
-                const response = await fetch('/api/analyze', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: controller.signal,
-                    body: JSON.stringify({ imageBase64: userImageBase64, analysisToken: window.analysisToken, requestId })
-                });
-                clearTimeout(timeoutId);
-                activeAnalysisController = null;
-                if (response.status === 400 || response.status === 403) throw new Error('AUTH_FAILED');
-                const payload = await response.json();
-                if (!response.ok) throw new Error(payload.error || 'SUBMIT_UNKNOWN');
-                task = { taskId: payload.taskId, jobToken: payload.jobToken, requestId };
-                sessionStorage.setItem('shisejiAnalysisJob', JSON.stringify(task));
-            }
-            const pollDeadline = Date.now() + 17 * 60 * 1000;
-            while (Date.now() < pollDeadline) {
-                if (currentRunId !== analysisRunId) return;
-                const response = await fetch('/api/analysis-status', {
-                    method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ taskId: task.taskId, jobToken: task.jobToken })
-                });
-                if (response.status === 403) throw new Error('AUTH_FAILED');
-                if (response.ok) {
-                    const payload = await response.json();
-                    if (payload.status === 'completed') {
-                        successData = payload.data;
-                        window.remainingUses = payload.remainingUses;
-                        window.visualToken = payload.visualToken;
-                        window.visualRequestId = payload.requestId;
-                        sessionStorage.removeItem('shisejiAnalysisJob');
-                        sessionStorage.removeItem('shisejiAnalysisRequestId');
-                        break;
-                    }
-                    if (payload.status === 'failed') {
-                        sessionStorage.removeItem('shisejiAnalysisJob');
-                        sessionStorage.removeItem('shisejiAnalysisRequestId');
-                        window.currentAnalysisRequestId = crypto.randomUUID();
-                        throw new Error('ANALYSIS_FAILED');
-                    }
-                    loadingText.innerText = payload.status === 'processing' ? '正在细致分析，请稍候' : '任务已排队，请稍候';
-                }
-                await new Promise(resolve => setTimeout(resolve, 2500 + Math.random() * 1000));
-            }
-            if (!successData) throw new Error('STATUS_UNKNOWN');
-
-            if (currentRunId !== analysisRunId) return;
-            clearAnalysisRuntime();
-            analysisSteps.forEach(step => {
-                step.classList.remove('active');
-                step.classList.add('complete');
-            });
-            loadingText.innerText = '你的色彩档案已生成';
-            
-            setTimeout(() => {
-                if (successData && successData.error) {
-                    showCustomAlert(successData.error);
-                    showStep('step-upload'); 
-                } else if (successData && (successData.season_name.includes("未检测到") || successData.season_name.includes("阻断") || successData.season_name.includes("无法完成"))) {
-                    showCustomAlert(successData.description || "抱歉，无法完成精准诊断。请上传合规原图。");
-                    showStep('step-upload');
-                } else if (successData) {
-                    renderAIResult(successData);
-                    showStep('step-result');
-                    startPersonalizedImageGeneration(successData);
-                    triggerVibration([100, 50, 200]);
-                    setTimeout(
-                        () => showToast(`色彩档案生成成功，剩余 ${window.remainingUses} 次`),
-                        800
-                    );
-                } else {
-                    throw new Error("无数据返回");
-                }
-            }, 500);
-
-        } catch (error) {
-            if (currentRunId !== analysisRunId) return;
-            activeAnalysisController = null;
-            clearAnalysisRuntime();
-            console.error("引擎连接失败:", error);
-            if (error.message === "AUTH_FAILED") {
-                forceKickToHome("令牌验证失败，请重新唤醒密钥");
-            } else if (error.name === 'AbortError' || error.message === 'SUBMIT_UNKNOWN' || error.message === 'STATUS_UNKNOWN') {
-                showCustomAlert('分析等待时间较长，请返回后重新尝试。此次失败不会生成报告。');
-                showStep('step-upload');
-            } else {
-                showCustomAlert('暂时无法完成分析，请检查网络后重新上传照片。');
-                showStep('step-upload');
-            }
-        }
-    }
-
-    function setPersonalizedImageState(kind, status, message) {
-        window.personalizedImageState[kind] = status;
-        const stateElement = document.getElementById(`${kind}GenerationState`);
-        if (!stateElement) return;
-        stateElement.classList.remove('hidden');
-        stateElement.dataset.status = status;
-        const label = stateElement.querySelector('span');
-        if (label) label.innerText = message;
-        updatePersonalizedImageCaption(kind, status);
-    }
-
-    function updatePersonalizedImageCaption(kind, status) {
-        const saveButton = document.getElementById(`${kind}EffectSaveBtn`);
-        if (saveButton) saveButton.classList.toggle('hidden', status !== 'complete');
-        if (kind === 'beauty') {
-            const kicker = document.getElementById('beautyCaptionKicker');
-            const copy = document.getElementById('beautyCaptionText');
-            if (!kicker || !copy) return;
-            if (status === 'complete') {
-                kicker.innerText = '拾色季 · 妆发设计 01';
-                copy.innerText = '不是换一张脸，而是让属于你的光被看见。';
-            } else if (status === 'failed') {
-                kicker.innerText = '原始自拍 · 色彩基准';
-                copy.innerText = '专属妆发暂未完成；当前保留原始自拍，不用占位图替代你。';
-            } else {
-                kicker.innerText = '原始自拍 · 专属妆发生成中';
-                copy.innerText = '正在保留你的身份特征，并重新设计更适合你的妆发。';
-            }
-            return;
-        }
-
-        const kicker = document.getElementById('outfitCaptionKicker');
-        if (!kicker) return;
-        if (status === 'complete') kicker.innerText = '拾色季 · 穿搭设计 01';
-        else if (status === 'failed') kicker.innerText = '专属穿搭暂未完成 · 点击图中重试';
-        else kicker.innerText = '拾色季 · 穿搭设计生成中';
-    }
-
-    const SAFE_STYLE_IMAGE_CLIENT_CODES = new Set([
-        'style_image_configuration_failed',
-        'style_image_request_build_failed',
-        'style_image_job_claim_failed',
-        'style_image_model_request_failed',
-        'style_image_model_rejected',
-        'style_image_response_parse_failed',
-        'style_image_result_extract_failed',
-        'style_image_job_complete_failed',
-        'style_image_download_failed',
-        'style_image_handler_failed',
-        'style_image_processing_timeout',
-        'style_image_client_failed'
-    ]);
-
-    async function generatePersonalizedStyleImage(kind, analysis) {
-        if (!analysis || !userImageBase64 || window.personalizedImageState[kind] === 'loading') return;
-        const loadingCopy = kind === 'beauty' ? '正在设计专属妆发' : '正在设计完整穿搭';
-        setPersonalizedImageState(kind, 'loading', loadingCopy);
-        try {
-            let payload;
-            for (let attempt = 0; attempt < 5; attempt += 1) {
-                if (attempt > 0) await new Promise((resolve) => setTimeout(resolve, 10000));
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 135000);
-                const response = await fetch('/api/generate-style-image', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    signal: controller.signal,
-                    body: JSON.stringify({
-                        kind,
-                        imageBase64: userImageBase64,
-                        visualToken: window.visualToken,
-                        requestId: window.visualRequestId,
-                        analysis
-                    })
-                });
-                clearTimeout(timeoutId);
-                payload = await response.json();
-                if (response.status === 202 && payload.status === 'processing') continue;
-                if (!response.ok || !payload.imageDataUrl) {
-                    const failure = new Error('STYLE_IMAGE_FAILED');
-                    failure.diagnosticCode = payload.diagnosticCode || 'style_image_handler_failed';
-                    throw failure;
-                }
-                break;
-            }
-            if (!payload?.imageDataUrl) {
-                const failure = new Error('STYLE_IMAGE_PROCESSING_TIMEOUT');
-                failure.diagnosticCode = 'style_image_processing_timeout';
-                throw failure;
-            }
-
-            if (kind === 'beauty') {
-                const image = document.getElementById('makeupEditorialAvatar');
-                if (image) image.src = payload.imageDataUrl;
-            } else {
-                const board = document.getElementById('outfitEditorialBoard');
-                const image = document.getElementById('outfitEditorialImage');
-                if (board && image) {
-                    image.src = payload.imageDataUrl;
-                    image.classList.remove('hidden');
-                    board.classList.add('has-editorial-image');
-                }
-            }
-            setPersonalizedImageState(kind, 'complete', '专属视觉已完成');
-        } catch (error) {
-            const diagnosticCode = SAFE_STYLE_IMAGE_CLIENT_CODES.has(error?.diagnosticCode)
-                ? error.diagnosticCode
-                : 'style_image_client_failed';
-            console.error(`${kind} personalized image failed:`, diagnosticCode);
-            const failedLabel = kind === 'beauty' ? '妆发图生成未完成' : '穿搭图生成未完成';
-            const failedCopy = `${failedLabel} · ${diagnosticCode}`;
-            setPersonalizedImageState(kind, 'failed', failedCopy);
-        }
-    }
-
-    function startPersonalizedImageGeneration(analysis) {
-        window.personalizedImageState = { beauty: 'idle', outfit: 'idle' };
-        Promise.allSettled([
-            generatePersonalizedStyleImage('beauty', analysis),
-            generatePersonalizedStyleImage('outfit', analysis)
-        ]).then(() => {
-            const completed = Object.values(window.personalizedImageState).filter((state) => state === 'complete').length;
-            if (completed === 2) showToast('专属妆发与穿搭视觉已完成');
-        });
-    }
-
-    function retryPersonalizedImage(kind) {
-        if (!['beauty', 'outfit'].includes(kind) || !window.currentAnalysisResult) return;
-        generatePersonalizedStyleImage(kind, window.currentAnalysisResult);
-    }
-
-    function renderAIResult(d) {
-        window.currentAnalysisResult = d;
-        applyReportTheme(d);
-        if(userImageBase64) {
-            const a = document.getElementById('userAvatarResult');
-            a.src = userImageBase64;
-            a.classList.remove('hidden');
-            const makeupEditorialAvatar = document.getElementById('makeupEditorialAvatar');
-            if (makeupEditorialAvatar) makeupEditorialAvatar.src = userImageBase64;
-        }
-        updatePersonalizedImageCaption('beauty', 'idle');
-        updatePersonalizedImageCaption('outfit', 'idle');
-        
-         ['season-name','season-en','desc'].forEach(key => {
-            const map = {'season-name':'season_name','season-en':'season_en','desc':'description'};
-            if(document.getElementById(`res-${key}`)) document.getElementById(`res-${key}`).innerText = d[map[key]] || "生成中...";
-         });
-
-         const identityCodeElement = document.getElementById('res-identity-code');
-         if (identityCodeElement) {
-             identityCodeElement.innerText = d.identity_code ? `COLOR ID · ${d.identity_code}` : '';
-         }
-
-         const assessmentElement = document.getElementById('res-identity-assessment');
-         if (assessmentElement) {
-             const assessment = d.identity_assessment;
-             assessmentElement.innerText = assessment?.message || '';
-             assessmentElement.dataset.confidence = assessment?.level || '';
-         }
-
-        const keywordContainer = document.getElementById('res-style-keywords');
-        if (keywordContainer) {
-            const keywords = Array.isArray(d.style_keywords)
-                ? d.style_keywords.slice(0, 5)
-                : [];
-            keywordContainer.innerHTML = keywords.map((keyword) =>
-                `<span class="bg-[#F4EFEA] text-[#6B5D55] text-[10px] tracking-[0.2em] px-3 py-1.5 rounded-full">${escapeHTML(keyword)}</span>`
-            ).join('');
-        }
-
-        const impressionElement = document.getElementById('res-color-impression');
-        if (impressionElement) {
-            impressionElement.innerText = d.color_impression || d.description || '';
-        }
-
-        ['makeup','outfit','accessory','style-reference'].forEach(key => {
-            const map = {'makeup':'makeup_advice','outfit':'outfit_advice','accessory':'accessory_advice','style-reference':'style_reference'};
-            let text = d[map[key]] || "...";
-            if(document.getElementById(`res-${key}`)) document.getElementById(`res-${key}`).innerHTML = highlightColors(text);
-        });
-
-        const makeupAdvice = d.makeup_advice || '以柔和、协调的颜色建立自然好气色。';
-        const outfitAdvice = d.outfit_advice || '将推荐色放在靠近面部的位置，用低冲突配色完成整体造型。';
-        const makeupEditorial = document.getElementById('res-makeup-editorial');
-        const makeupRecipe = document.getElementById('res-makeup-recipe');
-        const outfitEditorial = document.getElementById('res-outfit-editorial');
-        const outfitFormula = document.getElementById('res-outfit-formula');
-        if (makeupEditorial) makeupEditorial.innerText = '从发型、光线到妆面，重新设计更适合你的完整表达。';
-        if (makeupRecipe) makeupRecipe.innerHTML = highlightColors(makeupAdvice);
-        if (outfitEditorial) outfitEditorial.innerText = '把这份好看，穿进真实生活。';
-        if (outfitFormula) outfitFormula.innerHTML = highlightColors(outfitAdvice);
-        const outfitBoard = document.getElementById('outfitEditorialBoard');
-        const outfitImage = document.getElementById('outfitEditorialImage');
-        if (outfitBoard && outfitImage) {
-            outfitBoard.classList.remove('has-editorial-image');
-            outfitImage.classList.add('hidden');
-            outfitImage.removeAttribute('src');
-        }
-
-        const resAvoidEl = document.getElementById('res-avoid');
-        if (resAvoidEl) {
-            let avoidContent = '';
-            if (d.avoid_colors && Array.isArray(d.avoid_colors)) {
-                avoidContent = "建议减少靠近面部：";
-                d.avoid_colors.forEach((color) => {
-                    let colorName = typeof color === 'string' ? color : color.name;
-                    avoidContent += `<span class="color-capsule-avoid">${escapeHTML(colorName)}</span>`;
-                });
-            } else if (d.avoid_colors && typeof d.avoid_colors === 'string') {
-                avoidContent = `🚫 <span class="color-capsule-avoid">${escapeHTML(d.avoid_colors)}</span>`;
-            } else {
-                avoidContent = "...";
-            }
-            resAvoidEl.innerHTML = avoidContent;
-        }
-
-        const today = new Date();
-        const dateStr = today.getFullYear().toString() + (today.getMonth() + 1).toString().padStart(2, '0') + today.getDate().toString().padStart(2, '0');
-        const randomSuffix = String.fromCharCode(65 + Math.floor(Math.random() * 26)) + Math.floor(Math.random() * 10);
-        
-        if(document.getElementById('archive-no')) {
-            document.getElementById('archive-no').innerText = `ARCHIVE NO. SSJ-${dateStr}-${randomSuffix}`;
-        }
-
-        const f = document.getElementById('res-hex-extraction'); f.innerHTML = '';
-        if (d.feature_colors && Array.isArray(d.feature_colors)) {
-            const labels = ["肌肤底色", "面颊色调", "原生发色", "瞳孔特征"];
-            d.feature_colors.forEach((hexValue, index) => {
-                let colorHex = escapeHTML(typeof hexValue === 'string' ? hexValue : hexValue.hex);
-                let colorLabel = escapeHTML(typeof hexValue === 'string' ? labels[index] || "特征色" : hexValue.label);
-                f.innerHTML += `
-                <div class="bg-white rounded-[12px] p-3 shadow-[0_4px_15px_rgba(0,0,0,0.03)] border border-[#F4EFEA] flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-full shadow-inner border border-black/5 flex-shrink-0" style="background-color:${colorHex};"></div>
-                    <div class="flex flex-col">
-                        <span class="text-[12px] text-[#4A403A] font-medium tracking-widest">${colorLabel}</span>
-                        <span class="text-[10px] text-[#A0A0A0] font-mono mt-0.5 uppercase tracking-wider">${colorHex}</span>
-                    </div>
-                </div>`;
-            });
-        }
-
-        const p = document.getElementById('res-progress-bars'); p.innerHTML = '';
-        const r = [];
-        if (d.radar_data && Array.isArray(d.radar_data)) {
-            const labels = ['色调(冷暖)', '明度(深浅)', '彩度(饱和)', '清浊(清透)', '对比(反差)'];
-            d.radar_data.forEach((val, index) => {
-                let value = Math.max(0, Math.min(100, Number(typeof val === 'number' ? val : val.value) || 0));
-                let name = escapeHTML(typeof val === 'number' ? labels[index] || "维度" : val.name);
-                let desc = escapeHTML(typeof val === 'number' ? "" : val.desc);
-                r.push(value);
-                p.innerHTML += `
-                <div class="mb-4">
-                    <div class="flex justify-between items-end mb-1.5">
-                        <span class="text-[12px] text-[#6B5D55] font-medium tracking-widest">${name}</span>
-                        <span class="text-[12px] font-serif-custom font-bold text-[#3D342F]">${value}</span>
-                    </div>
-                    <div class="w-full bg-[#E8E1DE] rounded-full h-[4px] mb-1.5 overflow-hidden">
-                        <div class="bg-gradient-to-r from-[#5A4E47] to-[#2B2420] h-full rounded-full progress-bar-fill" style="width:0%" data-target-width="${value}%"></div>
-                    </div>
-                    <span class="text-[10px] text-[#BFA89F] tracking-widest">${desc || ''}</span>
-                </div>`;
-            });
-        }
-        
-         setTimeout(() => {
-            document.querySelectorAll('.progress-bar-fill').forEach(e => e.style.width = e.getAttribute('data-target-width'));
-         }, 600);
-
-         const dimensions = document.getElementById('res-dimensions');
-         if (dimensions) {
-             dimensions.innerHTML = '';
-             if (Array.isArray(d.dimension_data)) {
-                 d.dimension_data.forEach((item, index) => {
-                     const value = Math.max(0, Math.min(100, Number(item.value) || 0));
-                     dimensions.innerHTML += `
-                     <div class="dimension-row" title="${escapeHTML(getSafeObservation(item.observation))}">
-                         <div class="dimension-row-main">
-                             <div class="dimension-row-title"><span><i class="dimension-row-index">${String(index + 1).padStart(2, '0')}</i>${escapeHTML(item.name)}</span></div>
-                             <div class="dimension-row-track"><div class="dimension-row-fill" style="width:${value}%"></div></div>
-                         </div>
-                         <span class="dimension-row-value">${value}</span>
-                     </div>`;
-                 });
-             }
-         }
-
-         const c = document.getElementById('res-best-colors'); c.innerHTML = '';
-        if (d.best_colors && Array.isArray(d.best_colors)) {
-            const normalized = d.best_colors.map((val) => ({
-                hex: escapeHTML(typeof val === 'string' ? val : val.hex),
-                name: escapeHTML(typeof val === 'string' ? '推荐色' : val.name)
-            }));
-            c.innerHTML = `<div class="palette-arches">${normalized.slice(0, 4).map((color) =>
-                `<div class="palette-arch" style="background:${color.hex}">${color.name}</div>`
-            ).join('')}</div><div class="palette-circles">${normalized.slice(4, 8).map((color) =>
-                `<div><div class="palette-circle" style="background:${color.hex}" title="${color.name}"></div><p class="text-[8px] text-center text-[#9B8980] mt-1.5 truncate">${color.name}</p></div>`
-            ).join('')}</div>`;
-            renderColorStyling(normalized);
-            renderEditorialFormulas(normalized);
-        }
-
-
-        initRadarChart(r);
-    }
-
-    function renderEditorialFormulas(colors) {
-        if (!Array.isArray(colors) || colors.length < 4) return;
-        const pick = (index, fallback = 0) => colors[index] || colors[fallback] || { name: '推荐色', hex: '#BFA89F' };
-        const beauty = document.getElementById('res-beauty-formula');
-        if (beauty) {
-            const tones = [
-                { role: '唇色', color: pick(0), note: '点亮气色' },
-                { role: '腮红', color: pick(1), note: '柔化轮廓' },
-                { role: '眼妆', color: pick(2), note: '加深神采' }
-            ];
-            beauty.innerHTML = tones.map((item) => `<div class="beauty-tone"><i style="background:${item.color.hex}"></i><b>${item.role}</b><span>${item.color.name}<br>${item.note}</span></div>`).join('');
-        }
-        const wardrobe = document.getElementById('res-wardrobe-formula');
-        if (wardrobe) {
-            const pieces = [
-                { en: 'NEAR FACE', role: '上装主色', color: pick(4, 0), note: '贴近面部提亮' },
-                { en: 'SILHOUETTE', role: '轮廓辅助', color: pick(2, 1), note: '建立质感层次' },
-                { en: 'SIGNATURE', role: '点睛配饰', color: pick(0), note: '小面积留下记忆' }
-            ];
-            wardrobe.innerHTML = pieces.map((item) => `<article class="wardrobe-piece"><i style="background:${item.color.hex}"></i><div><small>${item.en}</small><b>${item.role}</b><span>${item.color.name}<br>${item.note}</span></div></article>`).join('');
-        }
-    }
-
-    function renderColorStyling(colors) {
-        const container = document.getElementById('res-color-styling');
-        if (!container || !Array.isArray(colors) || colors.length < 4) return;
-        const pick = (index, fallback = 0) => colors[index] || colors[fallback] || { name: '推荐色', hex: '#BFA89F' };
-        const schemes = [
-            {
-                title: '静奢日常', scene: 'DAILY QUIET LUXURY',
-                colors: [pick(4, 1), pick(2, 1), pick(0), pick(5, 2)],
-                ratios: [55, 25, 12, 8],
-                copy: '以最浅色建立大面积呼吸感，中间色负责包袋或下装，靠近面部放入提气色，最后用金属光泽收尾。',
-                texture: '针织 · 真丝 · 哑光皮革'
-            },
-            {
-                title: '温柔社交', scene: 'SOFT SOCIAL',
-                colors: [pick(1), pick(4, 0), pick(0), pick(5, 2)],
-                ratios: [50, 28, 14, 8],
-                copy: '让柔和主色成为第一印象，以轻盈浅色提亮，再把最有生命力的颜色控制在唇妆、丝巾或小包。',
-                texture: '雪纺 · 缎面 · 细闪金属'
-            },
-            {
-                title: '重要时刻', scene: 'SIGNATURE OCCASION',
-                colors: [pick(3, 2), pick(1), pick(0), pick(5, 2)],
-                ratios: [58, 22, 12, 8],
-                copy: '用色谱中较深的一色稳定轮廓，辅助色贴近面部，点睛色只出现一次，形成克制而清晰的存在感。',
-                texture: '精纺羊毛 · 丝绒 · 香槟金'
-            }
-        ];
-        window.reportColorStylingSchemes = schemes;
-        container.innerHTML = `<div class="color-styling-tabs">${schemes.map((scheme, index) =>
-            `<button type="button" class="color-styling-tab${index === 0 ? ' active' : ''}" onclick="selectColorStyling(${index})">${scheme.title}</button>`
-        ).join('')}</div><div id="res-color-styling-panel"></div>`;
-        selectColorStyling(0);
-    }
-
-    function selectColorStyling(index) {
-        const schemes = window.reportColorStylingSchemes || [];
-        const scheme = schemes[index] || schemes[0];
-        const panel = document.getElementById('res-color-styling-panel');
-        if (!scheme || !panel) return;
-        document.querySelectorAll('.color-styling-tab').forEach((button, buttonIndex) => button.classList.toggle('active', buttonIndex === index));
-        panel.innerHTML = getColorStylingCardHTML(scheme, index);
-    }
-
-    function getColorStylingCardHTML(scheme, index) {
-        return `<article class="color-look">
-            <div class="color-look-head"><div><h3>${scheme.title}</h3></div></div>
-            <div class="color-ratio">${scheme.colors.map((color, colorIndex) => `<i style="width:${scheme.ratios[colorIndex]}%;background:${color.hex}" title="${color.name}">${scheme.ratios[colorIndex]}%</i>`).join('')}</div>
-            <div class="color-look-formula"><p>${scheme.copy}</p><b>${scheme.texture}</b></div>
-        </article>`;
-    }
-
-    function applyReportTheme(d) {
-        const colors = Array.isArray(d.best_colors) ? d.best_colors.map((item) => typeof item === 'string' ? item : item.hex).filter(Boolean) : [];
-        const root = document.documentElement.style;
-        if (colors[0]) root.setProperty('--report-primary', colors[0]);
-        if (colors[1]) root.setProperty('--report-secondary', colors[1]);
-        if (colors[4] || colors[2]) root.setProperty('--report-metal', colors[4] || colors[2]);
-        root.setProperty('--report-deep', '#44362F');
-    }
-
-    function resizeReportChart() {
-        if (window.myRadarChart && typeof window.myRadarChart.resize === 'function') {
-            window.requestAnimationFrame(() => window.myRadarChart.resize());
-        }
-    }
-
-    function getSafeObservation(value) {
-        const text = String(value || '').trim();
-        const previewOnly = /本地.*预览|预览示例|本地界面/.test(text);
-        if (window.location.protocol !== 'file:' && previewOnly) return '基于本次照片条件生成';
-        return text || '基于本次照片条件生成';
-    }
-
-    function initRadarChart(data) {
-        const ctx = document.getElementById('radarChart').getContext('2d');
-        if(window.myRadarChart) window.myRadarChart.destroy();
-        
-        Chart.defaults.font.family = "'Noto Serif SC', serif";
-        Chart.defaults.color = "#8C7A70";
-        
-        window.myRadarChart = new Chart(ctx, {
-            type: 'radar',
-            data: {
-                labels: ['冷暖色调','深浅明度','饱和彩度','清浊(清透)','对比(反差)'],
-                datasets: [{
-                    data: data,
-                    backgroundColor: 'rgba(218,191,180,0.5)',
-                    borderColor: 'rgba(200,180,170,1)',
-                    borderWidth: 1.5,
-                    pointBackgroundColor: '#FFFFFF',
-                    pointBorderColor: '#CBAAA0',
-                    pointBorderWidth: 2,
-                    pointRadius: 3.5,
-                    pointHoverRadius: 5
-                }]
-            },
-            options: {
-                animation: false, responsive: true, maintainAspectRatio: false, plugins: { legend: false },
-                scales: {
-                    r: {
-                        angleLines: { color: 'rgba(200,195,190,0.9)', lineWidth: 1 },
-                        grid: { color: 'rgba(235,230,225,0.8)', circular: false },
-                        pointLabels: { font: { size: 10, weight: 500, family: "'Noto Serif SC', serif" }, color: '#6B5D55', padding: 12 },
-                        ticks: { display: false, min: 0, max: 100 }
-                    }
-                }
-            }
-        });
-    }
-
-    function deliverGeneratedImage(dataURL, filename, mobileMessage) {
-        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-        if (!isMobile) {
-            const link = document.createElement('a');
-            link.download = filename;
-            link.href = dataURL;
-            link.click();
-            showToast('图片下载已唤起，请确认保存');
-            return;
-        }
-        const overlay = document.getElementById('saveOverlay');
-        const overlayImg = document.getElementById('saveOverlayImg');
-        overlayImg.src = dataURL;
-        overlay.classList.remove('hidden');
-        setTimeout(() => {
-            overlay.classList.remove('opacity-0');
-            overlayImg.classList.remove('scale-95');
-            overlayImg.classList.add('scale-100');
-        }, 10);
-        triggerVibration([100, 50, 100]);
-        showToast(mobileMessage);
-    }
-
-    function loadEffectImage(src) {
-        return new Promise((resolve, reject) => {
-            const image = new Image();
-            image.crossOrigin = 'anonymous';
-            image.onload = () => resolve(image);
-            image.onerror = reject;
-            image.src = src;
-        });
-    }
-
-    async function saveEffectImage(kind) {
-        if (!['beauty', 'outfit'].includes(kind) || window.personalizedImageState?.[kind] !== 'complete') {
-            showCustomAlert('专属效果图尚未完成，请稍后再保存。');
-            return;
-        }
-        const source = kind === 'beauty'
-            ? document.getElementById('makeupEditorialAvatar')
-            : document.getElementById('outfitEditorialImage');
-        const button = document.getElementById(`${kind}EffectSaveBtn`);
-        if (!source?.src || !button) return;
-        const original = button.innerText;
-        button.innerText = '正在生成可分享效果图…';
-        button.disabled = true;
-        triggerVibration(50);
-        try {
-            const image = await loadEffectImage(source.src);
-            const canvas = document.createElement('canvas');
-            canvas.width = 1080;
-            canvas.height = 1440;
-            const context = canvas.getContext('2d');
-            const scale = Math.max(canvas.width / image.width, canvas.height / image.height);
-            const width = image.width * scale;
-            const height = image.height * scale;
-            context.drawImage(image, (canvas.width - width) / 2, (canvas.height - height) / 2, width, height);
-
-            const shade = context.createLinearGradient(0, 560, 0, 1440);
-            shade.addColorStop(0, 'rgba(45,34,29,0)');
-            shade.addColorStop(0.58, 'rgba(45,34,29,0.18)');
-            shade.addColorStop(1, 'rgba(45,34,29,0.78)');
-            context.fillStyle = shade;
-            context.fillRect(0, 0, 1080, 1440);
-
-            context.fillStyle = 'rgba(255,255,255,.92)';
-            context.font = '500 24px serif';
-            context.letterSpacing = '8px';
-            context.fillText('拾 色 季', 72, 84);
-            context.font = '400 20px sans-serif';
-            context.fillStyle = 'rgba(255,255,255,.82)';
-            context.fillText(kind === 'beauty' ? '专属妆发设计' : '专属穿搭设计', 72, 1160);
-            context.font = '400 66px serif';
-            context.fillStyle = '#fff';
-            context.fillText(window.currentAnalysisResult?.season_name || '我的专属色彩', 72, 1245);
-            context.font = '400 24px sans-serif';
-            context.fillStyle = 'rgba(255,255,255,.82)';
-            context.fillText(kind === 'beauty' ? '原来我还可以这样美。' : '把适合我的颜色，穿进真实生活。', 72, 1300);
-
-            const colors = Array.isArray(window.currentAnalysisResult?.best_colors)
-                ? window.currentAnalysisResult.best_colors.slice(0, 4)
-                : [];
-            colors.forEach((item, index) => {
-                context.fillStyle = typeof item === 'string' ? item : item.hex;
-                context.fillRect(72 + index * 74, 1340, 58, 18);
-            });
-            context.font = '400 16px sans-serif';
-            context.fillStyle = 'rgba(255,255,255,.65)';
-            context.fillText('拾色季 · PERSONAL COLOR EDIT', 72, 1392);
-
-            const label = kind === 'beauty' ? '妆发效果图' : '穿搭效果图';
-            deliverGeneratedImage(canvas.toDataURL('image/jpeg', .96), `拾色季_${label}.jpg`, `${label}已生成，请长按保存`);
-        } catch (error) {
-            console.error(error);
-            showCustomAlert('效果图生成失败，请稍后重试。');
-        } finally {
-            button.innerText = original;
-            button.disabled = false;
-        }
-    }
-
-    async function saveAsImage() {
-        if (window.location.protocol !== 'file:') {
-            const styleStates = Object.values(window.personalizedImageState || {});
-            if (styleStates.some((state) => state === 'loading' || state === 'idle')) {
-                showCustomAlert('专属妆发与穿搭视觉仍在生成，请完成后再保存完整长图。');
-                return;
-            }
-            if (styleStates.some((state) => state === 'failed')) {
-                showCustomAlert('仍有专属视觉未完成，请在对应图片上点击“重试”后再保存完整长图。');
-                return;
-            }
-        }
-        triggerVibration(50);
-        const btn = document.getElementById('saveBtn');
-        const ogText = btn.innerText;
-        btn.innerText = "引擎渲染中...";
-        btn.classList.add('opacity-70', 'cursor-wait');
-
-        try {
-            const exportColorSchemes = Array.isArray(window.reportColorStylingSchemes) ? window.reportColorStylingSchemes : [];
-            const mainContainer = document.getElementById('mainContainer');
-            const captureArea = document.getElementById('captureArea');
-            const appContainer = document.querySelector('.app-container');
-
-            const originalScrollTop = mainContainer.scrollTop;
-            const originalAppHeight = appContainer.style.height;
-            const originalMainOverflow = mainContainer.style.overflow;
-            const originalMainHeight = mainContainer.style.height;
-
-            mainContainer.scrollTop = 0;
-            appContainer.style.height = 'auto';
-            mainContainer.style.overflow = 'visible';
-            mainContainer.style.height = 'auto';
-
-            await new Promise(resolve => setTimeout(resolve, 300));
-
-            const canvas = await html2canvas(captureArea, {
-                scale: window.devicePixelRatio > 1 ? window.devicePixelRatio : 2, 
-                useCORS: true, 
-                backgroundColor: '#F7F5F2', 
-                logging: false, 
-                onclone: (doc) => {
-                    const cloneArea = doc.getElementById('captureArea');
-                    cloneArea.style.padding = '24px 20px';
-
-                    const dimensionDetails = doc.getElementById('dimensionDetails');
-                    if (dimensionDetails) dimensionDetails.open = false;
-
-                    const colorStylingTabs = cloneArea.querySelector('.color-styling-tabs');
-                    const colorStylingPanel = doc.getElementById('res-color-styling-panel');
-                    if (colorStylingTabs) colorStylingTabs.style.display = 'none';
-                    if (colorStylingPanel && exportColorSchemes.length) {
-                        colorStylingPanel.innerHTML = exportColorSchemes.map((scheme, index) => getColorStylingCardHTML(scheme, index)).join('');
-                        colorStylingPanel.style.display = 'grid';
-                        colorStylingPanel.style.gap = '14px';
-                    }
-
-                    const animatedEls = cloneArea.querySelectorAll('.fade-in, .stagger-1, .stagger-2, .stagger-3, .stagger-4');
-                    animatedEls.forEach(el => { el.style.opacity = '1'; el.style.transform = 'none'; el.style.animation = 'none'; });
-                    
-                    const glassPanels = cloneArea.querySelectorAll('.glass-panel, .content-card');
-                    glassPanels.forEach(el => {
-                        el.style.backdropFilter = 'none';
-                        el.style.webkitBackdropFilter = 'none';
-                        el.style.boxShadow = 'none';
-                        el.style.border = '1px solid #E8E1DE';
-                        el.style.background = '#FFFFFF';
-                    });
-                }
-            });
-
-            appContainer.style.height = originalAppHeight;
-            mainContainer.style.overflow = originalMainOverflow;
-            mainContainer.style.height = originalMainHeight;
-            mainContainer.scrollTop = originalScrollTop;
-
-            deliverGeneratedImage(canvas.toDataURL('image/jpeg', 0.95), '拾色季_完整色彩档案.jpg', '完整报告已生成，请长按保存');
-        } catch (e) {
-            console.error(e);
-            showCustomAlert('渲染引擎波动，建议直接使用系统长截屏功能。');
-        } finally {
-            btn.innerText = ogText; btn.classList.remove('opacity-70', 'cursor-wait');
-        }
-    }
-
-    function closeSaveOverlay() {
-        triggerVibration(30);
-        const overlay = document.getElementById('saveOverlay');
-        const overlayImg = document.getElementById('saveOverlayImg');
-        overlay.classList.add('opacity-0'); overlayImg.classList.remove('scale-100'); overlayImg.classList.add('scale-95');
-        setTimeout(() => overlay.classList.add('hidden'), 300);
-    }
-
-    async function resetTest() {
-        triggerVibration(50);
-        const code = window.currentCode;
-        
-        if (!code) {
-            forceKickToHome("登录态已失效，请重新唤醒密钥");
-            return;
-        }
-
-        const btn = document.querySelector('button[onclick="resetTest()"]');
-        const ogText = btn ? btn.innerText : "帮闺蜜也测一测";
-        if(btn) {
-            btn.innerText = "正在准备下一次分析...";
-            btn.classList.add('opacity-70', 'cursor-wait');
-        }
-
-        try {
-            const response = await fetch('/api/verify-code', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ activationCode: code })
-            });
-            const data = await response.json();
-
-            if (response.ok && data.valid) {
-                userImageBase64 = "";
-                window.analysisToken = data.analysisToken;
-                document.getElementById('analyzeBtn').disabled = true;
-                const preview = document.getElementById('imagePreview');
-                preview.src = ""; 
-                preview.classList.add('hidden');
-                document.getElementById('uploadText').innerText = "选择一张正面照片";
-                document.getElementById('dropzone-file').value = '';
-                const quality = document.getElementById('photoQuality');
-                quality.className = 'photo-quality hidden';
-                quality.innerHTML = '';
-                
-                checkLastReport();
-                showStep('step-upload');
-                document.getElementById('mainContainer').scrollTop = 0;
-                
-                let msg = `已准备完成，可生成次数剩余 ${data.remainingUses} 次`;
-                showToast(msg);
-            } else {
-                forceKickToHome(data.error || "该密钥可用次数已用完，请联系店铺客服");
-            }
-        } catch (error) {
-            console.error(error);
-            showCustomAlert('网络波动，重载失败，请重试');
-        } finally {
-            if(btn) {
-                btn.innerText = ogText;
-                btn.classList.remove('opacity-70', 'cursor-wait');
-            }
-        }
-    }
-
-    function forceKickToHome(msg) {
-        window.currentCode = ""; 
-        window.analysisToken = "";
-        userImageBase64 = "";
-        showStep('step-activation');
-        document.getElementById('mainContainer').scrollTop = 0;
-        showCustomAlert(msg);
-    }
-</script>
 </body>
 </html>
