@@ -181,6 +181,13 @@ function triggerVibration(pattern) {
         const dimensionDetails = document.getElementById('dimensionDetails');
         if (dimensionDetails) dimensionDetails.addEventListener('toggle', resizeReportChart);
         updateAnalyzeButtonState();
+        if (isDraftVisualReview()) {
+            clearClientWorkflow();
+            showStep('step-upload');
+            const previewStatus = document.getElementById('loadingPreviewStatus');
+            if (previewStatus) previewStatus.textContent = '视觉验收模式 · 使用合成结果，不调用模型';
+            setTimeout(() => showToast('视觉验收模式 · 照片仅在当前浏览器处理，不验证密钥、不调用模型'), 250);
+        }
     });
 
     let userImageBase64 = "";
@@ -301,9 +308,18 @@ function triggerVibration(pattern) {
         image.src = src;
     }
 
+    const DRAFT_VISUAL_REVIEW_HOST = 'codex-production-readiness.shiseji-app.pages.dev';
+
+    function isDraftVisualReview() {
+        return window.location.hostname === DRAFT_VISUAL_REVIEW_HOST
+            && new URLSearchParams(window.location.search).get('qa') === 'mobile';
+    }
+
     function isLocalPreview() {
         const loopback = ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname);
-        return window.location.protocol === 'file:' || (loopback && new URLSearchParams(window.location.search).has('preview'));
+        return window.location.protocol === 'file:'
+            || (loopback && new URLSearchParams(window.location.search).has('preview'))
+            || isDraftVisualReview();
     }
 
     let activationVerificationPending = false;
@@ -411,7 +427,7 @@ function triggerVibration(pattern) {
             window.currentCode = '';
             window.analysisToken = '';
             showStep('step-upload');
-            showToast('已进入本地界面预览，不验证或消耗密钥');
+            showToast('已进入视觉验收模式，不验证或消耗密钥');
             return;
         }
 
@@ -729,7 +745,7 @@ function triggerVibration(pattern) {
                     renderAIResult(demoResult);
                     showStep('step-result');
                     triggerVibration([80, 40, 120]);
-                    showToast('当前为本地示例报告，不消耗密钥次数');
+                    showToast('当前为合成示例报告，不消耗密钥、不调用模型');
                 }, 250);
             }, 1200);
             return;
@@ -904,6 +920,11 @@ function triggerVibration(pattern) {
 
     async function generatePersonalizedStyleImage(kind, analysis, retry = false) {
         if (!analysis || !userImageBase64 || window.personalizedImageState[kind] === 'loading') return;
+        if (isLocalPreview()) {
+            setPersonalizedImageState(kind, 'failed', '视觉验收模式不生成造型图');
+            showToast('视觉验收模式已阻止造型图接口调用');
+            return;
+        }
         const loadingCopy = kind === 'beauty' ? '正在设计专属妆发' : '正在设计完整穿搭';
         setPersonalizedImageState(kind, 'loading', loadingCopy);
         try {
@@ -1277,7 +1298,7 @@ function triggerVibration(pattern) {
     function getSafeObservation(value) {
         const text = String(value || '').trim();
         const previewOnly = /本地.*预览|预览示例|本地界面/.test(text);
-        if (window.location.protocol !== 'file:' && previewOnly) return '基于本次照片条件生成';
+        if (!isLocalPreview() && previewOnly) return '基于本次照片条件生成';
         return text || '基于本次照片条件生成';
     }
 
@@ -1594,9 +1615,17 @@ function triggerVibration(pattern) {
 
     async function resetTest() {
         triggerVibration(50);
-        const code = window.currentCode;
         if (resetVerificationPending) return;
 
+        if (isLocalPreview()) {
+            clearClientWorkflow();
+            checkLastReport();
+            showStep('step-upload');
+            showToast('视觉验收模式 · 已准备下一次界面检查');
+            return;
+        }
+
+        const code = window.currentCode;
         if (!code) {
             forceKickToHome('登录态已失效，请重新唤醒密钥');
             return;

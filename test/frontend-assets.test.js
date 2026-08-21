@@ -72,3 +72,26 @@ test('activation input uses a Latin-friendly mobile keyboard and a single brande
   assert.doesNotMatch(activationInput, /focus:ring|focus:border/);
   assert.match(cssSource, /#activationCode:focus-visible[\s\S]*border: 2px solid #8B6657/);
 });
+
+test('draft visual review is double-gated and blocks real service calls', async () => {
+  const appScript = await readFile(new URL('../web/app.js', import.meta.url), 'utf8');
+
+  assert.match(appScript, /DRAFT_VISUAL_REVIEW_HOST = 'codex-production-readiness\.shiseji-app\.pages\.dev'/);
+  assert.match(appScript, /window\.location\.hostname === DRAFT_VISUAL_REVIEW_HOST/);
+  assert.match(appScript, /\.get\('qa'\) === 'mobile'/);
+
+  const analysisStart = appScript.indexOf('async function startAnalysis()');
+  const previewAnalysisGuard = appScript.indexOf('if (localPreview)', analysisStart);
+  const analyzeRequest = appScript.indexOf("fetch('/api/analyze'", analysisStart);
+  assert.ok(analysisStart >= 0 && previewAnalysisGuard > analysisStart && previewAnalysisGuard < analyzeRequest);
+
+  const styleStart = appScript.indexOf('async function generatePersonalizedStyleImage');
+  const previewStyleGuard = appScript.indexOf('if (isLocalPreview())', styleStart);
+  const styleRequest = appScript.indexOf("fetch('/api/generate-style-image'", styleStart);
+  assert.ok(styleStart >= 0 && previewStyleGuard > styleStart && previewStyleGuard < styleRequest);
+
+  const resetStart = appScript.indexOf('async function resetTest()');
+  const previewResetGuard = appScript.indexOf('if (isLocalPreview())', resetStart);
+  const verifyRequest = appScript.indexOf("fetch('/api/verify-code'", resetStart);
+  assert.ok(resetStart >= 0 && previewResetGuard > resetStart && previewResetGuard < verifyRequest);
+});
