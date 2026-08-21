@@ -879,10 +879,13 @@ function triggerVibration(pattern) {
                 kicker.innerText = '拾色季 · 妆发设计 01';
                 copy.innerText = '不是换一张脸，而是让属于你的光被看见。';
             } else if (status === 'failed') {
-                kicker.innerText = '原始自拍 · 色彩基准';
-                copy.innerText = '专属妆发暂未完成；当前保留原始自拍，不用占位图替代你。';
+                kicker.innerText = '专属妆发暂未完成';
+                copy.innerText = '可以在上方重新生成，完成后即可保存效果图。';
+            } else if (status === 'preview') {
+                kicker.innerText = '视觉验收模式 · 造型图未生成';
+                copy.innerText = '此模式只验证报告排版与交互，不调用图像模型。';
             } else {
-                kicker.innerText = '原始自拍 · 专属妆发生成中';
+                kicker.innerText = '拾色季 · 专属妆发生成中';
                 copy.innerText = '正在保留你的身份特征，并重新设计更适合你的妆发。';
             }
             return;
@@ -892,6 +895,7 @@ function triggerVibration(pattern) {
         if (!kicker) return;
         if (status === 'complete') kicker.innerText = '拾色季 · 穿搭设计 01';
         else if (status === 'failed') kicker.innerText = '专属穿搭暂未完成 · 点击图中重试';
+        else if (status === 'preview') kicker.innerText = '视觉验收模式 · 造型图未生成';
         else kicker.innerText = '拾色季 · 穿搭设计生成中';
     }
 
@@ -921,7 +925,7 @@ function triggerVibration(pattern) {
     async function generatePersonalizedStyleImage(kind, analysis, retry = false) {
         if (!analysis || !userImageBase64 || window.personalizedImageState[kind] === 'loading') return;
         if (isLocalPreview()) {
-            setPersonalizedImageState(kind, 'failed', '视觉验收模式不生成造型图');
+            setPersonalizedImageState(kind, 'preview', '视觉验收模式 · 未生成造型图');
             showToast('视觉验收模式已阻止造型图接口调用');
             return;
         }
@@ -1011,7 +1015,10 @@ function triggerVibration(pattern) {
             const a = document.getElementById('userAvatarResult');
             setRuntimeImage(a, userImageBase64);
             const makeupEditorialAvatar = document.getElementById('makeupEditorialAvatar');
-            setRuntimeImage(makeupEditorialAvatar, userImageBase64);
+            if (makeupEditorialAvatar) {
+                makeupEditorialAvatar.classList.add('hidden');
+                makeupEditorialAvatar.removeAttribute('src');
+            }
         }
         updatePersonalizedImageCaption('beauty', 'idle');
         updatePersonalizedImageCaption('outfit', 'idle');

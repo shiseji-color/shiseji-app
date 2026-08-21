@@ -97,8 +97,8 @@
                         <div class="absolute inset-0 z-10 bg-black/5 mix-blend-multiply"></div>
                         <img id="imagePreview" class="absolute inset-0 w-full h-full object-cover hidden z-0 opacity-80 mix-blend-luminosity grayscale-[20%]" alt="已选择的正面照片预览">
                         
-                        <div class="flex flex-col items-center justify-center pt-5 pb-6 relative z-20 transition-transform group-hover:scale-105">
-                            <div class="w-12 h-12 bg-white backdrop-blur-sm rounded-full flex items-center justify-center shadow-[0_5px_14px_rgba(91,70,60,0.13)] mb-3">
+                        <div class="upload-choice flex flex-col items-center justify-center pt-5 pb-6 relative z-20 transition-transform group-hover:scale-105">
+                            <div class="upload-choice-icon w-12 h-12 bg-white backdrop-blur-sm rounded-full flex items-center justify-center shadow-[0_5px_14px_rgba(91,70,60,0.13)] mb-3">
                                 <svg class="w-5 h-5 text-[#C58F79]" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
                             </div>
                             <p class="text-[14px] text-[#4A403A] tracking-[0.16em] mb-1 font-medium shadow-white drop-shadow-md" id="uploadText" role="status" aria-live="polite">选择一张正面照片</p>
@@ -123,14 +123,9 @@
                 </div>
 
                 <div class="privacy-summary mt-6 rounded-[12px] border border-[#E7DCD6] bg-[#FCF9F7] px-4 py-4">
-                    <p class="font-medium text-[#4A403A]">提交照片前，请确认以下处理方式</p>
-                    <dl class="privacy-facts">
-                        <div><dt>处理方</dt><dd>拾色季服务端、阿里云百炼视觉与图像编辑服务。</dd></div>
-                        <div><dt>用途</dt><dd>本次色彩分析，以及经你授权的妆发和穿搭效果生成。</dd></div>
-                        <div><dt>保留</dt><dd>原图仅在私有临时存储中用于任务处理，最长保留 20 分钟。</dd></div>
-                        <div><dt>删除</dt><dd>任务完成、失败或超时后自动删除临时原图；取消等待不会重复提交或重复扣次。</dd></div>
-                    </dl>
-                    <div class="mt-4 flex items-start gap-2 text-[14px] text-[#4A403A] leading-relaxed">
+                    <p class="privacy-lead">照片仅用于本次分析和你授权的造型图</p>
+                    <p class="privacy-detail">原图私有临时处理，任务结束或最迟 20 分钟自动删除。</p>
+                    <div class="privacy-consent-row flex items-start gap-2 text-[14px] text-[#4A403A] leading-relaxed">
                         <label class="flex items-start gap-2 cursor-pointer">
                             <input id="privacyConsent" type="checkbox" class="privacy-check h-3.5 w-3.5">
                             <span>我已阅读并同意</span>
