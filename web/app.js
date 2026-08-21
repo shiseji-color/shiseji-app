@@ -54,8 +54,10 @@ function triggerVibration(pattern) {
         )).filter(element => !element.closest('[hidden]') && element.offsetParent !== null);
     }
 
-    function openModal(modal, initialFocus) {
-        modalReturnFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    function openModal(modal, initialFocus, returnFocus = null) {
+        modalReturnFocus = returnFocus instanceof HTMLElement
+            ? returnFocus
+            : (document.activeElement instanceof HTMLElement ? document.activeElement : null);
         activeModal = modal;
         const app = document.querySelector('.app-container');
         if (app) {
@@ -156,6 +158,29 @@ function triggerVibration(pattern) {
                 else closeSaveOverlay();
             });
         });
+
+        const activationInput = document.getElementById('activationCode');
+        const activationSubmit = document.getElementById('activationSubmit');
+        if (activationInput && activationSubmit) {
+            activationInput.addEventListener('input', () => {
+                const normalized = normalizeActivationInput(activationInput.value);
+                if (activationInput.value !== normalized) activationInput.value = normalized;
+                activationInput.setAttribute('aria-invalid', 'false');
+                setActivationStatus('');
+                updateActivationSubmitState();
+            });
+            activationInput.addEventListener('keydown', event => {
+                if (event.key !== 'Enter' || event.isComposing) return;
+                event.preventDefault();
+                if (!activationSubmit.disabled) verifyCode();
+            });
+            updateActivationSubmitState();
+        }
+        const privacyConsent = document.getElementById('privacyConsent');
+        if (privacyConsent) privacyConsent.addEventListener('change', updateAnalyzeButtonState);
+        const dimensionDetails = document.getElementById('dimensionDetails');
+        if (dimensionDetails) dimensionDetails.addEventListener('toggle', resizeReportChart);
+        updateAnalyzeButtonState();
     });
 
     let userImageBase64 = "";
@@ -167,6 +192,19 @@ function triggerVibration(pattern) {
     let analysisRecoveryTimer = null;
     let activeAnalysisController = null;
     let analysisRunId = 0;
+    let photoSelectionId = 0;
+    let photoProcessing = false;
+    let photoHasBlockingIssue = true;
+
+    function updateAnalyzeButtonState() {
+        const button = document.getElementById('analyzeBtn');
+        const consent = document.getElementById('privacyConsent');
+        if (!button) return;
+        const disabled = !userImageBase64 || photoProcessing || photoHasBlockingIssue || !consent?.checked;
+        button.disabled = disabled;
+        button.setAttribute('aria-disabled', String(disabled));
+    }
+
 
     function clearAnalysisRuntime() {
         if (progressInterval) clearInterval(progressInterval);
@@ -201,11 +239,11 @@ function triggerVibration(pattern) {
         }, tone === 'preview' ? 1600 : 2500);
     }
 
-    function showCustomAlert(message) {
+    function showCustomAlert(message, returnFocus = null) {
         triggerVibration([50, 50, 50]);
         document.getElementById('alertMessage').textContent = String(message);
         const modal = document.getElementById('customAlert');
-        openModal(modal, document.getElementById('alertTitle'));
+        openModal(modal, document.getElementById('alertTitle'), returnFocus);
     }
 
     function closeCustomAlert() {
@@ -230,16 +268,22 @@ function triggerVibration(pattern) {
         if (reportIndexObserver) reportIndexObserver.disconnect();
         const links = Array.from(document.querySelectorAll('.report-index a'));
         const sections = links.map(link => document.querySelector(link.getAttribute('href'))).filter(Boolean);
-        reportIndexObserver = new IntersectionObserver(entries => {
-            const visible = entries
-                .filter(entry => entry.isIntersecting)
-                .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        const scrollRoot = document.getElementById('mainContainer');
+        reportIndexObserver = new IntersectionObserver(() => {
+            const rootRect = scrollRoot.getBoundingClientRect();
+            const readingLine = rootRect.top + (rootRect.height * .22);
+            const visible = sections.find(section => {
+                const rect = section.getBoundingClientRect();
+                return rect.top <= readingLine && rect.bottom > readingLine;
+            }) || sections
+                .map(section => ({ section, distance: Math.abs(section.getBoundingClientRect().top - readingLine) }))
+                .sort((a, b) => a.distance - b.distance)[0]?.section;
             if (!visible) return;
             links.forEach(link => {
-                if (link.getAttribute('href') === `#${visible.target.id}`) link.setAttribute('aria-current', 'location');
+                if (link.getAttribute('href') === `#${visible.id}`) link.setAttribute('aria-current', 'location');
                 else link.removeAttribute('aria-current');
             });
-        }, { root: document.getElementById('mainContainer'), rootMargin: '-15% 0px -65%', threshold: [0, .25, .5] });
+        }, { root: scrollRoot, rootMargin: '-15% 0px -65%', threshold: [0, .25, .5] });
         sections.forEach(section => reportIndexObserver.observe(section));
     }
 
@@ -262,79 +306,189 @@ function triggerVibration(pattern) {
         return window.location.protocol === 'file:' || (loopback && new URLSearchParams(window.location.search).has('preview'));
     }
 
-    async function verifyCode() {
-        triggerVibration(50);
-        const inputElement = document.getElementById('activationCode');
-        const code = inputElement.value.trim(); 
+    let activationVerificationPending = false;
+    let resetVerificationPending = false;
 
+    function normalizeActivationInput(value) {
+        return String(value ?? '')
+            .toUpperCase()
+            .replace(/\s+/g, '')
+            .replace(/[^A-Z0-9-]/g, '')
+            .slice(0, 12);
+    }
+
+    function isActivationInputComplete(value) {
+        return /^[A-Z0-9-]{12}$/.test(value);
+    }
+
+    function setActivationStatus(message = '', tone = 'default') {
+        const status = document.getElementById('activationStatus');
+        const helpLink = document.getElementById('activationHelp');
+        if (!status) return;
+        status.textContent = message;
+        status.dataset.tone = tone;
+        status.hidden = !message;
+        if (helpLink) helpLink.hidden = Boolean(message);
+    }
+
+    function updateActivationSubmitState() {
+        const input = document.getElementById('activationCode');
+        const submit = document.getElementById('activationSubmit');
+        if (!input || !submit) return;
+        const disabled = activationVerificationPending || !isActivationInputComplete(input.value);
+        submit.disabled = disabled;
+        submit.setAttribute('aria-disabled', String(disabled));
+    }
+
+    function getActivationErrorMessage(response, data) {
+        const serverMessage = typeof data?.error === 'string' ? data.error : '';
+        if (response.status === 429) return '尝试次数较多，请稍候片刻再试。';
+        if (response.status >= 500) return '密钥验证服务暂时繁忙，请稍后重试。';
+        if (serverMessage.includes('格式')) return '密钥格式不正确，请检查后重新输入。';
+        if (data?.remainingUses === 0 || serverMessage.includes('用完')) {
+            return '该密钥无效或可用次数已用完，请联系提供密钥的店铺。';
+        }
+        return '密钥未通过验证，请检查后重新输入。';
+    }
+
+    function clearClientWorkflow({ clearConsent = true } = {}) {
+        analysisRunId += 1;
+        photoSelectionId += 1;
+        if (activeAnalysisController) activeAnalysisController.abort();
+        activeAnalysisController = null;
+        clearAnalysisRuntime();
+
+        userImageBase64 = '';
+        photoProcessing = false;
+        photoHasBlockingIssue = true;
+        window.currentAnalysisRequestId = null;
+        window.currentAnalysisResult = null;
+        window.personalizedImageState = { beauty: 'idle', outfit: 'idle' };
+        window.remainingUses = undefined;
+        window.visualToken = '';
+        window.visualRequestId = '';
+        generatedImagePayload = null;
+        sessionStorage.removeItem('shisejiAnalysisJob');
+        sessionStorage.removeItem('shisejiAnalysisRequestId');
+
+        const fileInput = document.getElementById('dropzone-file');
+        const preview = document.getElementById('imagePreview');
+        const quality = document.getElementById('photoQuality');
+        const consent = document.getElementById('privacyConsent');
+        if (fileInput) fileInput.value = '';
+        if (preview) {
+            preview.removeAttribute('src');
+            preview.classList.add('hidden');
+        }
+        const uploadText = document.getElementById('uploadText');
+        if (uploadText) uploadText.innerText = '选择一张正面照片';
+        if (quality) {
+            quality.className = 'photo-quality hidden';
+            quality.innerHTML = '';
+        }
+        if (clearConsent && consent) consent.checked = false;
+        updateAnalyzeButtonState();
+    }
+
+    async function verifyCode() {
+        const inputElement = document.getElementById('activationCode');
+        const submitBtn = document.getElementById('activationSubmit');
+        const code = normalizeActivationInput(inputElement.value);
+        inputElement.value = code;
+        if (activationVerificationPending) return;
+
+        if (!isActivationInputComplete(code)) {
+            setActivationStatus(code ? '密钥应为 12 位字母、数字或连字符。' : '请输入专属密钥后继续。', 'error');
+            inputElement.setAttribute('aria-invalid', 'true');
+            updateActivationSubmitState();
+            inputElement.focus();
+            return;
+        }
+
+        triggerVibration(50);
         if (isLocalPreview()) {
+            clearClientWorkflow();
             window.currentCode = '';
             window.analysisToken = '';
             showStep('step-upload');
             showToast('已进入本地界面预览，不验证或消耗密钥');
             return;
         }
-        
-        if (!code) { 
-            showCustomAlert("请输入您的专属密钥");
-            return; 
-        }
-        
-        const submitBtn = document.querySelector('button[onclick="verifyCode()"]');
-        const ogText = submitBtn.innerText;
-        submitBtn.innerText = "云端鉴权中...";
-        submitBtn.disabled = true;
+
+        const defaultText = '开启我的色彩档案';
+        let shouldRefocus = false;
+        let timeoutId = null;
+        activationVerificationPending = true;
+        inputElement.disabled = true;
+        submitBtn.innerText = '正在验证密钥…';
         submitBtn.setAttribute('aria-busy', 'true');
-        submitBtn.classList.add('opacity-70', 'cursor-wait');
+        setActivationStatus('正在安全验证，请稍候。', 'loading');
+        updateActivationSubmitState();
 
         try {
+            const controller = new AbortController();
+            timeoutId = setTimeout(() => controller.abort(), 12_000);
             const response = await fetch('/api/verify-code', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ activationCode: code })
+                body: JSON.stringify({ activationCode: code }),
+                signal: controller.signal,
             });
-
-            const data = await response.json();
+            const data = await response.json().catch(() => ({}));
 
             if (response.ok && data.valid) {
+                clearClientWorkflow();
                 window.currentCode = code;
                 window.analysisToken = data.analysisToken;
-                
+                inputElement.setAttribute('aria-invalid', 'false');
+                setActivationStatus('');
                 checkLastReport();
                 showStep('step-upload');
-                
-                let premiumMsg = "";
-                if (data.remainingUses !== undefined) {
-                    premiumMsg = `密钥验证通过，可生成次数剩余 ${data.remainingUses} 次`;
-                } else {
-                    premiumMsg = "密钥验证通过，可以开始生成色彩档案";
-                }
+                const premiumMsg = data.remainingUses !== undefined
+                    ? `密钥验证通过，可生成次数剩余 ${data.remainingUses} 次`
+                    : '密钥验证通过，可以开始生成色彩档案';
                 showToast(premiumMsg);
-                
             } else {
-                showCustomAlert(data.error || '该密钥无效或可用次数已用完，请联系店铺客服。');
+                inputElement.setAttribute('aria-invalid', 'true');
+                setActivationStatus(getActivationErrorMessage(response, data), 'error');
+                shouldRefocus = true;
             }
         } catch (error) {
-            console.error('云端核销失败:', error);
-            const localPreview = isLocalPreview();
-            showCustomAlert(localPreview ? '当前是本地静态预览，无法验证密钥。请打开正式发布页面。' : '暂时无法连接密钥验证服务，请稍后重试。');
+            console.error('Activation verification failed:', error);
+            inputElement.setAttribute('aria-invalid', 'true');
+            const message = error?.name === 'AbortError'
+                ? '验证等待时间较长，请稍后重新尝试。'
+                : '网络连接暂时不可用，请检查网络后重试。';
+            setActivationStatus(message, 'error');
+            shouldRefocus = true;
         } finally {
-            submitBtn.innerText = ogText;
-            submitBtn.disabled = false;
+            if (timeoutId) clearTimeout(timeoutId);
+            activationVerificationPending = false;
+            inputElement.disabled = false;
+            submitBtn.innerText = defaultText;
             submitBtn.removeAttribute('aria-busy');
-            submitBtn.classList.remove('opacity-70', 'cursor-wait');
+            updateActivationSubmitState();
+            if (shouldRefocus) inputElement.focus();
         }
     }
 
     function handleImageUpload(event) {
-        const file = event.target.files[0];
+        const input = event.target;
+        const file = input.files[0];
         if(file) {
+            const selectionId = ++photoSelectionId;
+            const preview = document.getElementById('imagePreview');
             triggerVibration(50);
+            photoProcessing = true;
+            photoHasBlockingIssue = true;
             document.getElementById('uploadText').innerText = "图像引擎处理中...";
+            updateAnalyzeButtonState();
             const reader = new FileReader();
             reader.onload = function(e) {
+                if (selectionId !== photoSelectionId) return;
                 const img = new Image();
                 img.onload = function() {
+                    if (selectionId !== photoSelectionId) return;
                     const quality = evaluateImageQuality(img);
                     renderPhotoQuality(quality);
                     const canvas = document.createElement('canvas');
@@ -350,34 +504,48 @@ function triggerVibration(pattern) {
 
                     canvas.width = width; canvas.height = height;
                     const ctx = canvas.getContext('2d');
+                    if (!ctx) { img.onerror(); return; }
                     ctx.drawImage(img, 0, 0, width, height);
 
                     userImageBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                    photoProcessing = false;
+                    photoHasBlockingIssue = quality.blocking.length > 0;
                     const pendingJob = JSON.parse(sessionStorage.getItem('shisejiAnalysisJob') || 'null');
                     window.currentAnalysisRequestId = pendingJob?.requestId
                         || sessionStorage.getItem('shisejiAnalysisRequestId')
                         || crypto.randomUUID();
                     sessionStorage.setItem('shisejiAnalysisRequestId', window.currentAnalysisRequestId);
                     
-                    const preview = document.getElementById('imagePreview');
                     setRuntimeImage(preview, userImageBase64);
                     document.getElementById('uploadText').innerText = "照片已就绪，轻触可重选";
-                    event.target.value = ''; 
-                    document.getElementById('analyzeBtn').disabled = quality.blocking.length > 0;
+                    input.value = '';
+                    updateAnalyzeButtonState();
                 };
                 img.onerror = function() {
+                    if (selectionId !== photoSelectionId) return;
                     userImageBase64 = '';
-                    event.target.value = '';
+                    photoProcessing = false;
+                    photoHasBlockingIssue = true;
+                    input.value = '';
                     document.getElementById('uploadText').innerText = '无法读取这张照片，请重新选择';
-                    document.getElementById('analyzeBtn').disabled = true;
+                    preview.classList.add('hidden');
+                    preview.removeAttribute('src');
                     renderPhotoQuality({ blocking: ['文件已损坏或不是受支持的照片格式'], warnings: [] });
+                    updateAnalyzeButtonState();
                 };
                 img.src = e.target.result;
             };
             reader.onerror = function() {
-                event.target.value = '';
+                if (selectionId !== photoSelectionId) return;
+                userImageBase64 = '';
+                photoProcessing = false;
+                photoHasBlockingIssue = true;
+                input.value = '';
                 document.getElementById('uploadText').innerText = '无法读取这张照片，请重新选择';
+                preview.classList.add('hidden');
+                preview.removeAttribute('src');
                 renderPhotoQuality({ blocking: ['读取照片失败，请重新选择原图'], warnings: [] });
+                updateAnalyzeButtonState();
             };
             reader.readAsDataURL(file);
         }
@@ -664,10 +832,10 @@ function triggerVibration(pattern) {
             if (error.message === "AUTH_FAILED") {
                 forceKickToHome("令牌验证失败，请重新唤醒密钥");
             } else if (error.name === 'AbortError' || error.message === 'SUBMIT_UNKNOWN' || error.message === 'STATUS_UNKNOWN') {
-                showCustomAlert('分析等待时间较长，请返回后重新尝试。此次失败不会生成报告。');
+                showCustomAlert('连接等待超时，任务可能仍在处理中。返回后再次开始会优先恢复，不会重复提交或扣次。');
                 showStep('step-upload');
             } else {
-                showCustomAlert('暂时无法完成分析，请检查网络后重新上传照片。');
+                showCustomAlert('暂时无法完成分析，请稍后重试。照片仍保留；未生成有效报告不会扣次。');
                 showStep('step-upload');
             }
         }
@@ -885,19 +1053,15 @@ function triggerVibration(pattern) {
 
         const resAvoidEl = document.getElementById('res-avoid');
         if (resAvoidEl) {
-            let avoidContent = '';
-            if (d.avoid_colors && Array.isArray(d.avoid_colors)) {
-                avoidContent = "建议减少靠近面部：";
-                d.avoid_colors.forEach((color) => {
-                    let colorName = typeof color === 'string' ? color : color.name;
-                    avoidContent += `<span class="color-capsule-avoid">${escapeHTML(colorName)}</span>`;
-                });
-            } else if (d.avoid_colors && typeof d.avoid_colors === 'string') {
-                avoidContent = `🚫 <span class="color-capsule-avoid">${escapeHTML(d.avoid_colors)}</span>`;
-            } else {
-                avoidContent = "...";
-            }
-            resAvoidEl.innerHTML = avoidContent;
+            const avoidColors = Array.isArray(d.avoid_colors)
+                ? d.avoid_colors.slice(0, 5)
+                : (typeof d.avoid_colors === 'string' ? [d.avoid_colors] : []);
+            resAvoidEl.innerHTML = avoidColors.length
+                ? avoidColors.map((color) => {
+                    const colorName = typeof color === 'string' ? color : color.name;
+                    return `<span class="color-capsule-avoid">${escapeHTML(colorName)}</span>`;
+                }).join('')
+                : '<span class="archive-avoid-empty">暂无补充建议</span>';
         }
 
         const today = new Date();
@@ -919,7 +1083,7 @@ function triggerVibration(pattern) {
                     <div class="w-9 h-9 rounded-full shadow-inner border border-black/5 flex-shrink-0" style="background-color:${colorHex};"></div>
                     <div class="flex flex-col">
                         <span class="text-[12px] text-[#4A403A] font-medium tracking-widest">${colorLabel}</span>
-                        <span class="text-[12px] text-[#66706B] font-mono mt-0.5 uppercase tracking-[0.04em]">${colorHex}</span>
+                        <span class="text-[12px] text-[#76665E] font-mono mt-0.5 uppercase tracking-[0.04em]">${colorHex}</span>
                     </div>
                 </div>`;
             });
@@ -941,9 +1105,9 @@ function triggerVibration(pattern) {
                         <span class="text-[12px] font-serif-custom font-bold text-[#3D342F]">${value}</span>
                     </div>
                     <div class="w-full h-[2px] mb-1.5 overflow-hidden">
-                        <div class="bg-[#315F56] h-full progress-bar-fill" style="width:${value}%" data-target-scale="1"></div>
+                        <div class="bg-[#9A7665] h-full progress-bar-fill" style="width:${value}%" data-target-scale="1"></div>
                     </div>
-                    <span class="text-[12px] text-[#66706B] tracking-[0.02em]">${desc || ''}</span>
+                    <span class="text-[12px] text-[#76665E] tracking-[0.02em]">${desc || ''}</span>
                 </div>`;
             });
         }
@@ -954,20 +1118,24 @@ function triggerVibration(pattern) {
 
          const dimensions = document.getElementById('res-dimensions');
          if (dimensions) {
-             dimensions.innerHTML = '';
-             if (Array.isArray(d.dimension_data)) {
-                 d.dimension_data.forEach((item, index) => {
+             const dimensionGroups = [
+                 { name: '肤色基底', range: '01—04' },
+                 { name: '面部色彩', range: '05—08' },
+                 { name: '发肤关系', range: '09—12' },
+                 { name: '色彩承载', range: '13—16' }
+             ];
+             const dimensionData = Array.isArray(d.dimension_data) ? d.dimension_data.slice(0, 16) : [];
+             dimensions.innerHTML = dimensionGroups.map((group, groupIndex) => {
+                 const rows = dimensionData.slice(groupIndex * 4, groupIndex * 4 + 4);
+                 if (!rows.length) return '';
+                 return `<article class="dimension-group"><header><span>${group.range}</span><h3>${group.name}</h3></header><div class="dimension-group-rows">${rows.map((item, rowIndex) => {
                      const value = Math.max(0, Math.min(100, Number(item.value) || 0));
-                     dimensions.innerHTML += `
-                     <div class="dimension-row" title="${escapeHTML(getSafeObservation(item.observation))}">
-                         <div class="dimension-row-main">
-                             <div class="dimension-row-title"><span><i class="dimension-row-index">${String(index + 1).padStart(2, '0')}</i>${escapeHTML(item.name)}</span></div>
-                             <div class="dimension-row-track"><div class="dimension-row-fill" style="width:${value}%"></div></div>
-                         </div>
-                         <span class="dimension-row-value">${value}</span>
-                     </div>`;
-                 });
-             }
+                     const index = groupIndex * 4 + rowIndex + 1;
+                     const name = escapeHTML(item.name);
+                     const observation = escapeHTML(getSafeObservation(item.observation));
+                     return `<div class="dimension-row" title="${observation}" aria-label="${name}，${value} 分。${observation}"><div class="dimension-row-main"><div class="dimension-row-title"><span><i class="dimension-row-index">${String(index).padStart(2, '0')}</i>${name}</span></div><div class="dimension-row-track"><div class="dimension-row-fill" style="width:${value}%"></div></div></div><span class="dimension-row-value">${value}</span></div>`;
+                 }).join('')}</div></article>`;
+             }).join('');
          }
 
          const c = document.getElementById('res-best-colors'); c.innerHTML = '';
@@ -976,11 +1144,17 @@ function triggerVibration(pattern) {
                 hex: escapeHTML(typeof val === 'string' ? val : val.hex),
                 name: escapeHTML(typeof val === 'string' ? '推荐色' : val.name)
             }));
-            c.innerHTML = `<div class="palette-arches">${normalized.slice(0, 4).map((color) =>
-                `<div class="palette-arch" style="background:${color.hex}">${color.name}</div>`
-            ).join('')}</div><div class="palette-circles">${normalized.slice(4, 8).map((color) =>
-                    `<div><div class="palette-circle" style="background:${color.hex}" title="${color.name}"></div><p class="text-[12px] text-center text-[#515854] mt-1.5 truncate">${color.name}</p></div>`
-            ).join('')}</div>`;
+            c.innerHTML = `<div class="palette-primary" role="list" aria-label="优先靠近面部的推荐色">${normalized.slice(0, 4).map((color) =>
+                `<figure class="palette-swatch palette-swatch-primary" role="listitem"><i style="--swatch-color:${color.hex}" aria-hidden="true"></i><figcaption><b>${color.name}</b><span>${color.hex.toUpperCase()}</span></figcaption></figure>`
+            ).join('')}</div><div class="palette-extended"><div class="palette-group-heading"><span>延展色盘</span><span>下装 · 包袋 · 鞋履</span></div><div class="palette-secondary" role="list" aria-label="适合下装、包袋和鞋履的延展色">${normalized.slice(4, 8).map((color) =>
+                `<figure class="palette-swatch palette-swatch-secondary" role="listitem"><i style="--swatch-color:${color.hex}" aria-hidden="true"></i><figcaption><b>${color.name}</b><span>${color.hex.toUpperCase()}</span></figcaption></figure>`
+            ).join('')}</div></div>`;
+            const closingColors = document.getElementById('res-closing-colors');
+            if (closingColors) {
+                const coreColors = normalized.slice(0, 4);
+                closingColors.innerHTML = coreColors.map((color) => `<i style="--closing-color:${color.hex}" aria-hidden="true"></i>`).join('');
+                closingColors.setAttribute('aria-label', `你的核心本命色：${coreColors.map((color) => color.name).join('、')}`);
+            }
             renderColorStyling(normalized);
             renderEditorialFormulas(normalized);
         }
@@ -999,7 +1173,7 @@ function triggerVibration(pattern) {
                 { role: '腮红', color: pick(1), note: '柔化轮廓' },
                 { role: '眼妆', color: pick(2), note: '加深神采' }
             ];
-            beauty.innerHTML = tones.map((item) => `<div class="beauty-tone"><i style="background:${item.color.hex}"></i><b>${item.role}</b><span>${item.color.name}<br>${item.note}</span></div>`).join('');
+            beauty.innerHTML = tones.map((item) => `<article class="beauty-tone"><i style="--tone-color:${item.color.hex}" aria-hidden="true"></i><div><b>${item.role}</b><span>${item.color.name}</span><small>${item.note}</small></div></article>`).join('');
         }
         const wardrobe = document.getElementById('res-wardrobe-formula');
         if (wardrobe) {
@@ -1008,7 +1182,7 @@ function triggerVibration(pattern) {
                 { en: 'SILHOUETTE', role: '轮廓辅助', color: pick(2, 1), note: '建立质感层次' },
                 { en: 'SIGNATURE', role: '点睛配饰', color: pick(0), note: '小面积留下记忆' }
             ];
-            wardrobe.innerHTML = pieces.map((item) => `<article class="wardrobe-piece"><i style="background:${item.color.hex}"></i><div><small>${item.en}</small><b>${item.role}</b><span>${item.color.name}<br>${item.note}</span></div></article>`).join('');
+            wardrobe.innerHTML = pieces.map((item) => `<article class="wardrobe-piece"><i style="--wardrobe-color:${item.color.hex}" aria-hidden="true"></i><div><small>${item.en}</small><b>${item.role}</b><span>${item.color.name}</span><em>${item.note}</em></div></article>`).join('');
         }
     }
 
@@ -1040,9 +1214,9 @@ function triggerVibration(pattern) {
             }
         ];
         window.reportColorStylingSchemes = schemes;
-        container.innerHTML = `<div class="color-styling-tabs">${schemes.map((scheme, index) =>
-            `<button type="button" class="color-styling-tab${index === 0 ? ' active' : ''}" onclick="selectColorStyling(${index})">${scheme.title}</button>`
-        ).join('')}</div><div id="res-color-styling-panel"></div>`;
+        container.innerHTML = `<div class="color-styling-tabs" role="group" aria-label="配色场景">${schemes.map((scheme, index) =>
+            `<button type="button" class="color-styling-tab${index === 0 ? ' active' : ''}" aria-pressed="${index === 0}" aria-controls="res-color-styling-panel" onclick="selectColorStyling(${index})">${scheme.title}</button>`
+        ).join('')}</div><div id="res-color-styling-panel" role="region" aria-label="当前配色方案" aria-live="polite" aria-atomic="true"></div>`;
         selectColorStyling(0);
     }
 
@@ -1051,25 +1225,47 @@ function triggerVibration(pattern) {
         const scheme = schemes[index] || schemes[0];
         const panel = document.getElementById('res-color-styling-panel');
         if (!scheme || !panel) return;
-        document.querySelectorAll('.color-styling-tab').forEach((button, buttonIndex) => button.classList.toggle('active', buttonIndex === index));
+        document.querySelectorAll('.color-styling-tab').forEach((button, buttonIndex) => {
+            button.classList.toggle('active', buttonIndex === index);
+            button.setAttribute('aria-pressed', String(buttonIndex === index));
+        });
         panel.innerHTML = getColorStylingCardHTML(scheme, index);
+    }
+
+    function getReadableColorForeground(hex) {
+        const normalized = String(hex || '').trim().replace(/^#/, '');
+        const expanded = normalized.length === 3
+            ? normalized.split('').map((character) => character + character).join('')
+            : normalized;
+        if (!/^[0-9a-f]{6}$/i.test(expanded)) return '#44362F';
+        const luminance = [0, 2, 4].map((offset) => {
+            const channel = parseInt(expanded.slice(offset, offset + 2), 16) / 255;
+            return channel <= 0.04045 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+        }).reduce((sum, channel, index) => sum + channel * [0.2126, 0.7152, 0.0722][index], 0);
+
+
+        const darkContrast = (luminance + 0.05) / (0.041 + 0.05);
+        const lightContrast = (0.964 + 0.05) / (luminance + 0.05);
+        if (darkContrast >= 4.5) return '#44362F';
+        if (lightContrast >= 4.5) return '#FFFAF7';
+        return luminance >= 0.179 ? '#000000' : '#FFFFFF';
     }
 
     function getColorStylingCardHTML(scheme, index) {
         return `<article class="color-look">
             <div class="color-look-head"><div><h3>${scheme.title}</h3></div></div>
-            <div class="color-ratio">${scheme.colors.map((color, colorIndex) => `<i style="width:${scheme.ratios[colorIndex]}%;background:${color.hex}" title="${color.name}">${scheme.ratios[colorIndex]}%</i>`).join('')}</div>
+            <div class="color-ratio">${scheme.colors.map((color, colorIndex) => `<i style="width:${scheme.ratios[colorIndex]}%;background:${color.hex};--ratio-foreground:${getReadableColorForeground(color.hex)}" title="${color.name}" aria-label="${color.name}，占比 ${scheme.ratios[colorIndex]}%">${scheme.ratios[colorIndex]}%</i>`).join('')}</div>
             <div class="color-look-formula"><p>${scheme.copy}</p><b>${scheme.texture}</b></div>
         </article>`;
     }
 
-    function applyReportTheme(d) {
-        const colors = Array.isArray(d.best_colors) ? d.best_colors.map((item) => typeof item === 'string' ? item : item.hex).filter(Boolean) : [];
+    function applyReportTheme() {
+
         const root = document.documentElement.style;
-        if (colors[0]) root.setProperty('--report-primary', colors[0]);
-        if (colors[1]) root.setProperty('--report-secondary', colors[1]);
-        if (colors[4] || colors[2]) root.setProperty('--report-metal', colors[4] || colors[2]);
-        root.setProperty('--report-deep', '#44362F');
+
+
+
+        ['--report-primary', '--report-secondary', '--report-metal'].forEach((property) => root.removeProperty(property));
     }
 
     function resizeReportChart() {
@@ -1114,7 +1310,7 @@ function triggerVibration(pattern) {
                     r: {
                         angleLines: { color: 'rgba(200,195,190,0.9)', lineWidth: 1 },
                         grid: { color: 'rgba(235,230,225,0.8)', circular: false },
-                        pointLabels: { font: { size: 12, weight: 500, family: "ui-serif, 'Songti SC', STSong, SimSun, serif" }, color: '#515854', padding: 12 },
+                        pointLabels: { font: { size: 12, weight: 500, family: "ui-serif, 'Songti SC', STSong, SimSun, serif" }, color: '#51433C', padding: 12 },
                         ticks: { display: false, min: 0, max: 100 }
                     }
                 }
@@ -1122,7 +1318,11 @@ function triggerVibration(pattern) {
         });
     }
 
-    function deliverGeneratedImage(dataURL, filename, mobileMessage) {
+    let generatedImagePayload = null;
+    let reportExportInProgress = false;
+
+    function deliverGeneratedImage(dataURL, filename, mobileMessage, returnFocus = null) {
+        generatedImagePayload = { dataURL, filename };
         const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
         if (!isMobile) {
             const link = document.createElement('a');
@@ -1134,14 +1334,53 @@ function triggerVibration(pattern) {
         }
         const overlay = document.getElementById('saveOverlay');
         const overlayImg = document.getElementById('saveOverlayImg');
+        const overlayTitle = document.getElementById('saveOverlayTitle');
+        const shareLabel = document.getElementById('shareGeneratedLabel');
         overlayImg.src = dataURL;
-        openModal(overlay, document.getElementById('saveOverlayTitle'));
+        overlayTitle.textContent = filename.includes('完整') ? '完整色彩档案已生成' : '专属效果图已生成';
+        shareLabel.textContent = typeof navigator.share === 'function' ? '保存或分享' : '保存图片';
+        openModal(overlay, overlayTitle, returnFocus);
         setTimeout(() => {
             overlayImg.classList.remove('scale-95');
             overlayImg.classList.add('scale-100');
         }, 10);
         triggerVibration([100, 50, 100]);
         showToast(mobileMessage);
+    }
+
+    async function shareGeneratedImage() {
+        const payload = generatedImagePayload;
+        const button = document.getElementById('shareGeneratedBtn');
+        const label = document.getElementById('shareGeneratedLabel');
+        if (!payload || !button || !label) return;
+        const originalLabel = label.textContent;
+        button.disabled = true;
+        button.setAttribute('aria-busy', 'true');
+        label.textContent = '准备图片…';
+        try {
+            const blob = await fetch(payload.dataURL).then(response => response.blob());
+            const file = new File([blob], payload.filename, { type: blob.type || 'image/jpeg' });
+            const shareData = { files: [file], title: '拾色季个人色彩档案' };
+            if (typeof navigator.share === 'function' && (!navigator.canShare || navigator.canShare(shareData))) {
+                await navigator.share(shareData);
+                showToast('已打开系统保存与分享');
+                return;
+            }
+            const link = document.createElement('a');
+            link.download = payload.filename;
+            link.href = payload.dataURL;
+            link.click();
+            showToast('已唤起图片保存');
+        } catch (error) {
+            if (error?.name !== 'AbortError') {
+                console.error(error);
+                showToast('暂时无法打开系统分享，请长按图片保存');
+            }
+        } finally {
+            button.disabled = false;
+            button.removeAttribute('aria-busy');
+            label.textContent = originalLabel;
+        }
     }
 
     function loadEffectImage(src) {
@@ -1164,9 +1403,12 @@ function triggerVibration(pattern) {
             : document.getElementById('outfitEditorialImage');
         const button = document.getElementById(`${kind}EffectSaveBtn`);
         if (!source?.src || !button) return;
-        const original = button.innerText;
-        button.innerText = '正在生成可分享效果图…';
+        const buttonLabel = button.querySelector('.effect-save-label');
+        const original = buttonLabel ? buttonLabel.innerText : button.innerText;
+        if (buttonLabel) buttonLabel.innerText = '生成中…';
+        else button.innerText = '生成中…';
         button.disabled = true;
+        button.setAttribute('aria-busy', 'true');
         triggerVibration(50);
         try {
             const image = await loadEffectImage(source.src);
@@ -1186,10 +1428,6 @@ function triggerVibration(pattern) {
             context.fillStyle = shade;
             context.fillRect(0, 0, 1080, 1440);
 
-            context.fillStyle = 'rgba(255,255,255,.92)';
-            context.font = '500 24px serif';
-            context.letterSpacing = '8px';
-            context.fillText('拾 色 季', 72, 84);
             context.font = '400 20px sans-serif';
             context.fillStyle = 'rgba(255,255,255,.82)';
             context.fillText(kind === 'beauty' ? '专属妆发设计' : '专属穿搭设计', 72, 1160);
@@ -1207,23 +1445,32 @@ function triggerVibration(pattern) {
                 context.fillStyle = typeof item === 'string' ? item : item.hex;
                 context.fillRect(72 + index * 74, 1340, 58, 18);
             });
-            context.font = '400 16px sans-serif';
-            context.fillStyle = 'rgba(255,255,255,.65)';
-            context.fillText('拾色季 · PERSONAL COLOR EDIT', 72, 1392);
+            context.save();
+            context.font = '500 20px serif';
+            context.fillStyle = 'rgba(255,255,255,.76)';
+            context.textAlign = 'right';
+            context.fillText('拾色季 · PERSONAL COLOR EDIT', 1008, 1392);
+            context.restore();
 
-            const label = kind === 'beauty' ? '妆发效果图' : '穿搭效果图';
-            deliverGeneratedImage(canvas.toDataURL('image/jpeg', .96), `拾色季_${label}.jpg`, `${label}已生成，请长按保存`);
+            const exportLabel = kind === 'beauty' ? '妆发效果图' : '穿搭效果图';
+            deliverGeneratedImage(canvas.toDataURL('image/jpeg', .96), `拾色季_${exportLabel}.jpg`, `${exportLabel}已生成，请长按保存`, button);
         } catch (error) {
             console.error(error);
             showCustomAlert('效果图生成失败，请稍后重试。');
         } finally {
-            button.innerText = original;
+            if (buttonLabel) buttonLabel.innerText = original;
+            else button.innerText = original;
             button.disabled = false;
+            button.removeAttribute('aria-busy');
         }
     }
 
     async function saveAsImage() {
-        if (window.location.protocol !== 'file:') {
+        if (reportExportInProgress) {
+            showToast('完整档案正在生成，请稍候');
+            return;
+        }
+        if (!isLocalPreview()) {
             const styleStates = Object.values(window.personalizedImageState || {});
             if (styleStates.some((state) => state === 'loading' || state === 'idle')) {
                 showCustomAlert('专属妆发与穿搭视觉仍在生成，请完成后再保存完整长图。');
@@ -1234,35 +1481,51 @@ function triggerVibration(pattern) {
                 return;
             }
         }
-        triggerVibration(50);
+
         const btn = document.getElementById('saveBtn');
-        const ogText = btn.innerText;
-        btn.innerText = "引擎渲染中...";
-        btn.classList.add('opacity-70', 'cursor-wait');
+        const btnLabel = btn && btn.querySelector('.report-action-label');
+        const mainContainer = document.getElementById('mainContainer');
+        const captureArea = document.getElementById('captureArea');
+        const appContainer = document.querySelector('.app-container');
+        if (!btn || !btnLabel || !mainContainer || !captureArea || !appContainer) {
+            showCustomAlert('当前页面尚未准备好，请稍后重试。');
+            return;
+        }
+
+        const originalLabel = btnLabel.textContent;
+        const originalLayout = {
+            scrollTop: mainContainer.scrollTop,
+            appHeight: appContainer.style.height,
+            mainOverflow: mainContainer.style.overflow,
+            mainHeight: mainContainer.style.height
+        };
+        let layoutExpanded = false;
+        let exportDataURL = '';
+        reportExportInProgress = true;
+        btn.disabled = true;
+        btn.setAttribute('aria-busy', 'true');
+        btnLabel.textContent = '正在整理完整档案…';
+        triggerVibration(50);
 
         try {
             const exportColorSchemes = Array.isArray(window.reportColorStylingSchemes) ? window.reportColorStylingSchemes : [];
-            const mainContainer = document.getElementById('mainContainer');
-            const captureArea = document.getElementById('captureArea');
-            const appContainer = document.querySelector('.app-container');
-
-            const originalScrollTop = mainContainer.scrollTop;
-            const originalAppHeight = appContainer.style.height;
-            const originalMainOverflow = mainContainer.style.overflow;
-            const originalMainHeight = mainContainer.style.height;
-
             mainContainer.scrollTop = 0;
             appContainer.style.height = 'auto';
             mainContainer.style.overflow = 'visible';
             mainContainer.style.height = 'auto';
+            layoutExpanded = true;
 
             await new Promise(resolve => setTimeout(resolve, 300));
+            const preferredScale = window.devicePixelRatio > 1 ? window.devicePixelRatio : 2;
+            const dimensionScale = 16384 / Math.max(captureArea.scrollWidth, captureArea.scrollHeight);
+            const pixelScale = Math.sqrt(48000000 / Math.max(1, captureArea.scrollWidth * captureArea.scrollHeight));
+            const exportScale = Math.max(1, Math.min(preferredScale, dimensionScale, pixelScale));
 
             const canvas = await html2canvas(captureArea, {
-                scale: window.devicePixelRatio > 1 ? window.devicePixelRatio : 2, 
-                useCORS: true, 
-                backgroundColor: '#F7F5F2', 
-                logging: false, 
+                scale: exportScale,
+                useCORS: true,
+                backgroundColor: '#F7F5F2',
+                logging: false,
                 onclone: (doc) => {
                     const cloneArea = doc.getElementById('captureArea');
                     cloneArea.style.padding = '24px 20px';
@@ -1281,7 +1544,7 @@ function triggerVibration(pattern) {
 
                     const animatedEls = cloneArea.querySelectorAll('.fade-in, .stagger-1, .stagger-2, .stagger-3, .stagger-4');
                     animatedEls.forEach(el => { el.style.opacity = '1'; el.style.transform = 'none'; el.style.animation = 'none'; });
-                    
+
                     const glassPanels = cloneArea.querySelectorAll('.glass-panel, .content-card');
                     glassPanels.forEach(el => {
                         el.style.backdropFilter = 'none';
@@ -1292,18 +1555,25 @@ function triggerVibration(pattern) {
                     });
                 }
             });
-
-            appContainer.style.height = originalAppHeight;
-            mainContainer.style.overflow = originalMainOverflow;
-            mainContainer.style.height = originalMainHeight;
-            mainContainer.scrollTop = originalScrollTop;
-
-            deliverGeneratedImage(canvas.toDataURL('image/jpeg', 0.95), '拾色季_完整色彩档案.jpg', '完整报告已生成，请长按保存');
-        } catch (e) {
-            console.error(e);
-            showCustomAlert('渲染引擎波动，建议直接使用系统长截屏功能。');
+            exportDataURL = canvas.toDataURL('image/jpeg', 0.95);
+        } catch (error) {
+            console.error(error);
+            showCustomAlert('完整报告暂时未能生成，页面已恢复。你可以稍后重试，或先使用系统长截屏保存。');
         } finally {
-            btn.innerText = ogText; btn.classList.remove('opacity-70', 'cursor-wait');
+            if (layoutExpanded) {
+                appContainer.style.height = originalLayout.appHeight;
+                mainContainer.style.overflow = originalLayout.mainOverflow;
+                mainContainer.style.height = originalLayout.mainHeight;
+                mainContainer.scrollTop = originalLayout.scrollTop;
+            }
+            reportExportInProgress = false;
+            btn.disabled = false;
+            btn.removeAttribute('aria-busy');
+            btnLabel.textContent = originalLabel;
+        }
+
+        if (exportDataURL) {
+            deliverGeneratedImage(exportDataURL, '拾色季_完整色彩档案.jpg', '完整报告已生成，可长按保存或使用系统分享', btn);
         }
     }
 
@@ -1313,71 +1583,88 @@ function triggerVibration(pattern) {
         const overlayImg = document.getElementById('saveOverlayImg');
         overlayImg.classList.remove('scale-100');
         overlayImg.classList.add('scale-95');
+        const payloadAtClose = generatedImagePayload;
         closeModal(overlay);
+        setTimeout(() => {
+            if (generatedImagePayload !== payloadAtClose) return;
+            overlayImg.removeAttribute('src');
+            generatedImagePayload = null;
+        }, 320);
     }
 
     async function resetTest() {
         triggerVibration(50);
         const code = window.currentCode;
-        
+        if (resetVerificationPending) return;
+
         if (!code) {
-            forceKickToHome("登录态已失效，请重新唤醒密钥");
+            forceKickToHome('登录态已失效，请重新唤醒密钥');
             return;
         }
 
         const btn = document.querySelector('button[onclick="resetTest()"]');
-        const ogText = btn ? btn.innerText : "帮闺蜜也测一测";
-        if(btn) {
-            btn.innerText = "正在准备下一次分析...";
+        const ogText = btn ? btn.innerText : '为朋友开启一份新档案';
+        if (btn) {
+            btn.innerText = '正在准备下一次分析…';
             btn.classList.add('opacity-70', 'cursor-wait');
+            btn.disabled = true;
+            btn.setAttribute('aria-busy', 'true');
         }
 
+        let timeoutId = null;
+        resetVerificationPending = true;
         try {
+            const controller = new AbortController();
+            timeoutId = setTimeout(() => controller.abort(), 12_000);
             const response = await fetch('/api/verify-code', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ activationCode: code })
+                body: JSON.stringify({ activationCode: code }),
+                signal: controller.signal,
             });
-            const data = await response.json();
+            const data = await response.json().catch(() => ({}));
 
             if (response.ok && data.valid) {
-                userImageBase64 = "";
+                clearClientWorkflow();
                 window.analysisToken = data.analysisToken;
-                document.getElementById('analyzeBtn').disabled = true;
-                const preview = document.getElementById('imagePreview');
-                preview.removeAttribute('src');
-                preview.classList.add('hidden');
-                document.getElementById('uploadText').innerText = "选择一张正面照片";
-                document.getElementById('dropzone-file').value = '';
-                const quality = document.getElementById('photoQuality');
-                quality.className = 'photo-quality hidden';
-                quality.innerHTML = '';
-                
                 checkLastReport();
                 showStep('step-upload');
-                document.getElementById('mainContainer').scrollTop = 0;
-                
-                let msg = `已准备完成，可生成次数剩余 ${data.remainingUses} 次`;
+                const msg = data.remainingUses !== undefined
+                    ? `已准备完成，可生成次数剩余 ${data.remainingUses} 次`
+                    : '已准备完成，可以上传新的正面照片';
                 showToast(msg);
             } else {
-                forceKickToHome(data.error || "该密钥可用次数已用完，请联系店铺客服");
+                forceKickToHome(getActivationErrorMessage(response, data));
             }
         } catch (error) {
             console.error(error);
-            showCustomAlert('网络波动，重载失败，请重试');
+            const message = error?.name === 'AbortError'
+                ? '验证等待时间较长，请稍后重新尝试。'
+                : '网络连接暂时不可用，请检查网络后重试。';
+            showCustomAlert(message);
         } finally {
-            if(btn) {
+            if (timeoutId) clearTimeout(timeoutId);
+            resetVerificationPending = false;
+            if (btn) {
                 btn.innerText = ogText;
                 btn.classList.remove('opacity-70', 'cursor-wait');
+                btn.disabled = false;
+                btn.removeAttribute('aria-busy');
             }
         }
     }
 
     function forceKickToHome(msg) {
-        window.currentCode = ""; 
-        window.analysisToken = "";
-        userImageBase64 = "";
+        window.currentCode = '';
+        window.analysisToken = '';
+        clearClientWorkflow();
+        const activationInput = document.getElementById('activationCode');
+        if (activationInput) {
+            activationInput.disabled = false;
+            activationInput.setAttribute('aria-invalid', 'false');
+        }
+        setActivationStatus('');
+        updateActivationSubmitState();
         showStep('step-activation');
-        document.getElementById('mainContainer').scrollTop = 0;
-        showCustomAlert(msg);
+        showCustomAlert(msg, activationInput);
     }

@@ -18,6 +18,8 @@ await copyFile('node_modules/chart.js/dist/chart.umd.js', 'web/vendor/chart.umd.
 
 await mkdir('dist', { recursive: true });
 await copyFile('index.html', 'dist/index.html');
+await copyFile('usage-rules.html', 'dist/usage-rules.html');
+await copyFile('privacy-policy.html', 'dist/privacy-policy.html');
 await copyFile('netlify/_redirects', 'dist/_redirects');
 await cp('web', 'dist/web', { recursive: true, force: true });
 console.log('Static site built in dist/');
