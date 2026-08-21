@@ -2,14 +2,14 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="robots" content="noindex">
   <title>隐私说明与删除申请｜拾色季</title>
   <style>
     :root { color-scheme:light; --ink:#4a403a; --muted:#6f6058; --line:#e8ddd7; --paper:#fbf8f4; --accent:#755044; --focus:#8b5b49; }
     * { box-sizing:border-box; }
-    body { margin:0; min-height:100vh; color:var(--ink); background:#f6f2ed; font-family:"Noto Sans SC","Microsoft YaHei",sans-serif; }
-    main { width:min(100% - 32px,680px); margin:40px auto; padding:44px 40px 48px; border:1px solid var(--line); border-radius:16px; background:var(--paper); box-shadow:0 20px 52px rgba(74,64,58,.08); }
+    body { margin:0; min-height:100vh; min-height:100svh; min-height:100dvh; padding:max(0px,env(safe-area-inset-top)) max(0px,env(safe-area-inset-right)) max(0px,env(safe-area-inset-bottom)) max(0px,env(safe-area-inset-left)); color:var(--ink); background:#f6f2ed; font-family:"Noto Sans SC","Microsoft YaHei",sans-serif; }
+    main { width:min(100% - 32px,680px); margin:clamp(16px,5dvh,40px) auto; padding:clamp(32px,5vw,44px) clamp(24px,6vw,40px) clamp(36px,6vw,48px); border:1px solid var(--line); border-radius:16px; background:var(--paper); box-shadow:0 20px 52px rgba(74,64,58,.08); }
     .brand { margin:0 0 34px; font-family:"Songti SC","STSong",serif; font-size:24px; font-weight:400; letter-spacing:.24em; text-align:center; }
     h1 { margin:0; font-family:"Songti SC","STSong",serif; font-size:28px; font-weight:400; line-height:1.5; letter-spacing:.06em; }
     .version { margin:8px 0 28px; color:var(--muted); font-size:13px; line-height:1.8; }
@@ -28,7 +28,10 @@
     .action { display:inline-flex; align-items:center; min-height:44px; color:var(--accent); font-size:14px; text-decoration-color:rgba(117,80,68,.34); text-underline-offset:4px; }
     :where(a):focus-visible { outline:2px solid var(--focus); outline-offset:3px; }
     @media (max-width:560px) {
-      main { margin:16px auto; padding:34px 24px 40px; }
+      main { margin:clamp(10px,2.5dvh,16px) auto; padding:clamp(28px,4dvh,34px) clamp(20px,6vw,24px) clamp(32px,5dvh,40px); }
+      .brand { margin-bottom:clamp(24px,4dvh,34px); }
+      h1 { font-size:clamp(24px,7vw,28px); }
+      section { padding-block:clamp(18px,3.5dvh,22px); }
       dl div { grid-template-columns:1fr; gap:2px; }
     }
   </style>

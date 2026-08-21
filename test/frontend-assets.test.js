@@ -21,3 +21,20 @@ test('frontend uses versioned local assets instead of runtime CDNs', async () =>
   assert.equal(packageJson.dependencies.html2canvas, '1.4.1');
   assert.equal(packageJson.devDependencies.tailwindcss, '3.4.17');
 });
+test('frontend keeps the project-wide adaptive viewport baseline', async () => {
+  const [html, cssSource, usageRules, privacyPolicy] = await Promise.all([
+    readFile(new URL('../index.html', import.meta.url), 'utf8'),
+    readFile(new URL('../web/app.source.css', import.meta.url), 'utf8'),
+    readFile(new URL('../usage-rules.html', import.meta.url), 'utf8'),
+    readFile(new URL('../privacy-policy.html', import.meta.url), 'utf8'),
+  ]);
+
+  for (const page of [html, usageRules, privacyPolicy]) {
+    assert.match(page, /viewport-fit=cover/);
+  }
+  assert.match(cssSource, /100dvh/);
+  assert.match(cssSource, /safe-area-inset-top/);
+  assert.match(cssSource, /@container \(max-width:340px\)/);
+  assert.match(cssSource, /orientation:landscape/);
+  assert.match(cssSource, /\.identity-preview \{ min-height:clamp\(/);
+});
