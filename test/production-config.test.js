@@ -108,9 +108,10 @@ test('style image migration verification covers every new RPC and constraint', a
 test('CI includes dependency, CodeQL, and production dependency audit gates', async () => {
   const workflow = await readFile(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
   assert.match(workflow, /npm audit --omit=dev --audit-level=high/);
-  assert.match(workflow, /actions\/dependency-review-action@v4/);
-  assert.match(workflow, /github\/codeql-action\/init@v3/);
-  assert.match(workflow, /github\/codeql-action\/analyze@v3/);
+  assert.match(workflow, /actions\/dependency-review-action@[0-9a-f]{40}/);
+  assert.match(workflow, /github\/codeql-action\/init@[0-9a-f]{40}/);
+  assert.match(workflow, /github\/codeql-action\/analyze@[0-9a-f]{40}/);
+  assert.doesNotMatch(workflow, /^\s*- uses: [^\s]+@v\d+\s*$/m);
 });
 test('production safety defaults and logs fail closed', async () => {
   const envExample = await readFile(new URL('../.env.example', import.meta.url), 'utf8');
