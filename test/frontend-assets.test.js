@@ -57,6 +57,7 @@ test('homepage preview communicates the report value instead of decorative metri
   assert.match(html, /穿搭方案/);
   assert.match(html, /看见属于你的/);
   assert.match(html, /从一张真实照片出发，找到本命色、妆容与穿搭方向/);
+  assert.match(html, /class="activation-access-index">PRIVATE ACCESS</);
   assert.match(html, /开启一份为你准备的档案/);
   assert.ok(html.indexOf('class="identity-preview"') < html.indexOf('class="content-card activation-card'));
   assert.doesNotMatch(html, /暖柔倾向\s*<span>·<\/span>\s*中低对比/);
