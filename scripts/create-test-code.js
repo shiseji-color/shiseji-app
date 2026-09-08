@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
+import { assertStagingTarget } from '../lib/staging-guard.js';
 
 const supabaseUrl = process.env.SUPABASE_URL?.trim().replace(/\/+$/, '');
 const supabaseKey =
@@ -10,6 +11,8 @@ if (!supabaseUrl || !supabaseKey) {
   console.error('Missing SUPABASE_URL or SUPABASE_SECRET_KEY.');
   process.exit(1);
 }
+
+assertStagingTarget(supabaseUrl);
 
 const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const random = randomBytes(8);

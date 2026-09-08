@@ -75,6 +75,19 @@ test('ranks two candidates and reports a bounded confidence assessment', () => {
   assert.match(assessment.message, new RegExp(assessment.primary.name));
 });
 
+test('marks a distant nearest template as low confidence instead of overstating certainty', () => {
+  const assessment = assessColorIdentity(dimensions({
+    skin_temperature: 68, cheek_temperature: 68, lip_temperature: 68, hair_temperature: 68,
+    skin_lightness: 53, brightness_capacity: 53, eye_depth: 47, hair_depth: 47,
+    skin_clarity: 74, eye_clarity: 74, chroma_capacity: 74,
+    skin_softness: 82, muted_capacity: 82, facial_contrast: 55,
+    hair_skin_contrast: 55, depth_capacity: 55,
+  }));
+  assert.equal(assessment.level, 'low');
+  assert.ok(assessment.primary.distance > 28);
+  assert.match(assessment.message, /固定身份模板存在明显距离/);
+});
+
 test('overrides model identity and recommendations with knowledge-base content', () => {
   const dimensionData = dimensions({
     skin_temperature: 72, cheek_temperature: 72, lip_temperature: 72, hair_temperature: 72,

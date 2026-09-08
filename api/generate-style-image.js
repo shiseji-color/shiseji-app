@@ -4,7 +4,7 @@ import { claimStyleImageJob, saveStyleImageSource } from '../lib/activation-stor
 import { validateAnalysisResult } from '../lib/analysis-schema.js';
 import { createStyleImageWorkerToken, verifyVisualToken } from '../lib/analysis-token.js';
 import { dispatchStyleImage } from '../lib/background-style-image-dispatch.js';
-import { enforceRateLimit } from '../lib/rate-limit.js';
+import { enforceRequestRateLimit as enforceRateLimit } from '../lib/request-rate-limit.js';
 import { validateStyleImageKind } from '../lib/style-image.js';
 import {
   classifyStyleImageFailure,
@@ -63,10 +63,10 @@ export function createStyleImageHandler(dependencies = {}) {
     }
 
     try {
-      enforceRateLimit(req, 'generate-style-image', { limit: 60, windowMs: 60_000 });
+      await enforceRateLimit(req, 'generate-style-image', { limit: 60, windowMs: 60_000 });
     } catch (error) {
       res.setHeader('Retry-After', String(error.retryAfter));
-      return res.status(429).json({ error: error.message });
+      return res.status(error.statusCode === 429 ? 429 : 503).json({ error: error.message });
     }
 
     const { imageBase64, visualToken, requestId, analysis, kind, retry = false } = req.body ?? {};

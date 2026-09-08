@@ -5,7 +5,7 @@ import {
   normalizeActivationCode,
 } from '../lib/activation-store.js';
 import { createAnalysisToken } from '../lib/analysis-token.js';
-import { enforceRateLimit } from '../lib/rate-limit.js';
+import { enforceRequestRateLimit as enforceRateLimit } from '../lib/request-rate-limit.js';
 
 export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store');
@@ -16,10 +16,10 @@ export default async function handler(req, res) {
   }
 
   try {
-    enforceRateLimit(req, 'verify-code', { limit: 10, windowMs: 60_000 });
+    await enforceRateLimit(req, 'verify-code', { limit: 10, windowMs: 60_000 });
   } catch (error) {
     res.setHeader('Retry-After', String(error.retryAfter));
-    return res.status(429).json({ error: error.message });
+    return res.status(error.statusCode === 429 ? 429 : 503).json({ error: error.message });
   }
 
   const code = normalizeActivationCode(req.body?.activationCode);

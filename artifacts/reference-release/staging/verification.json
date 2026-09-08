@@ -1,0 +1,74 @@
+[
+  {
+    "width": 390,
+    "height": 844,
+    "title": "杏光柔暖",
+    "status": "ready",
+    "photoWidth": 93.59375,
+    "overflow": false,
+    "images": [
+      {
+        "width": 1122,
+        "height": 1402,
+        "renderWidth": 342,
+        "renderHeight": 427
+      },
+      {
+        "width": 1024,
+        "height": 1536,
+        "renderWidth": 342,
+        "renderHeight": 512
+      }
+    ],
+    "font": "\"Shiseji Report Serif\", \"Songti SC\", STSong, STZhongsong, \"Songti TC\", \"Source Han Serif SC\", \"Noto Serif CJK SC\", SimSun, ui-serif, serif",
+    "reportFontLoaded": true,
+    "album": {
+      "count": 6,
+      "alert": null
+    },
+    "long": {
+      "visible": true,
+      "width": 1055,
+      "height": 15199,
+      "alert": null
+    },
+    "errors": [],
+    "apiRequests": []
+  },
+  {
+    "width": 1440,
+    "height": 900,
+    "title": "杏光柔暖",
+    "status": "ready",
+    "photoWidth": 113.59375,
+    "overflow": false,
+    "images": [
+      {
+        "width": 1122,
+        "height": 1402,
+        "renderWidth": 402,
+        "renderHeight": 503
+      },
+      {
+        "width": 1024,
+        "height": 1536,
+        "renderWidth": 402,
+        "renderHeight": 603
+      }
+    ],
+    "font": "\"Shiseji Report Serif\", \"Songti SC\", STSong, STZhongsong, \"Songti TC\", \"Source Han Serif SC\", \"Noto Serif CJK SC\", SimSun, ui-serif, serif",
+    "reportFontLoaded": true,
+    "album": {
+      "count": 6,
+      "alert": null
+    },
+    "long": {
+      "visible": true,
+      "width": 1980,
+      "height": 14290,
+      "alert": null
+    },
+    "errors": [],
+    "apiRequests": []
+  }
+]

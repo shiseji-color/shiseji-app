@@ -22,4 +22,9 @@ await copyFile('usage-rules.html', 'dist/usage-rules.html');
 await copyFile('privacy-policy.html', 'dist/privacy-policy.html');
 await copyFile('netlify/_redirects', 'dist/_redirects');
 await cp('web', 'dist/web', { recursive: true, force: true });
+// Only these public, deterministic knowledge modules belong in the browser.
+await mkdir('dist/lib', { recursive: true });
+for (const name of ['color-framework.js', 'style-reference-catalog.js', 'style-reference-requirements.js']) {
+  await copyFile('lib/' + name, 'dist/lib/' + name);
+}
 console.log('Static site built in dist/');

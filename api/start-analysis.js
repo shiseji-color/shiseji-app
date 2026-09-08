@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { claimExpiredAnalysisPhotos, createAnalysisJob } from '../lib/activation-store.js';
 import { createAnalysisJobToken, createAnalysisWorkerToken, verifyAnalysisToken } from '../lib/analysis-token.js';
-import { enforceRateLimit } from '../lib/rate-limit.js';
+import { enforceRequestRateLimit as enforceRateLimit } from '../lib/request-rate-limit.js';
 import { dispatchBackground } from '../lib/background-analysis-dispatch.js';
 import {
   decodePhotoDataUrl, deleteTemporaryPhotos, temporaryPhotoPath, uploadTemporaryPhoto,
@@ -24,10 +24,10 @@ export default async function handler(req, res) {
     res.setHeader('Allow', 'POST');
     return res.status(405).json({ error: '仅支持 POST 请求' });
   }
-  try { enforceRateLimit(req, 'analyze', { limit: 8, windowMs: 60_000 }); }
+  try { await enforceRateLimit(req, 'analyze', { limit: 8, windowMs: 60_000 }); }
   catch (error) {
     res.setHeader('Retry-After', String(error.retryAfter));
-    return res.status(429).json({ error: error.message });
+    return res.status(error.statusCode === 429 ? 429 : 503).json({ error: error.message });
   }
   try {
     const { imageBase64, analysisToken, requestId } = req.body ?? {};
