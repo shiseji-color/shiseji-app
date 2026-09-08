@@ -36,8 +36,18 @@
 ## 尚需外部完成的发布门禁
 
 - 正式生产发布仍需生产环境负责人确认备份/PITR、环境变量、监控与告警、回滚负责人和发布观察窗口。
+- PR #22 已转为可审查状态并通过全部自动检查，仍需完成发布前人工审查。
 - 共享 Supabase 限流继续保持关闭，等待工单 SU-464011；不得启用 `SHARED_RATE_LIMIT_ENABLED`，不得重启、轮换密钥或输出秘密。
-- 只允许发布到 Vercel 项目 `shiseji-staging` 做候选验证；不得触碰正式 production Vercel 或生产 Supabase。
+- 正式 Vercel 目前只允许保留受保护、无主域名流量的候选部署；生产 Supabase 在备份与迁移门禁明确完成前保持不变。
+
+## 正式项目无流量候选
+
+- 用户已授权正式发布预检；尚未授权或执行生产 Supabase 备份、迁移或密钥变更。
+- Vercel 正式项目 `shiseji-app` 已创建受保护且不切换主域名的 production 目标部署 `dpl_CLdY9zHyFtwESKzXSaKymnUtYSd1`。
+- 候选部署地址为 `https://shiseji-olzauz7zj-shiseji-colors-projects.vercel.app`；Deployment Protection 对普通外部请求返回 401。
+- 通过 Vercel 官方认证请求通道确认：主页返回 200，主图与 `COLOR SEASON`、`PRIVATE ACCESS` 完整，CSP 生效；无效密钥返回 400；空造型图请求返回 503 和 `Retry-After: 300`。
+- 正式主域名 `https://shiseji-app.vercel.app` 仍指向旧部署，未发生切流。
+- 正式 Vercel 回滚锚点为 `dpl_3WnUHSUNmv51FeFfZKfdSNcUwfJC`。
 
 ## Staging 回滚锚点
 
