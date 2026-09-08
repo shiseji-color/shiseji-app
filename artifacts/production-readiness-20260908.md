@@ -12,7 +12,7 @@
 - 低置信结果继续显示不确定性说明；所有示例图继续标记为 AI 虚构人物，非本人试妆或试穿效果。
 - 手机长图的圆点和文字改为同一画布绘制；妆容、穿搭及首页关键词色点已由用户在移动 Safari 实机确认。
 - 完整项目根目录构建成功，`dist/` 包含 32 张 V2 资产。
-- Vercel `shiseji-staging` 部署 `dpl_Ce6oQkbLF7wdgGXwUbjEuZydC5Yy` 状态为 READY，已绑定 `https://staging.shiseji.com`。
+- Vercel `shiseji-staging` 部署 `dpl_FrprT1FFbcyUiNd994CciQrZNZi3` 状态为 READY，已绑定 `https://staging.shiseji.com`。
 
 ## 验证证据
 
@@ -27,6 +27,7 @@
 - staging 环境变量名称与 Production 作用域齐全；秘密值保持隐藏。`SHARED_RATE_LIMIT_ENABLED=false`，与 SU-464011 约束一致。
 - staging 造型图开关通过线上非计费空请求验证：在鉴权、存储、队列和模型调用之前固定返回 503 与 `Retry-After: 300`。
 - staging 预报告流程：390×844 与 1440×900 的首页、激活入口、上传、隐私同意、等待及取消均通过，无错误、溢出或意外 API 请求；主图重复色卡保持隐藏。
+- staging 首页在 390×844 与 1440×900 均显示 `COLOR SEASON` 与 `PRIVATE ACCESS` 英文层级；输入框和按钮状态正常，无横向溢出、控制台错误或 API 请求。
 - staging 报告导出：两个视口均成功生成 6 页图册和 1 张长图；尺寸分别为 1055×15199 与 1980×14290，无破图、溢出、控制台错误或意外 API 请求。
 - 已确认线上公开构建文件包含 `released` 状态、production 精确映射且不再包含 `staging-candidate`。
 - 部署后错误日志查询未发现记录；这只能证明当前无已记录错误，不能替代正式生产监控和告警。
@@ -40,6 +41,6 @@
 
 ## Staging 回滚锚点
 
-- 当前候选：`dpl_Ce6oQkbLF7wdgGXwUbjEuZydC5Yy`。
-- 上一个 READY 部署：`dpl_9DpXSFzJchMgh3KHptXb16WhKrWo`，URL 为 `https://shiseji-staging-l5k35wi6e-shiseji-colors-projects.vercel.app`。
+- 当前候选：`dpl_FrprT1FFbcyUiNd994CciQrZNZi3`。
+- 上一个 READY 部署：`dpl_Ce6oQkbLF7wdgGXwUbjEuZydC5Yy`。
 - 如需回滚，只在 `shiseji-staging` 项目内将别名重新指向上一个 READY 部署；正式 production 环境不在本记录授权范围内。
