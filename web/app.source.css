@@ -4586,7 +4586,7 @@ body {
   #step-activation .activation-signature{font-size:10px!important;line-height:1.5!important}
   #step-activation .activation-intro-copy{font-size:12px!important;line-height:1.6!important}
   #step-activation .activation-submit{font-size:14px!important}
-  #step-activation .identity-preview,#step-activation .identity-preview:is(:where(*)){height:min(calc((100vw - 36px)/1.14),max(145px,calc(100dvh - 460px)))!important;aspect-ratio:auto!important;min-height:0!important}
+  #step-activation .identity-preview,#step-activation .identity-preview:is(:where(*)){height:min(calc((100vw - 36px)/1.14),max(120px,calc(100svh - 500px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))))!important;aspect-ratio:auto!important;min-height:0!important}
 }
 @media(max-width:699px) and (max-height:700px){
   .app-container:has(#step-activation:not(.hidden)) #appHeader{padding-top:12px!important;padding-bottom:8px!important}
@@ -4631,4 +4631,33 @@ body {
   #step-activation .activation-card{padding-top:14px!important;margin-top:12px!important}
   #step-activation .activation-access-copy h3{font-size:18px!important}
   #step-activation .activation-color-signature{margin-bottom:8px}
+}
+
+/* Browser chrome and the home indicator are outside the usable first screen.
+   Keep the entry in document flow so short screens and enlarged text can scroll. */
+@media (max-width:699px) {
+  .app-container:has(#step-activation:not(.hidden)) {
+    height:auto!important;
+    min-height:100svh!important;
+    max-height:none!important;
+    overflow:visible!important;
+  }
+  .app-container:has(#step-activation:not(.hidden)) #mainContainer {
+    flex:none;
+    height:auto!important;
+    max-height:none!important;
+    overflow:visible!important;
+    padding-bottom:calc(24px + env(safe-area-inset-bottom,0px))!important;
+  }
+  #step-activation .activation-signature {
+    margin-bottom:0!important;
+  }
+  #step-activation .activation-submit {
+    scroll-margin-bottom:calc(24px + env(safe-area-inset-bottom,0px));
+  }
+}
+
+
+@media (max-width:699px) {
+  #step-activation .preview-cover-image { object-position:center 20%!important; }
 }
