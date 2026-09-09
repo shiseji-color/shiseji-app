@@ -48,3 +48,8 @@ for (const entry of [
     assert.doesNotMatch(response.body, /vercelHandler is not a function/);
   });
 }
+
+test('Netlify exports a background style image worker', async () => {
+  const module = await import('../netlify/functions/style-image-background.js');
+  assert.equal(typeof module.handler, 'function');
+});

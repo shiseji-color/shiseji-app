@@ -1,0 +1,56 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {runInNewContext} from 'node:vm';
+const app=readFileSync(new URL('../web/app.js',import.meta.url),'utf8');
+test('reference styling keeps bilingual hierarchy and named solid color ratios',()=>{
+ const css=readFileSync(new URL('../web/reference-preview.css',import.meta.url),'utf8');
+ const sourceCss=readFileSync(new URL('../web/app.source.css',import.meta.url),'utf8');
+ const renderer=readFileSync(new URL('../web/report-references.js',import.meta.url),'utf8');
+ assert.match(renderer,/WARDROBE EDIT/);
+ assert.match(renderer,/asset\?\.description/);
+ assert.match(renderer,/reference-title-phrase/);
+ assert.match(renderer,/reference-color-cues/);
+ assert.match(renderer,/COLOR NOTES/);
+ assert.match(renderer,/本次报告推荐色索引/);
+ assert.match(renderer,/kind === 'beauty' \? \[0, 1, 2\] : \[4, 2, 0\]/);
+ assert.match(renderer,/querySelectorAll\('\.reference-color-cues,/);
+ assert.match(css,/\.reference-reading \.wardrobe-intro\{[^}]*flex-direction:column/);
+ assert.match(css,/\.reference-color-cue i\{[^}]*border-radius:50%/);
+ assert.match(css,/\.reference-reading \.color-ratio>i\{[^}]*box-shadow:none/);
+ assert.match(sourceCss,/@media \(min-width:900px\)[\s\S]*\.app-container\.report-mode[\s\S]*max-width:62rem/);
+ assert.match(css,/\.reference-layout\{display:grid/);
+ assert.match(css,/\.reference-reading:not\(\.reference-long-export\)/);
+ assert.match(sourceCss,/\.app-container\.report-mode \.archive-report \.archive-section[\s\S]*padding:3rem 2\.5rem/);
+ assert.match(app,/class="ratio-color-name"/);
+});
+test('retired personal image entry point never sends a request',async()=>{
+ const body=app.slice(app.indexOf('    async function generatePersonalizedStyleImage'),app.indexOf('    function startPersonalizedImageGeneration'));
+ let calls=0;
+ const fn=runInNewContext(body+';generatePersonalizedStyleImage',{fetch(){calls++;throw Error('must not fetch')}});
+ await fn('beauty',{});
+ await fn('outfit',{},true);
+ assert.equal(calls,0);
+});
+test('reference rollout loads shared assets and fail-closed copy without optional module',()=>{
+ const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+ assert.match(html,/type="module" src=".\/web\/report-references.js"/);
+ assert.doesNotMatch(html,/<script src=".\/web\/reference-preview.js"/);
+ assert.match(app,/window.styleReferencesMode = true/);
+ assert.match(app,/以下为配色建议，风格示例不表示本人试妆效果/);
+ assert.match(app,/以下为配色建议，风格示例不表示本人试穿效果/);
+});
+test('report typography keeps explicit Chinese serif faces ahead of generic iOS fallback',()=>{
+ const sourceCss=readFileSync(new URL('../web/app.source.css',import.meta.url),'utf8');
+ const html=readFileSync(new URL('../index.html',import.meta.url),'utf8');
+ const font=readFileSync(new URL('../web/assets/fonts/shiseji-report-serif.woff2',import.meta.url));
+ const license=readFileSync(new URL('../web/assets/fonts/OFL-Noto-CJK.txt',import.meta.url),'utf8');
+ assert.match(sourceCss,/@font-face\s*\{[\s\S]*?font-family:"Shiseji Report Serif";[\s\S]*?shiseji-report-serif\.woff2[\s\S]*?font-weight:400;/);
+ assert.match(sourceCss,/--font-serif:\s*"Shiseji Report Serif",\s*"Songti SC",\s*STSong,[^;]*ui-serif,\s*serif/);
+ assert.match(sourceCss,/\.archive-report \.report-masthead h1,[\s\S]*?\.archive-report \.reference-ending\s*\{[\s\S]*?font-weight:400;[\s\S]*?font-synthesis:none;/);
+ assert.doesNotMatch(sourceCss,/--font-serif:\s*ui-serif/);
+ assert.match(html,/rel="preload" href="\.\/web\/assets\/fonts\/shiseji-home-serif\.woff2" as="font" type="font\/woff2" crossorigin/);
+ assert.doesNotMatch(html,/rel="preload"[^>]+shiseji-report-serif/);
+ assert.ok(font.length>1000000);
+ assert.match(license,/SIL OPEN FONT LICENSE Version 1\.1/);
+});

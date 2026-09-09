@@ -1,6 +1,6 @@
 import { getAnalysisJob } from '../lib/activation-store.js';
 import { verifyAnalysisJobToken } from '../lib/analysis-token.js';
-import { enforceRateLimit } from '../lib/rate-limit.js';
+import { enforceRequestRateLimit as enforceRateLimit } from '../lib/request-rate-limit.js';
 import { deleteTemporaryPhoto } from '../lib/temporary-photo-store.js';
 
 export default async function handler(req, res) {
@@ -9,10 +9,10 @@ export default async function handler(req, res) {
     res.setHeader('Allow', 'POST');
     return res.status(405).json({ error: '仅支持 POST 请求' });
   }
-  try { enforceRateLimit(req, 'analysis-status', { limit: 90, windowMs: 60_000 }); }
+  try { await enforceRateLimit(req, 'analysis-status', { limit: 90, windowMs: 60_000 }); }
   catch (error) {
     res.setHeader('Retry-After', String(error.retryAfter));
-    return res.status(429).json({ error: error.message });
+    return res.status(error.statusCode === 429 ? 429 : 503).json({ error: error.message });
   }
   try {
     const claims = verifyAnalysisJobToken(req.body?.jobToken);

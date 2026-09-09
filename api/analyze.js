@@ -11,10 +11,17 @@ import {
   refundActivationUse,
 } from '../lib/activation-store.js';
 import { createVisualToken, verifyAnalysisToken } from '../lib/analysis-token.js';
-import { enforceInteractiveAnalysisRateLimit } from '../lib/rate-limit.js';
+import { enforceInteractiveRequestRateLimit as enforceInteractiveAnalysisRateLimit } from '../lib/request-rate-limit.js';
 import {
   frameworkPromptReference,
 } from '../lib/color-framework.js';
+
+export const INTERACTIVE_MODEL_TIMEOUT_MS = 25_000;
+export const BACKGROUND_MODEL_TIMEOUT_MS = 240_000;
+
+export function analysisModelTimeout(backgroundMode) {
+  return backgroundMode ? BACKGROUND_MODEL_TIMEOUT_MS : INTERACTIVE_MODEL_TIMEOUT_MS;
+}
 
 export function createModelClient(factory = (options) => new OpenAI(options)) {
   return runAnalysisStage('model_request_build_failed', () => factory({
@@ -37,10 +44,10 @@ async function handleAnalysisRequest(req, res, setFailureCode) {
   }
 
   try {
-    enforceInteractiveAnalysisRateLimit(req);
+    await enforceInteractiveAnalysisRateLimit(req);
   } catch (error) {
     res.setHeader('Retry-After', String(error.retryAfter));
-    return res.status(429).json({ error: error.message });
+    return res.status(error.statusCode === 429 ? 429 : 503).json({ error: error.message });
   }
 
   let consumedCodeHash = null;
@@ -200,7 +207,7 @@ ${frameworkPromptReference()}
     fallbackFailureCode = 'model_request_failed';
     const response = await runModelCall(() => openai.chat.completions.create(
       modelRequest,
-      { timeout: 45_000 },
+      { timeout: analysisModelTimeout(backgroundMode) },
     ));
 
     // 处理AI返回结果

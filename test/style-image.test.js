@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import {
   buildStyleImagePrompt,
   extractGeneratedImageUrl,
+  extractStyleImageTaskId,
+  normalizeStyleImageTaskStatus,
   validateStyleImageKind,
 } from '../lib/style-image.js';
 
@@ -35,4 +37,11 @@ test('extracts a generated HTTPS image URL', () => {
   });
   assert.equal(url, 'https://example.com/result.png');
   assert.throws(() => extractGeneratedImageUrl({ output: {} }));
+});
+
+test('extracts async task identifiers and normalizes provider states', () => {
+  assert.equal(extractStyleImageTaskId({ output: { task_id: 'task_12345678' } }), 'task_12345678');
+  assert.equal(normalizeStyleImageTaskStatus({ output: { task_status: 'SUCCEEDED' } }), 'succeeded');
+  assert.equal(normalizeStyleImageTaskStatus({ output: { task_status: 'unexpected' } }), 'unknown');
+  assert.throws(() => extractStyleImageTaskId({ output: { task_id: '../unsafe' } }));
 });

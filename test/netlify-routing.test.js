@@ -5,6 +5,10 @@ import test from 'node:test';
 test('built redirect artifact routes every API before the SPA fallback', async () => {
   await import(`../scripts/build-static.js?routing-test=${Date.now()}`);
   const redirects = await readFile(new URL('../dist/_redirects', import.meta.url), 'utf8');
+  const privacyPolicy = await readFile(new URL('../dist/privacy-policy.html', import.meta.url), 'utf8');
+  assert.match(privacyPolicy, /隐私说明与删除申请/);
+  assert.match(privacyPolicy, /默认 15 分钟有效的临时签名访问链接/);
+
   const rules = redirects.trim().split(/\r?\n/).map((line) => line.trim().split(/\s+/));
 
   assert.deepEqual(rules, [

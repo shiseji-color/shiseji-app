@@ -1,0 +1,198 @@
+[
+  {
+    "width": 390,
+    "height": 844,
+    "home": {
+      "visible": true,
+      "title": "看见属于你的色彩身份",
+      "intro": "从一张真实照片出发，找到本命色、妆容与穿搭方向",
+      "previewLoaded": true,
+      "submitDisabled": true,
+      "overflow": false,
+      "bodyHeight": 844,
+      "viewportHeight": 844
+    },
+    "homeEntry": {
+      "activeElementId": "",
+      "submitEnabled": true,
+      "scrollY": 0,
+      "input": {
+        "left": 18.53125,
+        "right": 371.46875,
+        "height": 44.46875
+      },
+      "helpHeight": 44,
+      "portrait": {
+        "top": 181.671875,
+        "bottom": 490.1875,
+        "height": 308.515625
+      },
+      "palette": {
+        "top": 0,
+        "bottom": 0,
+        "height": 0,
+        "visible": false
+      }
+    },
+    "uploadEmpty": {
+      "visible": true,
+      "heading": "让自然光，照见你的颜色",
+      "fileInputExposed": true,
+      "analyzeDisabled": true,
+      "consentChecked": false,
+      "guideCount": 3,
+      "overflow": false,
+      "shellWidth": 390,
+      "cardWidth": 346.34375
+    },
+    "uploadReady": {
+      "previewVisible": true,
+      "previewLoaded": true,
+      "quality": "照片基础质量良好可继续分析；请再确认是自然光、正面且无重度滤镜。",
+      "analyzeDisabled": false,
+      "analyzeStyle": {
+        "background": "rgb(61, 52, 47)",
+        "color": "rgb(255, 255, 255)",
+        "opacity": "1"
+      },
+      "consentChecked": true,
+      "consentStyle": {
+        "background": "rgb(61, 52, 47)",
+        "border": "rgb(61, 52, 47)",
+        "opacity": "1"
+      },
+      "overflow": false
+    },
+    "analysis": {
+      "visible": true,
+      "heading": "正在提交分析任务",
+      "steps": [
+        {
+          "text": "提交并检查照片",
+          "active": true,
+          "complete": false
+        },
+        {
+          "text": "建立个人色彩倾向",
+          "active": false,
+          "complete": false
+        },
+        {
+          "text": "生成色卡、妆容与穿搭建议",
+          "active": false,
+          "complete": false
+        }
+      ],
+      "previewNotice": "本地示例预览 · 不消耗次数",
+      "previewNoticeVisible": true,
+      "cancelVisible": true,
+      "overflow": false,
+      "shellWidth": 390,
+      "cardWidth": 346.34375
+    },
+    "cancel": {
+      "returnedToUpload": true,
+      "loadingHidden": true
+    },
+    "errors": [],
+    "apiRequests": []
+  },
+  {
+    "width": 1440,
+    "height": 900,
+    "home": {
+      "visible": true,
+      "title": "看见属于你的色彩身份",
+      "intro": "从一张真实照片出发，找到本命色、妆容与穿搭方向",
+      "previewLoaded": true,
+      "submitDisabled": true,
+      "overflow": false,
+      "bodyHeight": 907,
+      "viewportHeight": 900
+    },
+    "homeEntry": {
+      "activeElementId": "activationCode",
+      "submitEnabled": true,
+      "scrollY": 0,
+      "input": {
+        "left": 697.640625,
+        "right": 1142.984375,
+        "height": 56
+      },
+      "helpHeight": 44,
+      "portrait": {
+        "top": 156.796875,
+        "bottom": 504.15625,
+        "height": 347.359375
+      },
+      "palette": {
+        "top": 0,
+        "bottom": 0,
+        "height": 0,
+        "visible": false
+      }
+    },
+    "uploadEmpty": {
+      "visible": true,
+      "heading": "让自然光，照见你的颜色",
+      "fileInputExposed": true,
+      "analyzeDisabled": true,
+      "consentChecked": false,
+      "guideCount": 3,
+      "overflow": false,
+      "shellWidth": 576,
+      "cardWidth": 510
+    },
+    "uploadReady": {
+      "previewVisible": true,
+      "previewLoaded": true,
+      "quality": "照片基础质量良好可继续分析；请再确认是自然光、正面且无重度滤镜。",
+      "analyzeDisabled": false,
+      "analyzeStyle": {
+        "background": "rgb(61, 52, 47)",
+        "color": "rgb(255, 255, 255)",
+        "opacity": "1"
+      },
+      "consentChecked": true,
+      "consentStyle": {
+        "background": "rgb(61, 52, 47)",
+        "border": "rgb(61, 52, 47)",
+        "opacity": "1"
+      },
+      "overflow": false
+    },
+    "analysis": {
+      "visible": true,
+      "heading": "正在提交分析任务",
+      "steps": [
+        {
+          "text": "提交并检查照片",
+          "active": true,
+          "complete": false
+        },
+        {
+          "text": "建立个人色彩倾向",
+          "active": false,
+          "complete": false
+        },
+        {
+          "text": "生成色卡、妆容与穿搭建议",
+          "active": false,
+          "complete": false
+        }
+      ],
+      "previewNotice": "本地示例预览 · 不消耗次数",
+      "previewNoticeVisible": true,
+      "cancelVisible": true,
+      "overflow": false,
+      "shellWidth": 576,
+      "cardWidth": 510
+    },
+    "cancel": {
+      "returnedToUpload": true,
+      "loadingHidden": true
+    },
+    "errors": [],
+    "apiRequests": []
+  }
+]

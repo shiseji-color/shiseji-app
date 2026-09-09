@@ -11,3 +11,5 @@ Thumbs.db
 private/
 activation-hashes-*.csv
 *密钥库*.txt
+.vercel
+.env*
