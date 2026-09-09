@@ -24,6 +24,29 @@ alter table public.style_image_jobs
   add column if not exists result_path text,
   add column if not exists failure_code text;
 
+-- An empty pre-created bucket and stale jobs from the former protocol are
+-- safe to normalize. Current work or stored files require a separate plan.
+do $$
+begin
+  if exists (
+    select 1
+    from public.style_image_jobs
+    where status in ('claimed', 'processing')
+      and updated_at >= now() - interval '15 minutes'
+  ) then
+    raise exception 'migration refused: style image jobs are still active';
+  end if;
+
+  if exists (
+    select 1
+    from storage.objects
+    where bucket_id = 'style-images'
+  ) then
+    raise exception 'migration refused: style-images contains objects';
+  end if;
+end;
+$$;
+
 alter table public.style_image_jobs
   alter column status set default 'claimed',
   alter column stage set default 'claimed';
@@ -49,7 +72,9 @@ set status = 'failed',
     result_url = null,
     failure_code = 'style_image_legacy_job_failed',
     updated_at = now()
-where (status = 'processing' and source_path is null)
+where (status in ('claimed', 'processing')
+       and source_path is null
+       and updated_at < now() - interval '15 minutes')
    or (status = 'completed' and result_path is null);
 
 update public.style_image_jobs

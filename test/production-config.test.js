@@ -85,6 +85,17 @@ test('style image rollback refuses to discard jobs or stored images', async () =
   assert.match(sql, /drop column if exists source_path/);
 });
 
+test('style image migration refuses active jobs and stored images', async () => {
+  const sql = await readFile(
+    new URL('../database/migrate-style-image-jobs.sql', import.meta.url),
+    'utf8',
+  );
+
+  assert.match(sql, /migration refused: style image jobs are still active/);
+  assert.match(sql, /migration refused: style-images contains objects/);
+  assert.match(sql, /status in \('claimed', 'processing'\)[\s\S]+updated_at < now\(\) - interval '15 minutes'/);
+});
+
 test('style image migration verification covers every new RPC and constraint', async () => {
   const sql = await readFile(
     new URL('../database/verify-style-image-migration.sql', import.meta.url),

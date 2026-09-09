@@ -31,7 +31,7 @@ where table_schema = 'public' and table_name = 'style_image_jobs'
 order by ordinal_position;
 ```
 
-当前上线基线要求任务总数为 `0`，且 `style-images` 桶不存在。若不满足，不要照常执行，应重新评估数据迁移和回滚方案。
+优先上线基线仍是任务总数为 `0`，且 `style-images` 桶不存在。若不满足，先检查任务更新时间和桶内对象：迁移仅允许没有近 15 分钟活动任务、且 `style-images` 桶对象数为 `0` 的情况。迁移事务会把旧协议遗留的陈旧 `claimed` / `processing` 任务标记为失败，并允许复用空的私有桶；发现近期活动任务或任何桶对象时会整体中止。
 
 ## 迁移
 
@@ -43,7 +43,7 @@ database/migrate-style-image-jobs.sql
 
 脚本包含一个事务。任何语句失败时 PostgreSQL 会整体回滚，不要再运行回滚脚本。
 
-迁移会短暂取得 `style_image_jobs` 的表级锁。当前表为空，因此约束重建和字段更新风险较低；上线后有任务数据时不要直接重复执行。
+迁移会短暂取得 `style_image_jobs` 的表级锁。空表或只有已确认陈旧的旧协议任务时，约束重建和字段更新风险较低；上线后出现新协议任务或桶对象时不要直接重复执行。
 
 ## 迁移后验证
 
